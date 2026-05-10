@@ -1,0 +1,77 @@
+@import 'tailwindcss';
+
+@import '@fontsource/geist/400.css';
+@import '@fontsource/geist/500.css';
+@import '@fontsource/geist/600.css';
+@import '@fontsource/geist/700.css';
+
+@theme {
+  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Brand — Figma "Primary" */
+  --color-brand-25: #f5f8ff;
+  --color-brand-50: #eef0ff;
+  --color-brand-100: #e0e1ff;
+  --color-brand-200: #c5c5ff;
+  --color-brand-300: #a3b3ff;
+  --color-brand-400: #7c86ff;
+  --color-brand-500: #615fff;
+  --color-brand-600: #4f39f6;
+  --color-brand-700: #3f2bd9;
+  --color-brand-800: #3422af;
+  --color-brand-900: #261a7f;
+
+  /* Secondary — Figma "Secondary" (teal) */
+  --color-teal-25: #f5fffd;
+  --color-teal-300: #46ecd5;
+  --color-teal-400: #00d5be;
+  --color-teal-500: #00bba7;
+  --color-teal-700: #00786f;
+  --color-teal-950: #022f2e;
+
+  /* Greyscale — exact values from Figma */
+  --color-ink-0: #ffffff;
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #dde3eb;
+  --color-ink-300: #cad5e2;
+  --color-ink-400: #90a1b9;
+  --color-ink-500: #62748e;
+  --color-ink-600: #45556c;
+  --color-ink-700: #314158;
+  --color-ink-800: #1d293d;
+  --color-ink-900: #0f172b;
+  --color-ink-950: #020618;
+
+  /* Status — Figma alert colors */
+  --color-success-50: #ecfdf3;
+  --color-success-500: #22c55e;
+  --color-success-600: #049228;
+  --color-danger-50: #fdf4f3;
+  --color-danger-500: #d54033;
+  --color-danger-600: #c62019;
+  --color-warn-500: #f59e0b;
+  --color-progress-bg: #e7ebeb;
+
+  /* Auth illustration backdrop */
+  --color-auth-bg: #6750ff;
+
+  /* Shadow tokens */
+  --shadow-input: 0 1px 1.5px 0 rgb(44 54 53 / 0.04);
+  --shadow-card: 0 1px 2px 0 rgb(15 23 43 / 0.04), 0 1px 3px 0 rgb(15 23 43 / 0.05);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-ink-50 text-ink-900 font-sans;
+  }
+
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+}

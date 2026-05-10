@@ -1,0 +1,219 @@
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Breadcrumb } from '@/components/ui/Breadcrumb';
+import { Spinner } from '@/components/ui/Spinner';
+import { Tabs, type TabItem } from '@/components/ui/Tabs';
+import { CourseHero } from '@/components/course/CourseHero';
+import { CourseStats } from '@/components/course/CourseStats';
+import { InstructorCard } from '@/components/course/InstructorCard';
+import { PricingCard } from '@/components/course/PricingCard';
+import { PopularCourseCard } from '@/components/explore/PopularCourseCard';
+import { CheckIcon } from '@/components/icons';
+import {
+  useCourseCurriculum,
+  useCourseDetail,
+  useRelatedCourses,
+} from '@/features/course/hooks';
+import { useMyEnrollments } from '@/features/learning/hooks';
+import { enrollmentsApi } from '@/api/enrollments';
+import { ApiError } from '@/api/errors';
+
+const TABS = [
+  { value: 'overview', label: 'Overview' },
+  { value: 'instructor', label: 'Instructor' },
+  { value: 'courses', label: 'Courses' },
+  { value: 'schedule', label: 'Schedule' },
+  { value: 'testimonials', label: 'Testimonials' },
+] as const satisfies readonly TabItem<string>[];
+
+type Tab = (typeof TABS)[number]['value'];
+
+export function CourseDetailPage() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const course = useCourseDetail(slug);
+  const curriculum = useCourseCurriculum(slug);
+  const related = useRelatedCourses(slug);
+  const myEnrollments = useMyEnrollments({ size: 50 });
+  const [tab, setTab] = useState<Tab>('overview');
+
+  const isEnrolled = Boolean(
+    myEnrollments.data?.items.some((e) => e.course.slug === slug),
+  );
+
+  const enroll = useMutation({
+    mutationFn: (courseId: string) => enrollmentsApi.enroll(courseId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+      navigate(`/courses/${slug}/learn`);
+    },
+  });
+
+  function onCtaClick() {
+    if (!course.data) return;
+    if (isEnrolled) {
+      navigate(`/courses/${slug}/learn`);
+      return;
+    }
+    if (course.data.is_free) {
+      enroll.mutate(course.data.id);
+      return;
+    }
+    // Paid course → go through checkout flow.
+    navigate(`/courses/${slug}/checkout`);
+  }
+
+  if (course.isLoading) {
+    return (
+      <div className="grid place-items-center py-24">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  if (course.error || !course.data) {
+    return (
+      <div className="grid place-items-center py-24 text-center">
+        <p className="text-sm text-ink-500">This course is no longer available.</p>
+      </div>
+    );
+  }
+
+  const c = course.data;
+
+  return (
+    <div className="space-y-6">
+      <Breadcrumb
+        items={[
+          { label: 'Explore', to: '/explore' },
+          { label: 'Search results', to: '/explore/search' },
+          { label: 'Detail course' },
+        ]}
+      />
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <CourseHero course={c} />
+          <CourseStats course={c} curriculum={curriculum.data} />
+
+          <div>
+            <Tabs items={TABS} value={tab} onChange={(v) => setTab(v as Tab)} variant="underline" />
+            <div className="mt-6">
+              {tab === 'overview' && <OverviewSection course={c} />}
+              {tab === 'instructor' && c.instructor && <InstructorCard instructor={c.instructor} />}
+              {tab === 'courses' && <CurriculumPlaceholder />}
+              {tab === 'schedule' && <SchedulePlaceholder />}
+              {tab === 'testimonials' && <TestimonialsPlaceholder />}
+            </div>
+          </div>
+
+          {c.instructor && tab === 'overview' && (
+            <InstructorCard instructor={c.instructor} />
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <PricingCard
+            course={c}
+            onStart={onCtaClick}
+            isEnrolled={isEnrolled}
+            loading={enroll.isPending}
+          />
+          {enroll.error instanceof ApiError && (
+            <p className="text-sm text-danger-600">
+              Couldn’t enroll: {enroll.error.message}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {related.data && related.data.length > 0 && (
+        <section>
+          <h2 className="mb-4 text-lg font-semibold text-ink-900">Related courses</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {related.data.slice(0, 4).map((rc) => (
+              <PopularCourseCard key={rc.id} course={rc} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function OverviewSection({ course }: { course: ReturnType<typeof useCourseDetail>['data'] & {} }) {
+  const c = course;
+  return (
+    <div className="space-y-6">
+      <section>
+        <h3 className="text-base font-semibold text-ink-900">What you’ll learn</h3>
+        <p className="mt-1 text-sm text-ink-500">
+          {c.description ||
+            'Learn the essential concepts and practical skills you need to succeed.'}
+        </p>
+        {c.learning_outcomes?.length ? (
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {c.learning_outcomes.map((line, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-ink-700">
+                <span className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full bg-success-50 text-success-600">
+                  <CheckIcon className="size-3" />
+                </span>
+                {line}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
+
+      <section className="grid gap-6 sm:grid-cols-2">
+        <div className="rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
+          <h3 className="text-base font-semibold text-ink-900">Shareable Certificate</h3>
+          <p className="mt-2 text-sm text-ink-500">
+            Earn a certificate upon completion to share with your network.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
+          <h3 className="text-base font-semibold text-ink-900">Skills you’ll gain</h3>
+          {c.tags?.length ? (
+            <ul className="mt-3 flex flex-wrap gap-2">
+              {c.tags.map((t) => (
+                <li
+                  key={t}
+                  className="rounded-md bg-ink-100 px-2 py-1 text-xs font-medium text-ink-700"
+                >
+                  {t}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-2 text-sm text-ink-500">Project skills updated as you progress.</p>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CurriculumPlaceholder() {
+  return (
+    <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
+      The curriculum view is coming soon — check back shortly.
+    </p>
+  );
+}
+function SchedulePlaceholder() {
+  return (
+    <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
+      Schedule planner coming soon.
+    </p>
+  );
+}
+function TestimonialsPlaceholder() {
+  return (
+    <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
+      Reviews and testimonials coming soon.
+    </p>
+  );
+}
