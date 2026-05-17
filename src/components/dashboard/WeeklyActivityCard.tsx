@@ -1,11 +1,11 @@
+import { useMemo } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { CalendarIcon, CheckIcon } from '@/components/icons';
 import { cn } from '@/lib/cn';
 import type { UserMe } from '@/types/api';
 import { DashboardCard } from './DashboardCard';
-
-const WEEK_DAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+import { useT } from '@/i18n/I18nProvider';
 
 interface WeeklyActivityCardProps {
   user?: UserMe | null;
@@ -24,35 +24,49 @@ export function WeeklyActivityCard({
   studiedMinutes = 0,
   onSetPlan,
 }: WeeklyActivityCardProps) {
+  const t = useT();
   const hasPlan = weeklyGoalMinutes > 0;
   const planDays = Math.max(1, Math.round(weeklyGoalMinutes / 60));
   const hours = Math.floor(studiedMinutes / 60);
   const mins = studiedMinutes % 60;
 
+  const WEEK_DAYS = useMemo(
+    () => [
+      t('common.dayShort.sun'),
+      t('common.dayShort.mon'),
+      t('common.dayShort.tue'),
+      t('common.dayShort.wed'),
+      t('common.dayShort.thu'),
+      t('common.dayShort.fri'),
+      t('common.dayShort.sat'),
+    ],
+    [t],
+  );
+
   // No plan + no user details yet
   if (!hasPlan) {
     return (
-      <DashboardCard title="Weekly activity" bodyClassName="space-y-4">
+      <DashboardCard title={t('dashboard.weeklyActivity.title')} bodyClassName="space-y-4">
         <p className="text-sm text-ink-500">
-          Create a weekly study plan that fits your routine.
+          {t('dashboard.weeklyActivity.createPlan')}
         </p>
         <div className="flex items-center gap-2">
           <span className="grid size-9 place-items-center rounded-full bg-brand-50 text-brand-600">
             <CalendarIcon />
           </span>
           <p className="text-sm text-ink-700">
-            Set a weekly learning plan to stay consistent.
+            {t('dashboard.weeklyActivity.consistentHint')}
           </p>
         </div>
         <Button variant="outline" fullWidth leftIcon={<CalendarIcon />} onClick={onSetPlan}>
-          Set learning plan
+          {t('dashboard.weeklyActivity.setLearningPlan')}
         </Button>
       </DashboardCard>
     );
   }
 
   return (
-    <DashboardCard title="Weekly activity" bodyClassName="space-y-5">
+    <DashboardCard title={t('dashboard.weeklyActivity.title')} bodyClassName="space-y-5">
       {user && (
         <div className="flex items-center gap-3 rounded-xl bg-ink-50 p-3">
           <Avatar src={user.avatar_url} name={user.full_name} size={40} />
@@ -67,9 +81,9 @@ export function WeeklyActivityCard({
 
       <div>
         <div className="flex items-baseline justify-between">
-          <p className="text-base font-semibold text-ink-900">{planDays} days plan</p>
+          <p className="text-base font-semibold text-ink-900">{t('dashboard.weeklyActivity.daysPlan', { n: planDays })}</p>
           <p className="text-xs text-ink-500">
-            {studyDays.length}/{planDays} days completed
+            {t('dashboard.weeklyActivity.daysCompleted', { done: studyDays.length, total: planDays })}
           </p>
         </div>
         <div className="mt-3 flex items-center gap-2">
@@ -94,8 +108,8 @@ export function WeeklyActivityCard({
       </div>
 
       <div className="grid grid-cols-2 gap-3 border-t border-ink-100 pt-4">
-        <Stat label="Hours studied" value={`${hours}`} unit="hrs" />
-        <Stat label="Active time" value={`${mins}`} unit="min" />
+        <Stat label={t('dashboard.weeklyActivity.hoursStudied')} value={`${hours}`} unit={t('dashboard.weeklyActivity.unit.hrs')} />
+        <Stat label={t('dashboard.weeklyActivity.activeTime')} value={`${mins}`} unit={t('dashboard.weeklyActivity.unit.min')} />
       </div>
 
       <button
@@ -104,7 +118,7 @@ export function WeeklyActivityCard({
         className="flex items-center gap-2 text-sm font-medium text-brand-600 hover:underline"
       >
         <CalendarIcon className="size-4" />
-        Set learning plan
+        {t('dashboard.weeklyActivity.setLearningPlan')}
       </button>
     </DashboardCard>
   );

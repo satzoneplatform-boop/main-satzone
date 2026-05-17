@@ -1,24 +1,23 @@
 import { CategoryCard } from '@/components/explore/CategoryCard';
-import { DegreeCard } from '@/components/explore/DegreeCard';
 import { ExploreSearchHero } from '@/components/explore/ExploreSearchHero';
 import { PopularCourseCard } from '@/components/explore/PopularCourseCard';
 import { Spinner } from '@/components/ui/Spinner';
 import {
   useCategories,
   usePopularCourses,
-  usePrograms,
 } from '@/features/explore/hooks';
+import { useT } from '@/i18n/I18nProvider';
 
 export function ExplorePage() {
   const categories = useCategories();
-  const popular = usePopularCourses(4);
-  const programs = usePrograms(3);
+  const popular = usePopularCourses(100);
+  const t = useT();
 
   return (
     <div className="space-y-8">
       <ExploreSearchHero />
 
-      <Section title="Explore categories">
+      <Section title={t('explore.section.categories')}>
         {categories.isLoading ? (
           <div className="grid place-items-center py-6">
             <Spinner />
@@ -32,7 +31,7 @@ export function ExplorePage() {
         )}
       </Section>
 
-      <Section title="Popular courses for you">
+      <Section title={t('explore.section.popular')}>
         {popular.isLoading ? (
           <SkeletonRow />
         ) : (
@@ -41,22 +40,6 @@ export function ExplorePage() {
               <PopularCourseCard key={c.id} course={c} />
             ))}
           </div>
-        )}
-      </Section>
-
-      <Section title="Get your dream degree">
-        {programs.isLoading ? (
-          <SkeletonRow />
-        ) : programs.data?.items.length ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {programs.data.items.map((p) => (
-              <DegreeCard key={p.id} program={p} />
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-ink-500">
-            Programs are coming soon — check back shortly.
-          </p>
         )}
       </Section>
     </div>

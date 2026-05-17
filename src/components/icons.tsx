@@ -190,6 +190,33 @@ export function HelpIcon(props: IconProps) {
   );
 }
 
+export function GlobeIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M3 10h14M10 3c2.2 2.3 3.3 4.7 3.3 7s-1.1 4.7-3.3 7c-2.2-2.3-3.3-4.7-3.3-7S7.8 5.3 10 3Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function PhoneIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <path
+        d="M4.5 3.5h2.4l1.4 3.5-1.8 1.1a9 9 0 0 0 4.4 4.4l1.1-1.8 3.5 1.4v2.4a1.5 1.5 0 0 1-1.6 1.5C8.4 15.7 3.8 11.1 3 5.1A1.5 1.5 0 0 1 4.5 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function PlayIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 20 20" width={20} height={20} fill="currentColor" aria-hidden {...props}>
@@ -358,6 +385,26 @@ export function StarIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" width={20} height={20} aria-hidden {...props}>
       <path d="m10 2.5 2.4 4.86 5.36.78-3.88 3.78.92 5.34L10 14.74l-4.8 2.52.92-5.34L2.24 8.14l5.36-.78L10 2.5Z" />
+    </svg>
+  );
+}
+
+export function LockIcon(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      width={20}
+      height={20}
+      aria-hidden
+      {...props}
+    >
+      <rect x="4" y="9" width="12" height="8" rx="1.5" />
+      <path d="M6.5 9V6.5a3.5 3.5 0 0 1 7 0V9" />
     </svg>
   );
 }

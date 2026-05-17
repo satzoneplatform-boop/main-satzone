@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -9,15 +9,7 @@ import { ApiError } from '@/api/errors';
 import { meApi } from '@/api/me';
 import { authErrorMessage } from '@/features/auth/hooks';
 import { useAuth } from '@/features/auth/AuthProvider';
-
-const COUNTRIES = [
-  { value: 'US', label: 'United States' },
-  { value: 'GB', label: 'United Kingdom' },
-  { value: 'DE', label: 'Germany' },
-  { value: 'ID', label: 'Indonesia' },
-  { value: 'UZ', label: 'Uzbekistan' },
-  { value: 'IN', label: 'India' },
-];
+import { useT } from '@/i18n/I18nProvider';
 
 /**
  * Personal Data tab (Figma 14137:29221).
@@ -31,6 +23,7 @@ const COUNTRIES = [
  *    UI-only fields that no-op on save until the backend lands them.
  */
 export function PersonalDataTab() {
+  const t = useT();
   const { user, refresh } = useAuth();
   const queryClient = useQueryClient();
   const [firstName, setFirstName] = useState('');
@@ -40,6 +33,18 @@ export function PersonalDataTab() {
   const [address, setAddress] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+
+  const COUNTRIES = useMemo(
+    () => [
+      { value: 'US', label: t('account.personalData.country.US') },
+      { value: 'GB', label: t('account.personalData.country.GB') },
+      { value: 'DE', label: t('account.personalData.country.DE') },
+      { value: 'ID', label: t('account.personalData.country.ID') },
+      { value: 'UZ', label: t('account.personalData.country.UZ') },
+      { value: 'IN', label: t('account.personalData.country.IN') },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -53,11 +58,11 @@ export function PersonalDataTab() {
     onSuccess: async () => {
       await refresh();
       void queryClient.invalidateQueries({ queryKey: ['me'] });
-      setInfo('Profile updated.');
+      setInfo(t('account.personalData.profileUpdated'));
       setTimeout(() => setInfo(null), 2500);
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? authErrorMessage(err) : 'Could not save changes.');
+      setError(err instanceof ApiError ? authErrorMessage(err) : t('account.personalData.saveFailed'));
     },
   });
 
@@ -87,7 +92,7 @@ export function PersonalDataTab() {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <header>
-        <h2 className="text-base font-semibold text-ink-900">Personal Data</h2>
+        <h2 className="text-base font-semibold text-ink-900">{t('account.personalData.title')}</h2>
       </header>
 
       {error && <Banner tone="error">{error}</Banner>}
@@ -95,53 +100,55 @@ export function PersonalDataTab() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Input
-          label="First name"
+          label={t('account.personalData.firstName')}
           required
           autoComplete="given-name"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
         />
         <Input
-          label="Last name"
+          label={t('account.personalData.lastName')}
           autoComplete="family-name"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
         />
 
         <Input
-          label="Email"
+          label={t('account.personalData.email')}
           type="email"
           value={user.email}
           disabled
-          hint="Email is locked. Contact support to change it."
+          hint={t('account.personalData.emailHint')}
         />
         <PhoneInput
-          label="Phone number"
+          label={t('account.personalData.phone')}
           value={user.phone_number ?? ''}
           onChange={() => {
             /* Phone changes go through /verify-phone — disabled here. */
           }}
+          countries={['UZ']}
+          defaultCountry="UZ"
           disabled
         />
 
         <Select
-          label="Country"
-          placeholder="Select country"
+          label={t('account.personalData.country')}
+          placeholder={t('account.personalData.countryPlaceholder')}
           options={COUNTRIES}
           value={country}
           onChange={(e) => setCountry(e.target.value)}
         />
         <Input
-          label="City"
-          placeholder="Select city"
+          label={t('account.personalData.city')}
+          placeholder={t('account.personalData.cityPlaceholder')}
           value={city}
           onChange={(e) => setCity(e.target.value)}
         />
 
         <div className="sm:col-span-2">
           <Textarea
-            label="Address"
-            placeholder="Enter your full address"
+            label={t('account.personalData.address')}
+            placeholder={t('account.personalData.addressPlaceholder')}
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             rows={3}
@@ -151,10 +158,10 @@ export function PersonalDataTab() {
 
       <footer className="flex items-center justify-end gap-3 border-t border-ink-100 pt-4">
         <Button variant="outline" type="button" onClick={reset}>
-          Reset
+          {t('common.reset')}
         </Button>
         <Button type="submit" loading={save.isPending}>
-          Save
+          {t('common.save')}
         </Button>
       </footer>
     </form>

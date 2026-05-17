@@ -20,6 +20,7 @@ import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { ResetSuccessPage } from '@/pages/auth/ResetSuccessPage';
 import { VerifyPhonePage } from '@/pages/auth/VerifyPhonePage';
 import { AccountPage } from '@/pages/account/AccountPage';
+import { ContactsPage } from '@/pages/contacts/ContactsPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { RedirectIfAuthed, RequireAuth } from './guards';
 
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
           { path: '/courses/:slug/assessments/:assessmentId', element: <AssessmentOverviewPage /> },
           { path: '/learning-path', element: <MyLearningsPage /> },
           { path: '/account', element: <AccountPage /> },
+          { path: '/contacts', element: <ContactsPage /> },
           // Sidebar nav stubs — replace as those pages are designed.
           { path: '/courses', element: <ComingSoon title="Courses" /> },
           { path: '/notifications', element: <ComingSoon title="Notifications" /> },

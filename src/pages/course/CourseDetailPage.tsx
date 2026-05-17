@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
@@ -18,18 +18,12 @@ import {
 import { useMyEnrollments } from '@/features/learning/hooks';
 import { enrollmentsApi } from '@/api/enrollments';
 import { ApiError } from '@/api/errors';
+import { useT } from '@/i18n/I18nProvider';
 
-const TABS = [
-  { value: 'overview', label: 'Overview' },
-  { value: 'instructor', label: 'Instructor' },
-  { value: 'courses', label: 'Courses' },
-  { value: 'schedule', label: 'Schedule' },
-  { value: 'testimonials', label: 'Testimonials' },
-] as const satisfies readonly TabItem<string>[];
-
-type Tab = (typeof TABS)[number]['value'];
+type Tab = 'overview' | 'instructor' | 'courses' | 'schedule' | 'testimonials';
 
 export function CourseDetailPage() {
+  const t = useT();
   const { slug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -38,6 +32,17 @@ export function CourseDetailPage() {
   const related = useRelatedCourses(slug);
   const myEnrollments = useMyEnrollments({ size: 50 });
   const [tab, setTab] = useState<Tab>('overview');
+
+  const TABS: TabItem<Tab>[] = useMemo(
+    () => [
+      { value: 'overview', label: t('course.tabs.overview') },
+      { value: 'instructor', label: t('course.tabs.instructor') },
+      { value: 'courses', label: t('course.tabs.courses') },
+      { value: 'schedule', label: t('course.tabs.schedule') },
+      { value: 'testimonials', label: t('course.tabs.testimonials') },
+    ],
+    [t],
+  );
 
   const isEnrolled = Boolean(
     myEnrollments.data?.items.some((e) => e.course.slug === slug),
@@ -76,7 +81,7 @@ export function CourseDetailPage() {
   if (course.error || !course.data) {
     return (
       <div className="grid place-items-center py-24 text-center">
-        <p className="text-sm text-ink-500">This course is no longer available.</p>
+        <p className="text-sm text-ink-500">{t('course.detail.unavailable')}</p>
       </div>
     );
   }
@@ -87,9 +92,9 @@ export function CourseDetailPage() {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: 'Explore', to: '/explore' },
-          { label: 'Search results', to: '/explore/search' },
-          { label: 'Detail course' },
+          { label: t('course.breadcrumb.explore'), to: '/explore' },
+          { label: t('course.breadcrumb.searchResults'), to: '/explore/search' },
+          { label: t('course.breadcrumb.detail') },
         ]}
       />
 
@@ -123,7 +128,7 @@ export function CourseDetailPage() {
           />
           {enroll.error instanceof ApiError && (
             <p className="text-sm text-danger-600">
-              Couldn’t enroll: {enroll.error.message}
+              {t('course.detail.enrollFailed', { message: enroll.error.message })}
             </p>
           )}
         </div>
@@ -131,7 +136,7 @@ export function CourseDetailPage() {
 
       {related.data && related.data.length > 0 && (
         <section>
-          <h2 className="mb-4 text-lg font-semibold text-ink-900">Related courses</h2>
+          <h2 className="mb-4 text-lg font-semibold text-ink-900">{t('course.relatedCourses')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {related.data.slice(0, 4).map((rc) => (
               <PopularCourseCard key={rc.id} course={rc} />
@@ -144,14 +149,14 @@ export function CourseDetailPage() {
 }
 
 function OverviewSection({ course }: { course: ReturnType<typeof useCourseDetail>['data'] & {} }) {
+  const t = useT();
   const c = course;
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="text-base font-semibold text-ink-900">What you’ll learn</h3>
+        <h3 className="text-base font-semibold text-ink-900">{t('course.detail.whatLearn')}</h3>
         <p className="mt-1 text-sm text-ink-500">
-          {c.description ||
-            'Learn the essential concepts and practical skills you need to succeed.'}
+          {c.description || t('course.detail.whatLearnFallback')}
         </p>
         {c.learning_outcomes?.length ? (
           <ul className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -169,26 +174,26 @@ function OverviewSection({ course }: { course: ReturnType<typeof useCourseDetail
 
       <section className="grid gap-6 sm:grid-cols-2">
         <div className="rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
-          <h3 className="text-base font-semibold text-ink-900">Shareable Certificate</h3>
+          <h3 className="text-base font-semibold text-ink-900">{t('course.detail.shareableCertificate')}</h3>
           <p className="mt-2 text-sm text-ink-500">
-            Earn a certificate upon completion to share with your network.
+            {t('course.detail.shareableCertificateDesc')}
           </p>
         </div>
         <div className="rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
-          <h3 className="text-base font-semibold text-ink-900">Skills you’ll gain</h3>
+          <h3 className="text-base font-semibold text-ink-900">{t('course.detail.skillsGain')}</h3>
           {c.tags?.length ? (
             <ul className="mt-3 flex flex-wrap gap-2">
-              {c.tags.map((t) => (
+              {c.tags.map((tag) => (
                 <li
-                  key={t}
+                  key={tag}
                   className="rounded-md bg-ink-100 px-2 py-1 text-xs font-medium text-ink-700"
                 >
-                  {t}
+                  {tag}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="mt-2 text-sm text-ink-500">Project skills updated as you progress.</p>
+            <p className="mt-2 text-sm text-ink-500">{t('course.detail.skillsGainFallback')}</p>
           )}
         </div>
       </section>
@@ -197,23 +202,26 @@ function OverviewSection({ course }: { course: ReturnType<typeof useCourseDetail
 }
 
 function CurriculumPlaceholder() {
+  const t = useT();
   return (
     <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
-      The curriculum view is coming soon — check back shortly.
+      {t('course.detail.curriculumSoon')}
     </p>
   );
 }
 function SchedulePlaceholder() {
+  const t = useT();
   return (
     <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
-      Schedule planner coming soon.
+      {t('course.detail.scheduleSoon')}
     </p>
   );
 }
 function TestimonialsPlaceholder() {
+  const t = useT();
   return (
     <p className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
-      Reviews and testimonials coming soon.
+      {t('course.detail.testimonialsSoon')}
     </p>
   );
 }

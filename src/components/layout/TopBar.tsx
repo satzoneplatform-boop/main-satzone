@@ -2,14 +2,14 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
 import {
-  BellIcon,
   ChevronDownIcon,
-  GiftIcon,
   LogoutIcon,
   SearchIcon,
 } from '@/components/icons';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useI18n } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
+import { LanguageDropdown } from './LanguageDropdown';
 
 interface TopBarProps {
   title: string;
@@ -19,6 +19,7 @@ interface TopBarProps {
 export function TopBar({ title, onSignOut }: TopBarProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
 
   function onSearchSubmit(e: FormEvent<HTMLFormElement>) {
@@ -44,7 +45,7 @@ export function TopBar({ title, onSignOut }: TopBarProps) {
             <input
               type="search"
               name="q"
-              placeholder="Search class or category"
+              placeholder={t('topbar.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-transparent text-white placeholder:text-ink-500 focus:outline-none"
@@ -52,42 +53,11 @@ export function TopBar({ title, onSignOut }: TopBarProps) {
           </label>
         </form>
 
-        <IconButton to="/inbox" label="Rewards">
-          <GiftIcon />
-        </IconButton>
-
-        <IconButton to="/notifications" label="Notifications" hasUnread>
-          <BellIcon />
-        </IconButton>
+        <LanguageDropdown variant="dark" />
 
         <AccountMenu onSignOut={onSignOut} userName={user?.full_name} userAvatar={user?.avatar_url} />
       </div>
     </header>
-  );
-}
-
-function IconButton({
-  to,
-  label,
-  children,
-  hasUnread,
-}: {
-  to: string;
-  label: string;
-  children: React.ReactNode;
-  hasUnread?: boolean;
-}) {
-  return (
-    <Link
-      to={to}
-      aria-label={label}
-      className="relative grid size-9 place-items-center rounded-md border border-ink-800 bg-ink-800/70 text-ink-300 transition-colors hover:bg-ink-800 hover:text-white"
-    >
-      {children}
-      {hasUnread && (
-        <span className="absolute right-2 top-2 size-1.5 rounded-full bg-danger-500 ring-2 ring-ink-900" />
-      )}
-    </Link>
   );
 }
 
@@ -100,6 +70,7 @@ function AccountMenu({
   userName?: string;
   userAvatar?: string | null;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -122,7 +93,7 @@ function AccountMenu({
     };
   }, [open]);
 
-  const firstName = userName?.split(' ')[0] ?? 'You';
+  const firstName = userName?.split(' ')[0] ?? t('common.you');
 
   return (
     <div ref={wrapRef} className="relative">
@@ -156,8 +127,8 @@ function AccountMenu({
           >
             <Avatar shape="square" name={userName} src={userAvatar} size={36} />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{userName ?? 'You'}</p>
-              <p className="truncate text-xs text-ink-500">View profile</p>
+              <p className="truncate text-sm font-semibold">{userName ?? t('common.you')}</p>
+              <p className="truncate text-xs text-ink-500">{t('topbar.viewProfile')}</p>
             </div>
           </Link>
           <button
@@ -170,7 +141,7 @@ function AccountMenu({
             className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-danger-600 hover:bg-danger-50"
           >
             <LogoutIcon />
-            <span>Sign out</span>
+            <span>{t('topbar.signOut')}</span>
           </button>
         </div>
       )}

@@ -8,6 +8,7 @@ import { LogoutIcon } from '@/components/icons';
 import { meApi } from '@/api/me';
 import { ApiError } from '@/api/errors';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useT } from '@/i18n/I18nProvider';
 import type { UserMe } from '@/types/api';
 
 interface ProfileSidebarProps {
@@ -16,7 +17,6 @@ interface ProfileSidebarProps {
   studyHours: number;
   certificates: number;
   onSignOut: () => void;
-  onEditPreferences?: () => void;
 }
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -32,14 +32,14 @@ export function ProfileSidebar({
   studyHours,
   certificates,
   onSignOut,
-  onEditPreferences,
 }: ProfileSidebarProps) {
+  const t = useT();
   return (
     <aside className="space-y-4 rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
       <div className="flex flex-col items-center text-center">
         <AvatarUploader user={user} />
         <p className="mt-3 text-base font-semibold text-ink-900">
-          {user.full_name || 'Edura learner'}
+          {user.full_name || 'Idrokhub learner'}
         </p>
         <p className="text-xs text-ink-500">{user.email}</p>
         {user.phone_number && (
@@ -48,38 +48,29 @@ export function ProfileSidebar({
       </div>
 
       <div className="grid grid-cols-3 gap-2 border-t border-ink-100 pt-4 text-center">
-        <Stat value={String(totalCourses)} label="Total courses" />
-        <Stat value={`${studyHours}h ${studyHours > 0 ? '0' : ''}m`} label="Total time" />
-        <Stat value={String(certificates)} label="Certificates" />
+        <Stat value={String(totalCourses)} label={t('account.profile.totalCourses')} />
+        <Stat value={`${studyHours}h ${studyHours > 0 ? '0' : ''}m`} label={t('account.profile.totalTime')} />
+        <Stat value={String(certificates)} label={t('account.profile.certificates')} />
       </div>
 
       <section className="rounded-xl border border-ink-200 bg-ink-50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-          Work preferences
+          {t('account.profile.workPreferences')}
         </p>
         <div className="mt-3">
-          <p className="text-xs text-ink-500">Current Job Title</p>
+          <p className="text-xs text-ink-500">{t('account.profile.currentJobTitle')}</p>
           <p className="text-sm font-medium text-ink-900">
             Digital Marketings
           </p>
         </div>
         <div className="mt-3">
-          <p className="text-xs text-ink-500">Interests</p>
+          <p className="text-xs text-ink-500">{t('account.profile.interests')}</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
             <Badge tone="brand">Marketing</Badge>
             <Badge tone="brand">Business</Badge>
             <Badge tone="brand">Analytics</Badge>
           </div>
         </div>
-        {onEditPreferences && (
-          <button
-            type="button"
-            onClick={onEditPreferences}
-            className="mt-4 w-full text-left text-xs font-medium text-brand-600 hover:underline"
-          >
-            Edit preferences
-          </button>
-        )}
       </section>
 
       <Button
@@ -90,7 +81,7 @@ export function ProfileSidebar({
         onClick={onSignOut}
         className="text-danger-600 hover:bg-red-50"
       >
-        Sign out from Edura
+        {t('account.profile.signOut')}
       </Button>
     </aside>
   );
@@ -104,6 +95,7 @@ export function ProfileSidebar({
 function AvatarUploader({ user }: { user: UserMe }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const { refresh } = useAuth();
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
 
   const upload = useMutation({
@@ -188,7 +180,7 @@ function AvatarUploader({ user }: { user: UserMe }) {
           onClick={() => remove.mutate()}
           className="mt-2 text-xs font-medium text-ink-500 hover:text-danger-600"
         >
-          Remove photo
+          {t('account.profile.removePhoto')}
         </button>
       )}
 

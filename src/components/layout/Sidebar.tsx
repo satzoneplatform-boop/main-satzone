@@ -1,16 +1,15 @@
-import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Logo, LogoMark } from '@/components/brand/Logo';
 import {
   BookIcon,
   GridIcon,
-  HelpIcon,
   HomeIcon,
   PanelLeftIcon,
-  SearchIcon,
+  PhoneIcon,
 } from '@/components/icons';
 import { cn } from '@/lib/cn';
 import { useHomeFeed } from '@/features/home/hooks';
+import { useT } from '@/i18n/I18nProvider';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,22 +26,21 @@ interface NavItemConfig {
 /**
  * Authed app sidebar — matches the Explore / Search Results layout in Figma:
  *  - Brand wordmark + collapse toggle
- *  - Search box with ⌘K hint
  *  - MAIN MENU group
  *  - LATEST LEARNINGS group (continue-learning history)
- *  - Help Center footer
+ *  - Contacts footer
  */
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
-  const [search, setSearch] = useState('');
   const home = useHomeFeed();
+  const t = useT();
 
   // Show 4 most recent in-progress courses (FRONTEND.md §4.4 — `continue_learning`).
   const recent = (home.data?.continue_learning ?? []).slice(0, 4);
 
   const main: NavItemConfig[] = [
-    { to: '/', label: 'Dashboard', icon: HomeIcon },
-    { to: '/explore', label: 'Explore', icon: GridIcon, badge: 2 },
-    { to: '/learning-path', label: 'My learnings', icon: BookIcon },
+    { to: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { to: '/explore', label: t('nav.explore'), icon: GridIcon, badge: 2 },
+    { to: '/learning-path', label: t('nav.myLearnings'), icon: BookIcon },
   ];
 
   return (
@@ -74,42 +72,19 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
         </button>
       </div>
 
-      {!collapsed && (
-        <div className="px-2 pb-3">
-          <label
-            className={cn(
-              'flex h-9 items-center gap-2 rounded-lg border border-ink-800 bg-ink-800 px-3 text-sm text-ink-400',
-              'focus-within:border-ink-700',
-            )}
-          >
-            <SearchIcon className="size-4" />
-            <input
-              type="search"
-              placeholder="Search.."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent text-white placeholder:text-ink-500 focus:outline-none"
-            />
-            <kbd className="rounded border border-ink-700 px-1 text-[10px] uppercase tracking-wide text-ink-500">
-              ⌘K
-            </kbd>
-          </label>
-        </div>
-      )}
-
       <nav className="flex-1 space-y-6 overflow-y-auto pr-1 pt-2">
-        <NavGroup title="Main Menu" collapsed={collapsed}>
+        <NavGroup title={t('nav.mainMenu')} collapsed={collapsed}>
           {main.map((item) => (
             <NavRow key={item.to} item={item} collapsed={collapsed} />
           ))}
         </NavGroup>
 
         {recent.length > 0 && !collapsed && (
-          <NavGroup title="Latest Learnings" collapsed={collapsed}>
+          <NavGroup title={t('nav.latestLearnings')} collapsed={collapsed}>
             {recent.map((e) => (
               <NavLink
                 key={e.id}
-                to={`/courses/${e.course.slug}`}
+                to={`/courses/${e.course.slug}/learn`}
                 className="flex h-9 items-center gap-3 rounded-lg px-3 text-sm text-ink-400 hover:bg-ink-800 hover:text-white"
               >
                 <RecentBadge progress={e.progress_percent} />
@@ -122,7 +97,7 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
 
       <div className="space-y-1 border-t border-ink-800 pt-3">
         <NavRow
-          item={{ to: '/help', label: 'Help Center', icon: HelpIcon }}
+          item={{ to: '/contacts', label: t('nav.contacts'), icon: PhoneIcon }}
           collapsed={collapsed}
         />
       </div>

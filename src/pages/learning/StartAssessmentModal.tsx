@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { FlagIcon } from '@/components/icons';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/i18n/I18nProvider';
 
 interface StartAssessmentModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ export function StartAssessmentModal({
   timeLimitMinutes,
   attemptsRemaining,
 }: StartAssessmentModalProps) {
+  const t = useT();
   return (
     <Modal open={open} onClose={onClose}>
       <div className="space-y-5 text-center">
@@ -26,17 +28,19 @@ export function StartAssessmentModal({
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold text-ink-900">Start this assessment?</h2>
+          <h2 className="text-lg font-semibold text-ink-900">{t('assessment.startModal.title')}</h2>
           <p className="mt-2 text-sm text-ink-500">
-            This assessment must be completed within{' '}
+            {t('assessment.startModal.bodyPrefix')}{' '}
             <span className="font-medium text-ink-900">
-              {timeLimitMinutes ? formatDuration(timeLimitMinutes) : 'no fixed time'}
+              {timeLimitMinutes ? formatDuration(timeLimitMinutes) : t('assessment.startModal.noFixedTime')}
             </span>
-            . Once you begin you won’t be able to pause.
+            {t('assessment.startModal.bodySuffix')}
             {typeof attemptsRemaining === 'number' && attemptsRemaining > 0 && (
               <>
-                {' '}You have <span className="font-medium text-ink-900">{attemptsRemaining}</span>{' '}
-                attempt{attemptsRemaining === 1 ? '' : 's'} left.
+                {' '}
+                {attemptsRemaining === 1
+                  ? t('assessment.startModal.attemptsRemaining', { n: attemptsRemaining })
+                  : t('assessment.startModal.attemptsRemainingPlural', { n: attemptsRemaining })}
               </>
             )}
           </p>
@@ -44,10 +48,10 @@ export function StartAssessmentModal({
 
         <div className="flex flex-col gap-2">
           <Button fullWidth size="lg" onClick={onStart}>
-            Start assessment
+            {t('assessment.startModal.start')}
           </Button>
           <Button fullWidth size="lg" variant="ghost" onClick={onClose}>
-            Cancel
+            {t('assessment.startModal.cancel')}
           </Button>
         </div>
       </div>

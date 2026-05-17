@@ -3,31 +3,37 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { SignOutModal } from '@/pages/dashboard/SignOutModal';
+import { useT } from '@/i18n/I18nProvider';
+import type { TranslationKey } from '@/i18n/en';
 
-const TITLE_BY_PATH: Array<{ match: RegExp; title: string }> = [
-  { match: /^\/$/, title: 'Dashboard' },
-  { match: /^\/explore\/search/, title: 'Explore' },
-  { match: /^\/explore/, title: 'Explore' },
-  { match: /^\/courses\/[^/]+\/lessons\//, title: 'My learnings' },
-  { match: /^\/courses\/[^/]+\/assessments\//, title: 'My learnings' },
-  { match: /^\/courses\/[^/]+\/learn/, title: 'My learnings' },
-  { match: /^\/courses\/[^/]+\/checkout\/success/, title: 'Explore' },
-  { match: /^\/courses\/[^/]+\/checkout/, title: 'Explore' },
-  { match: /^\/courses\/[^/]+/, title: 'Explore' },
-  { match: /^\/courses/, title: 'Courses' },
-  { match: /^\/learning-path/, title: 'My learnings' },
-  { match: /^\/notifications/, title: 'Notifications' },
-  { match: /^\/inbox/, title: 'Inbox' },
-  { match: /^\/help/, title: 'Help Center' },
-  { match: /^\/account/, title: 'Account & Settings' },
+const TITLE_BY_PATH: Array<{ match: RegExp; titleKey: TranslationKey }> = [
+  { match: /^\/$/, titleKey: 'page.dashboard' },
+  { match: /^\/explore\/search/, titleKey: 'page.explore' },
+  { match: /^\/explore/, titleKey: 'page.explore' },
+  { match: /^\/courses\/[^/]+\/lessons\//, titleKey: 'page.myLearnings' },
+  { match: /^\/courses\/[^/]+\/assessments\//, titleKey: 'page.myLearnings' },
+  { match: /^\/courses\/[^/]+\/learn/, titleKey: 'page.myLearnings' },
+  { match: /^\/courses\/[^/]+\/checkout\/success/, titleKey: 'page.explore' },
+  { match: /^\/courses\/[^/]+\/checkout/, titleKey: 'page.explore' },
+  { match: /^\/courses\/[^/]+/, titleKey: 'page.explore' },
+  { match: /^\/courses/, titleKey: 'page.courses' },
+  { match: /^\/learning-path/, titleKey: 'page.myLearnings' },
+  { match: /^\/notifications/, titleKey: 'page.notifications' },
+  { match: /^\/inbox/, titleKey: 'page.inbox' },
+  { match: /^\/help/, titleKey: 'page.help' },
+  { match: /^\/account/, titleKey: 'page.account' },
+  { match: /^\/contacts/, titleKey: 'page.contacts' },
 ];
 
 export function DashboardShell() {
   const location = useLocation();
+  const t = useT();
   const [signOutOpen, setSignOutOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const title =
-    TITLE_BY_PATH.find((t) => t.match.test(location.pathname))?.title ?? 'Dashboard';
+  const titleKey =
+    TITLE_BY_PATH.find((r) => r.match.test(location.pathname))?.titleKey ??
+    'page.dashboard';
+  const title = t(titleKey);
 
   return (
     <div className="flex h-screen overflow-hidden bg-ink-50">

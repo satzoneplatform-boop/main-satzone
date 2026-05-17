@@ -9,28 +9,24 @@ import { api } from '@/api/client';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { SignOutModal } from '@/pages/dashboard/SignOutModal';
 import type { CertificateRead } from '@/types/api';
-import { LanguageTab } from './LanguageTab';
+import { useT } from '@/i18n/I18nProvider';
 import { NotificationTab } from './NotificationTab';
-import { PaymentsBillingTab } from './PaymentsBillingTab';
 import { PersonalDataTab } from './PersonalDataTab';
 import { PreferencesTab } from './PreferencesTab';
-import { SecurityTab } from './SecurityTab';
 
-const TABS = [
-  { value: 'personal', label: 'Personal Data' },
-  { value: 'notification', label: 'Notification' },
-  { value: 'security', label: 'Security' },
-  { value: 'billing', label: 'Payments & Billing' },
-  { value: 'language', label: 'Language' },
-  { value: 'preferences', label: 'Preferences' },
-] as const satisfies readonly TabItem<string>[];
-
-type Tab = (typeof TABS)[number]['value'];
+type Tab = 'personal' | 'notification' | 'preferences';
 
 export function AccountPage() {
   const { user } = useAuth();
+  const t = useT();
   const [tab, setTab] = useState<Tab>('personal');
   const [signOutOpen, setSignOutOpen] = useState(false);
+
+  const tabs: TabItem<Tab>[] = [
+    { value: 'personal', label: t('account.tabs.personal') },
+    { value: 'notification', label: t('account.tabs.notification') },
+    { value: 'preferences', label: t('account.tabs.preferences') },
+  ];
 
   const enrollments = useQuery({
     queryKey: ['enrollments', { all: true }],
@@ -73,13 +69,12 @@ export function AccountPage() {
               studyHours={studyHours}
               certificates={certificates.data?.length ?? 0}
               onSignOut={() => setSignOutOpen(true)}
-              onEditPreferences={() => setTab('preferences')}
             />
           </div>
 
           <section className="rounded-2xl border border-ink-200 bg-white p-6 shadow-[var(--shadow-card)]">
             <Tabs
-              items={TABS}
+              items={tabs}
               value={tab}
               onChange={(v) => setTab(v as Tab)}
               variant="underline"
@@ -87,9 +82,6 @@ export function AccountPage() {
             />
             {tab === 'personal' && <PersonalDataTab />}
             {tab === 'notification' && <NotificationTab />}
-            {tab === 'security' && <SecurityTab />}
-            {tab === 'billing' && <PaymentsBillingTab />}
-            {tab === 'language' && <LanguageTab />}
             {tab === 'preferences' && <PreferencesTab />}
           </section>
         </div>

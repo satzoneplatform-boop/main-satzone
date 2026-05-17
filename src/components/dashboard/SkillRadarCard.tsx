@@ -1,29 +1,35 @@
+import { useMemo } from 'react';
 import { RadarChart, type RadarAxis } from '@/components/charts/RadarChart';
 import { DashboardCard } from './DashboardCard';
+import { useT } from '@/i18n/I18nProvider';
 
 interface SkillRadarCardProps {
   axes?: RadarAxis[];
 }
 
-const DEFAULT_AXES: RadarAxis[] = [
-  { label: 'Data', value: 0.65 },
-  { label: 'Logic', value: 0.5 },
-  { label: 'Focus', value: 0.7 },
-  { label: 'Strategy', value: 0.45 },
-  { label: 'Reasoning', value: 0.6 },
-  { label: 'Analysis', value: 0.55 },
-];
-
-export function SkillRadarCard({ axes = DEFAULT_AXES }: SkillRadarCardProps) {
-  const empty = axes.every((a) => a.value === 0);
+export function SkillRadarCard({ axes }: SkillRadarCardProps) {
+  const t = useT();
+  const DEFAULT_AXES: RadarAxis[] = useMemo(
+    () => [
+      { label: t('dashboard.skillRadar.axis.data'), value: 0.65 },
+      { label: t('dashboard.skillRadar.axis.logic'), value: 0.5 },
+      { label: t('dashboard.skillRadar.axis.focus'), value: 0.7 },
+      { label: t('dashboard.skillRadar.axis.strategy'), value: 0.45 },
+      { label: t('dashboard.skillRadar.axis.reasoning'), value: 0.6 },
+      { label: t('dashboard.skillRadar.axis.analysis'), value: 0.55 },
+    ],
+    [t],
+  );
+  const resolvedAxes = axes ?? DEFAULT_AXES;
+  const empty = resolvedAxes.every((a) => a.value === 0);
   return (
-    <DashboardCard title="Skill you’re building" bodyClassName="grid place-items-center">
+    <DashboardCard title={t('dashboard.skillRadar.heading')} bodyClassName="grid place-items-center">
       {empty ? (
         <div className="py-8 text-center text-sm text-ink-500">
-          Take a class to start building your skill profile.
+          {t('dashboard.skillRadar.empty')}
         </div>
       ) : (
-        <RadarChart axes={axes} size={220} />
+        <RadarChart axes={resolvedAxes} size={220} />
       )}
     </DashboardCard>
   );

@@ -182,6 +182,11 @@ export interface LessonPlaybackResponse {
   expires_at: string;
   hls_url: string | null;
   hls_status: HlsStatus;
+  // Authoritative duration components — total_segments × segment_seconds is
+  // the real total length. <video>.duration only reflects the buffered window
+  // for sliding manifests.
+  total_segments: number | null;
+  segment_seconds: number | null;
   drm: { provider: string; license_url: string } | null;
 }
 

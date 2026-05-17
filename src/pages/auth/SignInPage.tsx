@@ -10,6 +10,7 @@ import { GoogleIcon } from '@/components/icons';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { ApiError } from '@/api/errors';
 import { authErrorMessage, googleSignInUrl } from '@/features/auth/hooks';
+import { useT } from '@/i18n/I18nProvider';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { EmailSentModal } from './EmailSentModal';
 
@@ -19,6 +20,7 @@ export function SignInPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const t = useT();
   const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? '/';
 
   const [email, setEmail] = useState('');
@@ -37,7 +39,7 @@ export function SignInPage() {
       await login({ email, password });
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? authErrorMessage(err) : 'Something went wrong.');
+      setError(err instanceof ApiError ? authErrorMessage(err) : t('auth.signIn.genericError'));
     } finally {
       setSubmitting(false);
     }
@@ -48,9 +50,10 @@ export function SignInPage() {
       <AuthSplitLayout
         footer={
           <p>
-            By continuing you agree to the{' '}
-            <a href="#" className="underline">Terms of Services</a> and{' '}
-            <a href="#" className="underline">Privacy Policy</a>.
+            {t('auth.signIn.footer')}{' '}
+            <a href="#" className="underline">{t('auth.signUp.terms')}</a>{' '}
+            {t('auth.signUp.and')}{' '}
+            <a href="#" className="underline">{t('auth.signUp.privacy')}</a>.
           </p>
         }
       >
@@ -58,12 +61,10 @@ export function SignInPage() {
           <div className="flex flex-col items-center text-center">
             <LogoMark size={40} />
             <h1 className="mt-5 text-[28px] font-semibold tracking-tight text-ink-900">
-              Welcome to IdrokHub
+              {t('auth.signIn.welcome')}
             </h1>
             <p className="mt-2 text-sm text-ink-500">
-              Login with your account and Password
-              <br />
-              or create new account
+              {t('auth.signIn.welcomeSubtitle')}
             </p>
           </div>
 
@@ -76,10 +77,10 @@ export function SignInPage() {
               window.location.href = googleSignInUrl();
             }}
           >
-            Sign up with Google
+            {t('auth.signIn.signInWithGoogle')}
           </Button>
 
-          <Divider label="Or sign in with email" />
+          <Divider label={t('auth.signIn.orWithEmail')} />
 
           {error && (
             <div className="rounded-md border border-danger-500/30 bg-red-50 px-3 py-2 text-sm text-danger-600">
@@ -88,20 +89,20 @@ export function SignInPage() {
           )}
 
           <Input
-            label="Email"
+            label={t('auth.signIn.email')}
             type="email"
             autoComplete="email"
             required
-            placeholder="Enter your email"
+            placeholder={t('auth.signIn.emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
           <PasswordInput
-            label="Password"
+            label={t('auth.signIn.password')}
             required
             autoComplete="current-password"
-            placeholder="Enter your password"
+            placeholder={t('auth.signIn.passwordPlaceholder')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -114,7 +115,7 @@ export function SignInPage() {
                 onChange={(e) => setRemember(e.target.checked)}
                 className="size-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
               />
-              Remember me
+              {t('auth.signIn.rememberMe')}
             </label>
             <button
               type="button"
@@ -124,18 +125,18 @@ export function SignInPage() {
               }}
               className="font-medium text-brand-600 hover:underline"
             >
-              Forgot password?
+              {t('auth.signIn.forgotPassword')}
             </button>
           </div>
 
           <Button type="submit" fullWidth size="lg" loading={submitting} disabled={!email || !password}>
-            Continue
+            {t('auth.signIn.continue')}
           </Button>
 
           <p className="text-center text-sm text-ink-500">
-            Don’t have an account?{' '}
+            {t('auth.signIn.noAccount')}{' '}
             <Link to="/sign-up" className="font-medium text-brand-600 hover:underline">
-              Sign up
+              {t('auth.signIn.signUp')}
             </Link>
           </p>
         </form>

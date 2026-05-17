@@ -1,18 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Modal } from '@/components/ui/Modal';
 import { LogoMark } from '@/components/brand/Logo';
 import authIllustration from '@/assets/auth-illustration.png';
-
-const COMMITMENTS = [
-  'Pausing briefly to regain focus',
-  'Breaking complex ideas into manageable steps',
-  'Revisiting lessons and examples',
-  'Asking for help when needed',
-  'Finding additional resources',
-  'Keeping a positive and focused mindset',
-];
+import { useT } from '@/i18n/I18nProvider';
 
 interface CommitmentModalProps {
   open: boolean;
@@ -27,7 +19,20 @@ interface CommitmentModalProps {
  * (typically once per course on first lesson open) using localStorage.
  */
 export function CommitmentModal({ open, onClose, onStart }: CommitmentModalProps) {
+  const t = useT();
   const [checked, setChecked] = useState<Set<number>>(new Set());
+
+  const COMMITMENTS = useMemo(
+    () => [
+      t('course.commitment.item.pausing'),
+      t('course.commitment.item.breaking'),
+      t('course.commitment.item.revisiting'),
+      t('course.commitment.item.asking'),
+      t('course.commitment.item.resources'),
+      t('course.commitment.item.mindset'),
+    ],
+    [t],
+  );
 
   function toggle(i: number) {
     const next = new Set(checked);
@@ -51,17 +56,16 @@ export function CommitmentModal({ open, onClose, onStart }: CommitmentModalProps
           <div className="flex items-center gap-3">
             <LogoMark size={32} />
             <div>
-              <h2 className="text-lg font-semibold text-ink-900">My learning commitment</h2>
+              <h2 className="text-lg font-semibold text-ink-900">{t('course.commitment.title')}</h2>
               <p className="text-xs text-ink-500">
-                I’m starting this course on Strategic Thinking & Decision Making to build a stronger
-                base. I commit to engaging fully and learning at my own pace.
+                {t('course.commitment.intro')}
               </p>
             </div>
           </div>
 
           <div>
             <p className="text-sm font-medium text-ink-900">
-              If I encounter difficulties along the way, I’ll respond constructively by:
+              {t('course.commitment.prompt')}
             </p>
             <ul className="mt-3 space-y-2.5">
               {COMMITMENTS.map((c, i) => (
@@ -85,7 +89,7 @@ export function CommitmentModal({ open, onClose, onStart }: CommitmentModalProps
               onClose();
             }}
           >
-            Start learning
+            {t('course.commitment.start')}
           </Button>
         </div>
       </div>

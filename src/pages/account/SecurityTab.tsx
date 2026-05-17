@@ -9,8 +9,11 @@ import { ApiError } from '@/api/errors';
 import { meApi, type SessionRead } from '@/api/me';
 import { authErrorMessage } from '@/features/auth/hooks';
 import { evaluatePassword } from '@/components/ui/PasswordStrength';
+import { useT } from '@/i18n/I18nProvider';
+import type { TranslationKey } from '@/i18n/en';
 
 export function SecurityTab() {
+  const t = useT();
   const queryClient = useQueryClient();
   const sessions = useQuery({
     queryKey: ['me', 'sessions'],
@@ -30,20 +33,20 @@ export function SecurityTab() {
   return (
     <div className="space-y-6">
       <header>
-        <h2 className="text-base font-semibold text-ink-900">Security</h2>
+        <h2 className="text-base font-semibold text-ink-900">{t('account.security.title')}</h2>
       </header>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <SecurityCard
-          title="Password"
-          description="If you forgot your password, you can reset it here."
-          ctaLabel="Change now"
+          title={t('account.security.password.title')}
+          description={t('account.security.password.description')}
+          ctaLabel={t('account.security.password.cta')}
           onClick={() => setPwOpen(true)}
         />
         <SecurityCard
-          title="Two-Factor Auth"
-          description="Add an extra layer of security to your account by enabling 2FA."
-          ctaLabel="Enable"
+          title={t('account.security.twoFactor.title')}
+          description={t('account.security.twoFactor.description')}
+          ctaLabel={t('account.security.twoFactor.cta')}
           disabled
           ctaVariant="primary"
         />
@@ -51,14 +54,14 @@ export function SecurityTab() {
 
       <section className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
         <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-          <h3 className="text-base font-semibold text-ink-900">Active sessions</h3>
+          <h3 className="text-base font-semibold text-ink-900">{t('account.security.activeSessions')}</h3>
           <button
             type="button"
             onClick={() => revokeAll.mutate()}
             disabled={revokeAll.isPending || (sessions.data?.length ?? 0) <= 1}
             className="text-sm font-medium text-danger-600 hover:underline disabled:cursor-not-allowed disabled:text-ink-400"
           >
-            {revokeAll.isPending ? 'Signing out…' : 'Sign out All devices'}
+            {revokeAll.isPending ? t('account.security.signingOut') : t('account.security.signOutAll')}
           </button>
         </header>
 
@@ -67,14 +70,14 @@ export function SecurityTab() {
             <Spinner />
           </div>
         ) : (sessions.data?.length ?? 0) === 0 ? (
-          <p className="px-5 py-12 text-center text-sm text-ink-500">No active sessions.</p>
+          <p className="px-5 py-12 text-center text-sm text-ink-500">{t('account.security.noSessions')}</p>
         ) : (
           <table className="w-full text-sm">
             <thead className="text-xs uppercase tracking-wider text-ink-500">
               <tr className="border-b border-ink-100">
-                <th className="px-5 py-3 text-left font-medium">Device</th>
-                <th className="px-5 py-3 text-left font-medium">Location</th>
-                <th className="px-5 py-3 text-left font-medium">Status</th>
+                <th className="px-5 py-3 text-left font-medium">{t('account.security.col.device')}</th>
+                <th className="px-5 py-3 text-left font-medium">{t('account.security.col.location')}</th>
+                <th className="px-5 py-3 text-left font-medium">{t('account.security.col.status')}</th>
                 <th className="px-5 py-3" />
               </tr>
             </thead>
@@ -137,15 +140,16 @@ function SessionRow({
   onRevoke: () => void;
   busy: boolean;
 }) {
-  const ua = session.user_agent ?? 'Unknown';
+  const t = useT();
+  const ua = session.user_agent ?? t('account.security.unknown');
   const isRecent = Date.now() - new Date(session.created_at).getTime() < 60 * 60 * 1000;
   return (
     <tr className="border-b border-ink-100 last:border-b-0">
-      <td className="px-5 py-3 text-ink-900">{shortBrowser(ua)}</td>
+      <td className="px-5 py-3 text-ink-900">{shortBrowser(ua, t)}</td>
       <td className="px-5 py-3 text-ink-600">{session.ip_address ?? '—'}</td>
       <td className="px-5 py-3">
         <Badge tone={isRecent ? 'success' : 'neutral'}>
-          {isRecent ? 'Active now' : relativeTime(session.created_at)}
+          {isRecent ? t('account.security.activeNow') : relativeTime(session.created_at, t)}
         </Badge>
       </td>
       <td className="px-5 py-3 text-right">
@@ -155,28 +159,37 @@ function SessionRow({
           disabled={busy}
           className="text-xs font-medium text-danger-600 hover:underline disabled:opacity-50"
         >
-          Revoke
+          {t('account.security.revoke')}
         </button>
       </td>
     </tr>
   );
 }
 
-function shortBrowser(ua: string): string {
+function shortBrowser(ua: string, t: (k: TranslationKey) => string): string {
   if (/edg/i.test(ua)) return 'Edge';
   if (/chrome/i.test(ua)) return 'Chrome';
   if (/firefox/i.test(ua)) return 'Firefox';
   if (/safari/i.test(ua)) return 'Safari';
-  return ua.split(' ')[0] ?? 'Unknown';
+  return ua.split(' ')[0] ?? t('account.security.unknown');
 }
 
-function relativeTime(iso: string): string {
+function relativeTime(
+  iso: string,
+  t: (k: TranslationKey, vars?: Record<string, string | number>) => string,
+): string {
   const ms = Date.now() - new Date(iso).getTime();
   const h = Math.floor(ms / (1000 * 60 * 60));
-  if (h < 1) return 'Just now';
-  if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+  if (h < 1) return t('account.security.justNow');
+  if (h < 24) {
+    return h === 1
+      ? t('account.security.hoursAgo', { n: h })
+      : t('account.security.hoursAgoPlural', { n: h });
+  }
   const d = Math.floor(h / 24);
-  return `${d} day${d === 1 ? '' : 's'} ago`;
+  return d === 1
+    ? t('account.security.daysAgo', { n: d })
+    : t('account.security.daysAgoPlural', { n: d });
 }
 
 function ChangePasswordModal({
@@ -186,6 +199,7 @@ function ChangePasswordModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useT();
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -199,7 +213,7 @@ function ChangePasswordModal({
       onClose();
     },
     onError: (err) => {
-      setError(err instanceof ApiError ? authErrorMessage(err) : 'Could not change password.');
+      setError(err instanceof ApiError ? authErrorMessage(err) : t('account.security.changePassword.failed'));
     },
   });
 
@@ -210,7 +224,7 @@ function ChangePasswordModal({
     e.preventDefault();
     setError(null);
     if (!passwordValid) {
-      setError('New password must contain an uppercase letter, a number and 8+ characters.');
+      setError(t('account.security.changePassword.invalid'));
       return;
     }
     change.mutate();
@@ -220,9 +234,9 @@ function ChangePasswordModal({
     <Modal open={open} onClose={onClose}>
       <form onSubmit={onSubmit} className="space-y-5">
         <div>
-          <h2 className="text-xl font-semibold text-ink-900">Change password</h2>
+          <h2 className="text-xl font-semibold text-ink-900">{t('account.security.changePassword.title')}</h2>
           <p className="mt-1 text-sm text-ink-500">
-            Enter your current password and choose a new one.
+            {t('account.security.changePassword.subtitle')}
           </p>
         </div>
 
@@ -233,7 +247,7 @@ function ChangePasswordModal({
         )}
 
         <PasswordInput
-          label="Current password"
+          label={t('account.security.changePassword.current')}
           required
           autoComplete="current-password"
           value={current}
@@ -241,12 +255,12 @@ function ChangePasswordModal({
         />
 
         <PasswordInput
-          label="New password"
+          label={t('account.security.changePassword.new')}
           required
           autoComplete="new-password"
           value={next}
           onChange={(e) => setNext(e.target.value)}
-          hint="At least 8 characters, 1 uppercase letter, 1 number."
+          hint={t('account.security.changePassword.hint')}
         />
 
         <Button
@@ -256,7 +270,7 @@ function ChangePasswordModal({
           loading={change.isPending}
           disabled={!current || !passwordValid}
         >
-          Update password
+          {t('account.security.changePassword.submit')}
         </Button>
       </form>
     </Modal>

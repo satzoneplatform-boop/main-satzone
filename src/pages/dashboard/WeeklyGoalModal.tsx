@@ -1,20 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { onboardingApi } from '@/api/onboarding';
 import { CheckIcon } from '@/components/icons';
 import { cn } from '@/lib/cn';
-
-const DAYS = [
-  { key: 0, label: 'Sunday' },
-  { key: 1, label: 'Monday' },
-  { key: 2, label: 'Tuesday' },
-  { key: 3, label: 'Wednesday' },
-  { key: 4, label: 'Thursday' },
-  { key: 5, label: 'Friday' },
-  { key: 6, label: 'Saturday' },
-];
+import { useT } from '@/i18n/I18nProvider';
 
 interface WeeklyGoalModalProps {
   open: boolean;
@@ -30,9 +21,23 @@ interface WeeklyGoalModalProps {
  * `weekly_goal_minutes`; we map day-toggles to it so the API stays simple.
  */
 export function WeeklyGoalModal({ open, onClose, initialMinutes = 0 }: WeeklyGoalModalProps) {
+  const t = useT();
   const queryClient = useQueryClient();
   const initialDays = Math.max(0, Math.min(7, Math.round(initialMinutes / 60)));
   const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  const DAYS = useMemo(
+    () => [
+      { key: 0, label: t('common.day.sunday') },
+      { key: 1, label: t('common.day.monday') },
+      { key: 2, label: t('common.day.tuesday') },
+      { key: 3, label: t('common.day.wednesday') },
+      { key: 4, label: t('common.day.thursday') },
+      { key: 5, label: t('common.day.friday') },
+      { key: 6, label: t('common.day.saturday') },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -69,9 +74,9 @@ export function WeeklyGoalModal({ open, onClose, initialMinutes = 0 }: WeeklyGoa
     <Modal open={open} onClose={onClose}>
       <div className="space-y-5">
         <div>
-          <h2 className="text-xl font-semibold text-ink-900">Set weekly learning goal</h2>
+          <h2 className="text-xl font-semibold text-ink-900">{t('dashboard.weeklyGoal.title')}</h2>
           <p className="mt-1 text-sm text-ink-500">
-            Pick the days you plan to learn each week. We’ll remind you to keep your streak going.
+            {t('dashboard.weeklyGoal.subtitle')}
           </p>
         </div>
 
@@ -112,10 +117,10 @@ export function WeeklyGoalModal({ open, onClose, initialMinutes = 0 }: WeeklyGoa
 
         <div className="flex items-center gap-3">
           <Button variant="outline" fullWidth onClick={onReset}>
-            Reset
+            {t('common.reset')}
           </Button>
           <Button fullWidth onClick={onSave} loading={save.isPending}>
-            Save
+            {t('common.save')}
           </Button>
         </div>
       </div>

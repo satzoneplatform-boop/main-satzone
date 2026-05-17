@@ -8,11 +8,13 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { SearchIcon } from '@/components/icons';
 import { useMyEnrollments } from '@/features/learning/hooks';
+import { useT } from '@/i18n/I18nProvider';
 import type { EnrollmentRead } from '@/types/api';
 
 type Filter = 'all' | 'active' | 'completed' | 'saved';
 
 export function MyLearningsPage() {
+  const t = useT();
   const [tab, setTab] = useState<Filter>('all');
   const [search, setSearch] = useState('');
 
@@ -31,10 +33,10 @@ export function MyLearningsPage() {
   const allCount = enrollments.data?.total ?? 0;
 
   const tabs: TabItem<Filter>[] = [
-    { value: 'all', label: 'All courses', count: allCount },
-    { value: 'completed', label: 'Completed' },
-    { value: 'active', label: 'In progress' },
-    { value: 'saved', label: 'Saved courses' },
+    { value: 'all', label: t('learning.myLearnings.tabs.all'), count: allCount },
+    { value: 'completed', label: t('learning.myLearnings.tabs.completed') },
+    { value: 'active', label: t('learning.myLearnings.tabs.inProgress') },
+    { value: 'saved', label: t('learning.myLearnings.tabs.saved') },
   ];
 
   return (
@@ -46,16 +48,16 @@ export function MyLearningsPage() {
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search popular course"
+            placeholder={t('learning.myLearnings.searchPlaceholder')}
             leftSlot={<SearchIcon />}
           />
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-ink-500">
-        <span>Course type</span>
+        <span>{t('learning.myLearnings.courseType')}</span>
         <span>·</span>
-        <span>Last Modified</span>
+        <span>{t('learning.myLearnings.lastModified')}</span>
       </div>
 
       {enrollments.isLoading ? (
@@ -78,6 +80,7 @@ export function MyLearningsPage() {
 }
 
 function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
+  const t = useT();
   const c = enrollment.course;
   const completed = Boolean(enrollment.completed_at);
   const next = enrollment.last_lesson_id
@@ -112,13 +115,15 @@ function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
             size={20}
           />
           <span className="truncate text-xs text-ink-500">
-            {c.instructor?.full_name ?? 'Edura instructor'}
+            {c.instructor?.full_name ?? t('learning.myLearnings.defaultInstructor')}
           </span>
         </div>
         <div className="mt-auto space-y-2">
           <div className="flex items-center justify-between text-xs">
             <Badge tone={completed ? 'success' : 'brand'}>
-              {completed ? 'Completed' : 'Continue'}
+              {completed
+                ? t('learning.myLearnings.completedBadge')
+                : t('learning.myLearnings.continueBadge')}
             </Badge>
             <span className="font-medium text-ink-700">
               {Math.round(enrollment.progress_percent)}%
@@ -132,13 +137,14 @@ function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
 }
 
 function EmptyEnrollments() {
+  const t = useT();
   return (
     <div className="grid place-items-center py-16 text-center text-sm text-ink-500">
       <div>
         <span aria-hidden className="text-4xl">📘</span>
-        <p className="mt-3">No courses match this view yet.</p>
+        <p className="mt-3">{t('learning.myLearnings.noMatches')}</p>
         <Link to="/explore" className="mt-2 inline-block text-brand-600 hover:underline">
-          Explore courses →
+          {t('learning.myLearnings.exploreLink')}
         </Link>
       </div>
     </div>
@@ -146,13 +152,14 @@ function EmptyEnrollments() {
 }
 
 function SavedPlaceholder() {
+  const t = useT();
   return (
     <div className="grid place-items-center py-16 text-center text-sm text-ink-500">
       <div>
         <span aria-hidden className="text-4xl">🔖</span>
-        <p className="mt-3">Saved courses live in your wishlist.</p>
+        <p className="mt-3">{t('learning.myLearnings.savedTitle')}</p>
         <Link to="/explore" className="mt-2 inline-block text-brand-600 hover:underline">
-          Find something to save →
+          {t('learning.myLearnings.findSaved')}
         </Link>
       </div>
     </div>

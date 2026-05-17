@@ -1,46 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
 import { Spinner } from '@/components/ui/Spinner';
 import { meApi, type NotificationPreferences } from '@/api/me';
 import { BellIcon, BookIcon, CheckIcon, FlagIcon } from '@/components/icons';
-
-const ROWS: Array<{
-  key: keyof NotificationPreferences;
-  title: string;
-  description: string;
-  icon: typeof BellIcon;
-}> = [
-  {
-    key: 'course_updates',
-    title: 'Course updates',
-    description:
-      'Get notified about new lessons, instructor announcements, and changes to your courses.',
-    icon: BookIcon,
-  },
-  {
-    key: 'assignment_deadlines',
-    title: 'Assignment deadlines',
-    description:
-      'Receive reminders before quizzes, exams, or assignments are due so you stay on track.',
-    icon: FlagIcon,
-  },
-  {
-    key: 'certificates_achievements',
-    title: 'Certificates & achievements',
-    description:
-      'Get notified when you earn a certificate or hit a learning milestone.',
-    icon: CheckIcon,
-  },
-  {
-    key: 'degree_admission_updates',
-    title: 'Degree & admission updates',
-    description:
-      'Stay informed about application status, enrollment progress, program requirements, and degree announcements.',
-    icon: BellIcon,
-  },
-];
+import { useT } from '@/i18n/I18nProvider';
 
 const DEFAULT: NotificationPreferences = {
   course_updates: true,
@@ -50,6 +15,7 @@ const DEFAULT: NotificationPreferences = {
 };
 
 export function NotificationTab() {
+  const t = useT();
   const queryClient = useQueryClient();
   const prefs = useQuery({
     queryKey: ['me', 'preferences', 'notifications'],
@@ -57,6 +23,41 @@ export function NotificationTab() {
   });
   const [draft, setDraft] = useState<NotificationPreferences>(DEFAULT);
   const [info, setInfo] = useState<string | null>(null);
+
+  const ROWS: Array<{
+    key: keyof NotificationPreferences;
+    title: string;
+    description: string;
+    icon: typeof BellIcon;
+  }> = useMemo(
+    () => [
+      {
+        key: 'course_updates',
+        title: t('account.notification.courseUpdates.title'),
+        description: t('account.notification.courseUpdates.description'),
+        icon: BookIcon,
+      },
+      {
+        key: 'assignment_deadlines',
+        title: t('account.notification.assignments.title'),
+        description: t('account.notification.assignments.description'),
+        icon: FlagIcon,
+      },
+      {
+        key: 'certificates_achievements',
+        title: t('account.notification.certificates.title'),
+        description: t('account.notification.certificates.description'),
+        icon: CheckIcon,
+      },
+      {
+        key: 'degree_admission_updates',
+        title: t('account.notification.degree.title'),
+        description: t('account.notification.degree.description'),
+        icon: BellIcon,
+      },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     if (prefs.data) setDraft({ ...DEFAULT, ...prefs.data });
@@ -67,7 +68,7 @@ export function NotificationTab() {
       meApi.updateNotifications(payload),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['me', 'preferences', 'notifications'] });
-      setInfo('Preferences saved.');
+      setInfo(t('account.notification.saved'));
       setTimeout(() => setInfo(null), 2500);
     },
   });
@@ -83,10 +84,9 @@ export function NotificationTab() {
   return (
     <div className="space-y-5">
       <header>
-        <h2 className="text-base font-semibold text-ink-900">Notification</h2>
+        <h2 className="text-base font-semibold text-ink-900">{t('account.notification.title')}</h2>
         <p className="mt-1 text-sm text-ink-500">
-          Get notified about new lessons, instructor announcements,
-          assignment deadlines, certificates and milestones.
+          {t('account.notification.subtitle')}
         </p>
       </header>
 
@@ -123,10 +123,10 @@ export function NotificationTab() {
 
       <footer className="flex items-center justify-end gap-3 border-t border-ink-100 pt-4">
         <Button variant="outline" type="button" onClick={() => prefs.data && setDraft({ ...DEFAULT, ...prefs.data })}>
-          Reset
+          {t('common.reset')}
         </Button>
         <Button onClick={() => save.mutate(draft)} loading={save.isPending}>
-          Save
+          {t('common.save')}
         </Button>
       </footer>
     </div>

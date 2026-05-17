@@ -12,6 +12,8 @@ import { CurriculumNav } from '@/components/learning/CurriculumNav';
 import { useCourseCurriculum, useCourseDetail } from '@/features/course/hooks';
 import { StartAssessmentModal } from './StartAssessmentModal';
 import { formatDuration } from '@/lib/format';
+import { useT } from '@/i18n/I18nProvider';
+import type { TranslationKey } from '@/i18n/en';
 
 /**
  * Assessment overview / "before you start" page (Figma nodes 14115:50188 + 14115:49788).
@@ -21,6 +23,7 @@ import { formatDuration } from '@/lib/format';
  * `is_correct` from options per FRONTEND.md §4.8).
  */
 export function AssessmentOverviewPage() {
+  const t = useT();
   const { slug, assessmentId } = useParams<{ slug: string; assessmentId: string }>();
   const assessment = useAssessment(assessmentId);
   const history = useAssessmentHistory(assessmentId);
@@ -40,7 +43,7 @@ export function AssessmentOverviewPage() {
   if (!assessment.data) {
     return (
       <div className="grid place-items-center py-24 text-center">
-        <p className="text-sm text-ink-500">This assessment is unavailable.</p>
+        <p className="text-sm text-ink-500">{t('assessment.overview.unavailable')}</p>
       </div>
     );
   }
@@ -53,17 +56,22 @@ export function AssessmentOverviewPage() {
   const attemptsAllowed = a.max_attempts; // null = unlimited
 
   const stats = [
-    { label: 'Final score', value: `${Math.round(lastScore)}/100` },
-    { label: 'Best grade', value: `${Math.round(best)} (${grade(best)})` },
+    { label: t('assessment.overview.finalScore'), value: `${Math.round(lastScore)}/100` },
+    { label: t('assessment.overview.bestGrade'), value: `${Math.round(best)} (${grade(best, t)})` },
     {
-      label: 'Attempts',
+      label: t('assessment.overview.attempts'),
       value:
         attemptsAllowed == null
           ? `${attemptsUsed} / ∞`
           : `${attemptsUsed}/${attemptsAllowed}`,
     },
-    { label: 'Time limit', value: a.time_limit_minutes ? `${a.time_limit_minutes} Min` : '—' },
-    { label: 'Passing score', value: `${a.pass_percent}` },
+    {
+      label: t('assessment.overview.timeLimit'),
+      value: a.time_limit_minutes
+        ? t('assessment.overview.minutes', { n: a.time_limit_minutes })
+        : t('assessment.overview.dash'),
+    },
+    { label: t('assessment.overview.passingScore'), value: `${a.pass_percent}` },
   ];
 
   return (
@@ -71,9 +79,9 @@ export function AssessmentOverviewPage() {
       <header className="border-b border-ink-200 px-6 py-3">
         <Breadcrumb
           items={[
-            { label: 'My learnings', to: '/learning-path' },
-            { label: course.data?.title ?? 'Course', to: `/courses/${slug}/learn` },
-            { label: 'Assessment' },
+            { label: t('learning.lesson.coursesBreadcrumb'), to: '/learning-path' },
+            { label: course.data?.title ?? t('course.breadcrumb.course'), to: `/courses/${slug}/learn` },
+            { label: t('course.breadcrumb.assessment') },
           ]}
         />
       </header>
@@ -101,7 +109,9 @@ export function AssessmentOverviewPage() {
                     attemptsAllowed != null && attemptsUsed >= attemptsAllowed
                   }
                 >
-                  {attemptsUsed > 0 ? 'Next attempt' : 'Start assessment'}
+                  {attemptsUsed > 0
+                    ? t('assessment.overview.nextAttempt')
+                    : t('assessment.overview.startAssessment')}
                 </Button>
               </div>
             </section>
@@ -113,18 +123,18 @@ export function AssessmentOverviewPage() {
               )}
 
               <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-ink-200 bg-ink-50 p-4 sm:grid-cols-3">
-                <Detail label="Assessment Type" value="Multiple choice" />
+                <Detail label={t('assessment.overview.assessmentType')} value={t('assessment.overview.multipleChoice')} />
                 <Detail
-                  label="Estimated Time"
+                  label={t('assessment.overview.estimatedTime')}
                   value={
                     a.time_limit_minutes
                       ? `${formatDuration(a.time_limit_minutes)}`
-                      : 'No limit'
+                      : t('assessment.overview.noLimit')
                   }
                 />
                 <Detail
-                  label="Number of questions"
-                  value={`${a.questions.length} questions`}
+                  label={t('assessment.overview.numberOfQuestions')}
+                  value={t('assessment.overview.questionsCount', { n: a.questions.length })}
                 />
               </div>
             </section>
@@ -150,7 +160,7 @@ export function AssessmentOverviewPage() {
 
             {a.questions.length > 3 && (
               <p className="text-center text-sm text-ink-500">
-                {a.questions.length - 3} more questions in this assessment.
+                {t('assessment.overview.moreQuestions', { n: a.questions.length - 3 })}
               </p>
             )}
           </div>
@@ -184,9 +194,9 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-function grade(score: number): string {
-  if (score >= 90) return 'Great';
-  if (score >= 70) return 'Good';
-  if (score >= 50) return 'Fair';
-  return 'Try again';
+function grade(score: number, t: (k: TranslationKey) => string): string {
+  if (score >= 90) return t('assessment.grade.great');
+  if (score >= 70) return t('assessment.grade.good');
+  if (score >= 50) return t('assessment.grade.fair');
+  return t('assessment.grade.tryAgain');
 }

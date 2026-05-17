@@ -3,23 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { SearchIcon } from '@/components/icons';
 import { useCourseSearch } from '@/features/explore/hooks';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
-const SCOPE_TABS = [
-  { value: 'class', label: 'Class' },
-  { value: 'specialization', label: 'Specialization' },
-  { value: 'pre_certificate', label: 'Pre Certificate' },
-  { value: 'web_course', label: 'Web Course' },
-] as const satisfies readonly TabItem<string>[];
-
-type Scope = (typeof SCOPE_TABS)[number]['value'];
+type Scope = 'class' | 'specialization' | 'pre_certificate' | 'web_course';
 
 export function ExploreSearchHero() {
+  const t = useT();
   const [scope, setScope] = useState<Scope>('class');
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const ref = useRef<HTMLDivElement>(null);
+
+  const scopeTabs: TabItem<Scope>[] = [
+    { value: 'class', label: t('explore.scope.class') },
+    { value: 'specialization', label: t('explore.scope.specialization') },
+    { value: 'pre_certificate', label: t('explore.scope.preCertificate') },
+    { value: 'web_course', label: t('explore.scope.webCourse') },
+  ];
 
   const suggestions = useCourseSearch(
     { search: query, size: 6 },
@@ -47,10 +49,10 @@ export function ExploreSearchHero() {
       <BackdropPattern />
 
       <h1 className="relative text-3xl font-semibold tracking-tight text-ink-900">
-        Find your next skill
+        {t('explore.hero.title')}
       </h1>
       <p className="relative mt-2 text-sm text-ink-500">
-        Discover all courses we have for inspire institution and partners.
+        {t('explore.hero.subtitle')}
       </p>
 
       <div ref={ref} className="relative mx-auto mt-8 w-full max-w-2xl">
@@ -70,7 +72,7 @@ export function ExploreSearchHero() {
                 setOpen(true);
               }}
               onFocus={() => setOpen(true)}
-              placeholder="Search class, lesson or specialty topic"
+              placeholder={t('explore.hero.placeholder')}
               className="h-12 w-full bg-transparent text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
             />
           </div>
@@ -79,15 +81,15 @@ export function ExploreSearchHero() {
         {open && query.trim().length > 1 && (
           <div className="absolute left-0 right-0 top-full z-20 mt-2 rounded-xl border border-ink-200 bg-white p-3 shadow-xl">
             <div className="mb-2 flex">
-              <Tabs items={SCOPE_TABS} value={scope} onChange={(v) => setScope(v as Scope)} />
+              <Tabs items={scopeTabs} value={scope} onChange={(v) => setScope(v as Scope)} />
             </div>
 
             <ul className="max-h-72 overflow-auto">
               {suggestions.isLoading && (
-                <li className="px-3 py-2 text-sm text-ink-500">Searching…</li>
+                <li className="px-3 py-2 text-sm text-ink-500">{t('explore.searching')}</li>
               )}
               {suggestions.data?.items.length === 0 && (
-                <li className="px-3 py-2 text-sm text-ink-500">No matches.</li>
+                <li className="px-3 py-2 text-sm text-ink-500">{t('explore.noMatches')}</li>
               )}
               {suggestions.data?.items.map((c) => (
                 <li key={c.id}>

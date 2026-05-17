@@ -5,7 +5,13 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Spinner } from '@/components/ui/Spinner';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
-import { ArrowRightIcon, CheckIcon, CloseIcon, PlayIcon } from '@/components/icons';
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  CloseIcon,
+  LockIcon,
+  PlayIcon,
+} from '@/components/icons';
 import {
   useCourseCurriculum,
   useCourseDetail,
@@ -15,7 +21,9 @@ import {
   useDeleteNote,
   useMyEnrollments,
 } from '@/features/learning/hooks';
+import { useCompletedLessons } from '@/features/learning/completionStore';
 import authIllustration from '@/assets/auth-illustration.png';
+import { useT } from '@/i18n/I18nProvider';
 import type {
   CurriculumRead,
   LessonNoteRead,
@@ -23,15 +31,7 @@ import type {
   SectionRead,
 } from '@/types/api';
 
-const TABS = [
-  { value: 'modules', label: 'Modules' },
-  { value: 'outline', label: 'Outline' },
-  { value: 'notes', label: 'Notes' },
-  { value: 'messages', label: 'Messages' },
-  { value: 'resources', label: 'Resources' },
-] as const satisfies readonly TabItem<string>[];
-
-type Tab = (typeof TABS)[number]['value'];
+type Tab = 'modules' | 'notes';
 
 /**
  * Enrolled-learner course page (Figma node 14115:49231).
@@ -41,15 +41,29 @@ type Tab = (typeof TABS)[number]['value'];
  * enrolled and shows trial status, modules, and lesson navigation.
  */
 export function CourseLearnPage() {
+  const t = useT();
   const { slug } = useParams();
   const course = useCourseDetail(slug);
   const curriculum = useCourseCurriculum(slug);
   const enrollments = useMyEnrollments({ size: 50 });
   const [tab, setTab] = useState<Tab>('modules');
 
+  const TABS: TabItem<Tab>[] = useMemo(
+    () => [
+      { value: 'modules', label: t('learning.courseLearn.tab.modules') },
+      { value: 'notes', label: t('learning.courseLearn.tab.notes') },
+    ],
+    [t],
+  );
+
   const enrollment = enrollments.data?.items.find(
     (e) => e.course.slug === slug,
   );
+
+  // Sequential lock signal — keep in sync with LessonPlayerPage logic.
+  // Must be called unconditionally (rules of hooks); compute the derived
+  // values below the early returns.
+  const completedIds = useCompletedLessons(enrollment?.id);
 
   if (course.isLoading || curriculum.isLoading) {
     return (
@@ -62,7 +76,7 @@ export function CourseLearnPage() {
   if (!course.data) {
     return (
       <div className="grid place-items-center py-24 text-center">
-        <p className="text-sm text-ink-500">This course is unavailable.</p>
+        <p className="text-sm text-ink-500">{t('common.unavailable')}</p>
       </div>
     );
   }
@@ -70,11 +84,20 @@ export function CourseLearnPage() {
   const c = course.data;
   const sections = curriculum.data?.sections ?? [];
 
+  const orderedLessonIds = sections.flatMap((s) => s.lessons.map((l) => l.id));
+  let firstLockedIdx = orderedLessonIds.length;
+  for (let i = 0; i < orderedLessonIds.length; i++) {
+    if (!completedIds.has(orderedLessonIds[i])) {
+      firstLockedIdx = i;
+      break;
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: 'My learnings', to: '/learning-path' },
+          { label: t('learning.lesson.coursesBreadcrumb'), to: '/learning-path' },
           { label: c.title },
         ]}
       />
@@ -91,9 +114,13 @@ export function CourseLearnPage() {
           <Tabs items={TABS} value={tab} onChange={(v) => setTab(v as Tab)} variant="underline" />
 
           {tab === 'modules' && (
-            <ModulesContent course={c} sections={sections} />
+            <ModulesContent
+              course={c}
+              sections={sections}
+              completedIds={completedIds}
+              firstLockedIdx={firstLockedIdx}
+            />
           )}
-          {tab === 'outline' && <OutlinePlaceholder />}
           {tab === 'notes' && (
             <NotesTab
               courseId={c.id}
@@ -101,8 +128,6 @@ export function CourseLearnPage() {
               curriculum={curriculum.data}
             />
           )}
-          {tab === 'messages' && <MessagesPlaceholder />}
-          {tab === 'resources' && <ResourcesPlaceholder />}
         </div>
       </div>
     </div>
@@ -116,6 +141,7 @@ function Hero({
   course: NonNullable<ReturnType<typeof useCourseDetail>['data']>;
   progressPercent: number;
 }) {
+  const t = useT();
   return (
     <section className="overflow-hidden rounded-2xl bg-gradient-to-r from-brand-900 via-brand-800 to-brand-700 text-white">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_minmax(0,1fr)_260px]">
@@ -138,10 +164,10 @@ function Hero({
 
         <div className="px-6 py-6">
           <div className="rounded-xl bg-white/10 p-4 backdrop-blur">
-            <p className="text-xs uppercase tracking-wider text-white/70">Progress</p>
+            <p className="text-xs uppercase tracking-wider text-white/70">{t('learning.courseLearn.progress')}</p>
             <p className="mt-1 text-sm">
               <span className="text-2xl font-semibold">{Math.round(progressPercent)}%</span>{' '}
-              <span className="text-white/70">complete</span>
+              <span className="text-white/70">{t('learning.courseLearn.percentComplete')}</span>
             </p>
             <ProgressBar
               value={progressPercent}
@@ -150,7 +176,7 @@ function Hero({
               fillClassName="bg-teal-300"
             />
             <p className="mt-3 text-xs text-white/70">
-              Keep going — pick a lesson below to continue.
+              {t('learning.courseLearn.keepGoing')}
             </p>
           </div>
         </div>
@@ -160,10 +186,11 @@ function Hero({
 }
 
 function ModulesNav({ sections }: { sections: SectionRead[] }) {
+  const t = useT();
   return (
     <aside className="rounded-2xl border border-ink-200 bg-white p-3 text-sm shadow-[var(--shadow-card)]">
       <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-ink-500">
-        Course
+        {t('learning.courseLearn.course')}
       </p>
       <ul className="space-y-1">
         {sections.map((s) => (
@@ -172,15 +199,12 @@ function ModulesNav({ sections }: { sections: SectionRead[] }) {
               href={`#section-${s.id}`}
               className="flex items-center justify-between rounded-lg px-3 py-2 text-ink-700 hover:bg-ink-50"
             >
-              <span className="truncate">Module {s.order}: {s.title}</span>
+              <span className="truncate">{t('learning.courseLearn.module', { order: s.order, title: s.title })}</span>
             </a>
           </li>
         ))}
         <li className="pt-2">
-          <SidebarRow label="Outline" />
-          <SidebarRow label="Notes" />
-          <SidebarRow label="Messages" />
-          <SidebarRow label="Resources" />
+          <SidebarRow label={t('learning.courseLearn.tab.notes')} />
         </li>
       </ul>
     </aside>
@@ -198,15 +222,21 @@ function SidebarRow({ label }: { label: string }) {
 function ModulesContent({
   course,
   sections,
+  completedIds,
+  firstLockedIdx,
 }: {
   course: NonNullable<ReturnType<typeof useCourseDetail>['data']>;
   sections: SectionRead[];
+  completedIds: Set<string>;
+  firstLockedIdx: number;
 }) {
+  const t = useT();
+  let runningIdx = 0;
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div>
-          <h2 className="text-base font-semibold text-ink-900">What you’ll learn</h2>
+          <h2 className="text-base font-semibold text-ink-900">{t('learning.courseLearn.whatLearn')}</h2>
           <ul className="mt-3 space-y-1.5 text-sm text-ink-700">
             {(course.learning_outcomes ?? []).slice(0, 4).map((line, i) => (
               <li key={i}>• {line}</li>
@@ -214,7 +244,7 @@ function ModulesContent({
           </ul>
         </div>
         <div>
-          <h2 className="text-base font-semibold text-ink-900">Skill you’ll gain</h2>
+          <h2 className="text-base font-semibold text-ink-900">{t('learning.courseLearn.skillGain')}</h2>
           <ul className="mt-3 flex flex-wrap gap-2">
             {(course.tags ?? []).slice(0, 6).map((tag) => (
               <li key={tag}>
@@ -225,27 +255,43 @@ function ModulesContent({
         </div>
       </header>
 
-      {sections.map((section) => (
-        <section
-          key={section.id}
-          id={`section-${section.id}`}
-          className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]"
-        >
-          <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-            <h3 className="text-base font-semibold text-ink-900">
-              Module {section.order}: {section.title}
-            </h3>
-            <span className="text-xs text-ink-500">{section.lessons.length} lessons</span>
-          </header>
-          <ul className="divide-y divide-ink-100">
-            {section.lessons.map((lesson) => (
-              <li key={lesson.id}>
-                <LessonRow courseSlug={course.slug} lesson={lesson} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      {sections.map((section) => {
+        const sectionStart = runningIdx;
+        runningIdx += section.lessons.length;
+        return (
+          <section
+            key={section.id}
+            id={`section-${section.id}`}
+            className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]"
+          >
+            <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+              <h3 className="text-base font-semibold text-ink-900">
+                {t('learning.courseLearn.module', { order: section.order, title: section.title })}
+              </h3>
+              <span className="text-xs text-ink-500">
+                {t('learning.courseLearn.lessons', { n: section.lessons.length })}
+              </span>
+            </header>
+            <ul className="divide-y divide-ink-100">
+              {section.lessons.map((lesson, i) => {
+                const absIdx = sectionStart + i;
+                const locked = absIdx > firstLockedIdx;
+                const completed = completedIds.has(lesson.id);
+                return (
+                  <li key={lesson.id}>
+                    <LessonRow
+                      courseSlug={course.slug}
+                      lesson={lesson}
+                      completed={completed}
+                      locked={locked}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
@@ -253,43 +299,77 @@ function ModulesContent({
 function LessonRow({
   courseSlug,
   lesson,
+  completed,
+  locked,
 }: {
   courseSlug: string;
   lesson: LessonSummary;
+  completed: boolean;
+  locked: boolean;
 }) {
-  // Backend doesn't expose per-lesson completion here; the curriculum endpoint
-  // returns LessonSummary without a `completed` flag, so we render unchecked
-  // until the player marks the user's progress.
-  const completed = false;
+  const t = useT();
+  const body = (
+    <>
+      <span
+        className={
+          completed
+            ? 'grid size-7 place-items-center rounded-md bg-success-50 text-success-600'
+            : locked
+              ? 'grid size-7 place-items-center rounded-md bg-ink-100 text-ink-400'
+              : 'grid size-7 place-items-center rounded-md bg-ink-100 text-ink-500'
+        }
+      >
+        {completed ? (
+          <CheckIcon className="size-4" />
+        ) : locked ? (
+          <LockIcon className="size-3.5" />
+        ) : (
+          <PlayIcon className="size-3.5" />
+        )}
+      </span>
+      <span className="flex-1">
+        <span
+          className={
+            locked
+              ? 'block font-medium text-ink-400'
+              : 'block font-medium text-ink-900'
+          }
+        >
+          {t('learning.courseLearn.lessonLine', { order: lesson.order, title: lesson.title })}
+        </span>
+        <span className="block text-xs text-ink-500">
+          {locked
+            ? t('learning.courseLearn.lockedHint')
+            : t('learning.courseLearn.lessonMeta', {
+                minutes: Math.max(1, Math.round(lesson.duration_seconds / 60)),
+                type: lesson.type,
+              })}
+        </span>
+      </span>
+      {!locked && <ArrowRightIcon className="text-ink-400" />}
+    </>
+  );
+
+  if (locked) {
+    return (
+      <div
+        className="flex cursor-not-allowed items-center gap-3 bg-ink-50/40 px-5 py-3 text-sm"
+        aria-disabled
+        title={t('learning.courseLearn.lockedHint')}
+      >
+        {body}
+      </div>
+    );
+  }
+
   return (
     <Link
       to={`/courses/${courseSlug}/lessons/${lesson.id}`}
       className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-ink-50"
     >
-      <span
-        className={
-          completed
-            ? 'grid size-7 place-items-center rounded-md bg-success-50 text-success-600'
-            : 'grid size-7 place-items-center rounded-md bg-ink-100 text-ink-500'
-        }
-      >
-        {completed ? <CheckIcon className="size-4" /> : <PlayIcon className="size-3.5" />}
-      </span>
-      <span className="flex-1">
-        <span className="block font-medium text-ink-900">
-          Lesson {lesson.order}: {lesson.title}
-        </span>
-        <span className="block text-xs text-ink-500">
-          {Math.max(1, Math.round(lesson.duration_seconds / 60))} min · {lesson.type}
-        </span>
-      </span>
-      <ArrowRightIcon className="text-ink-400" />
+      {body}
     </Link>
   );
-}
-
-function OutlinePlaceholder() {
-  return <PlaceholderTab>The outline view is coming soon.</PlaceholderTab>;
 }
 
 function NotesTab({
@@ -301,6 +381,7 @@ function NotesTab({
   courseSlug: string;
   curriculum: CurriculumRead | undefined;
 }) {
+  const t = useT();
   const notesQuery = useCourseNotes(courseId);
   const remove = useDeleteNote(courseId);
 
@@ -327,8 +408,7 @@ function NotesTab({
   if (notes.length === 0) {
     return (
       <PlaceholderTab>
-        No notes yet. Open a lesson and use the Notes tab there to write one — it’ll
-        show up here.
+        {t('learning.courseLearn.emptyNotes')}
       </PlaceholderTab>
     );
   }
@@ -349,8 +429,8 @@ function NotesTab({
                   className="block text-sm font-semibold text-ink-900 hover:underline"
                 >
                   {meta
-                    ? `Lesson ${meta.order}: ${meta.title}`
-                    : 'Lesson'}
+                    ? t('learning.courseLearn.lessonLine', { order: meta.order, title: meta.title })
+                    : t('learning.lesson.lessonLabel')}
                 </Link>
                 <p className="text-xs text-ink-500">
                   {new Date(n.created_at).toLocaleString()}
@@ -359,7 +439,7 @@ function NotesTab({
               <button
                 type="button"
                 onClick={() => remove.mutate(n.id)}
-                aria-label="Delete note"
+                aria-label={t('learning.lesson.deleteNote')}
                 disabled={remove.isPending}
                 className="text-ink-400 hover:text-ink-700 disabled:opacity-50"
               >
@@ -372,13 +452,6 @@ function NotesTab({
       })}
     </ul>
   );
-}
-
-function MessagesPlaceholder() {
-  return <PlaceholderTab>Course messages will appear here once the backend ships.</PlaceholderTab>;
-}
-function ResourcesPlaceholder() {
-  return <PlaceholderTab>Lesson resources are available inside each lesson’s Downloads tab.</PlaceholderTab>;
 }
 
 function PlaceholderTab({ children }: { children: React.ReactNode }) {

@@ -1,6 +1,7 @@
 import { DonutChart } from '@/components/charts/DonutChart';
 import type { EnrollmentRead } from '@/types/api';
 import { DashboardCard } from './DashboardCard';
+import { useT } from '@/i18n/I18nProvider';
 
 interface ProgressOverviewCardProps {
   enrollments: EnrollmentRead[];
@@ -25,31 +26,35 @@ function bucket(enrollments: EnrollmentRead[]): BucketCounts {
 }
 
 export function ProgressOverviewCard({ enrollments }: ProgressOverviewCardProps) {
+  const t = useT();
   const counts = bucket(enrollments);
   const total = counts.notStarted + counts.inProgress + counts.completed;
   const completedPct = total > 0 ? Math.round((counts.completed / total) * 100) : 0;
 
   return (
-    <DashboardCard title="Progress overview" bodyClassName="grid grid-cols-[auto_1fr] gap-6 items-center">
+    <DashboardCard
+      title={t('dashboard.progressOverview.title')}
+      bodyClassName="flex flex-wrap items-center gap-x-4 gap-y-4"
+    >
       <DonutChart
-        size={140}
-        strokeWidth={16}
+        size={120}
+        strokeWidth={14}
         centerValue={total > 0 ? `${completedPct}%` : '—'}
-        centerLabel={total > 0 ? 'Completed' : 'No data'}
+        centerLabel={total > 0 ? t('dashboard.progressOverview.completed') : t('dashboard.progressOverview.noData')}
         segments={
           total > 0
             ? [
-                { label: 'Completed', value: counts.completed, color: '#615FFF' },
-                { label: 'In progress', value: counts.inProgress, color: '#46ECD5' },
-                { label: 'Not started', value: counts.notStarted, color: '#E7EBEB' },
+                { label: t('dashboard.progressOverview.completed'), value: counts.completed, color: '#615FFF' },
+                { label: t('dashboard.progressOverview.inProgress'), value: counts.inProgress, color: '#46ECD5' },
+                { label: t('dashboard.progressOverview.notStarted'), value: counts.notStarted, color: '#E7EBEB' },
               ]
-            : [{ label: 'Empty', value: 1, color: '#E7EBEB' }]
+            : [{ label: t('dashboard.progressOverview.noData'), value: 1, color: '#E7EBEB' }]
         }
       />
-      <ul className="space-y-3 text-sm">
-        <LegendRow color="#E7EBEB" label="Not started" count={counts.notStarted} />
-        <LegendRow color="#46ECD5" label="In progress" count={counts.inProgress} />
-        <LegendRow color="#615FFF" label="Completed" count={counts.completed} />
+      <ul className="min-w-0 flex-1 space-y-2.5 text-sm">
+        <LegendRow color="#E7EBEB" label={t('dashboard.progressOverview.notStarted')} count={counts.notStarted} />
+        <LegendRow color="#46ECD5" label={t('dashboard.progressOverview.inProgress')} count={counts.inProgress} />
+        <LegendRow color="#615FFF" label={t('dashboard.progressOverview.completed')} count={counts.completed} />
       </ul>
     </DashboardCard>
   );
@@ -65,12 +70,15 @@ function LegendRow({
   count: number;
 }) {
   return (
-    <li className="flex items-center justify-between gap-3">
-      <span className="flex items-center gap-2 text-ink-700">
-        <span className="size-2.5 rounded-full" style={{ background: color }} />
-        {label}
+    <li className="flex items-center gap-2">
+      <span
+        className="size-2.5 shrink-0 rounded-full"
+        style={{ background: color }}
+      />
+      <span className="min-w-0 flex-1 truncate text-ink-700">{label}</span>
+      <span className="shrink-0 whitespace-nowrap text-xs font-medium text-ink-500">
+        {count}
       </span>
-      <span className="text-xs font-medium text-ink-500">{count} courses</span>
     </li>
   );
 }

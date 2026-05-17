@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Logo } from '@/components/brand/Logo';
+import { LanguageDropdown } from './LanguageDropdown';
 
 interface AuthCenteredLayoutProps {
   children: ReactNode;
@@ -28,7 +29,7 @@ export function AuthCenteredLayout({
       {showHeader && (
         <header className="flex h-[72px] items-center justify-between border-b border-ink-200 bg-white px-8">
           <Logo withWordmark size={32} />
-          {headerSlot}
+          {headerSlot ?? <LanguageDropdown variant="light" />}
         </header>
       )}
 

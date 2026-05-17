@@ -3,26 +3,28 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ArrowRightIcon } from '@/components/icons';
 import type { EnrollmentRead } from '@/types/api';
 import { DashboardCard } from './DashboardCard';
+import { useT } from '@/i18n/I18nProvider';
 
 interface LearningPathCardProps {
   enrollments: EnrollmentRead[];
 }
 
 export function LearningPathCard({ enrollments }: LearningPathCardProps) {
+  const t = useT();
   if (!enrollments.length) {
     return (
-      <DashboardCard title="Your learning path" bodyClassName="grid place-items-center text-center">
+      <DashboardCard title={t('dashboard.learningPath.heading')} bodyClassName="grid place-items-center text-center">
         <div className="py-6">
           <span aria-hidden className="text-4xl">📘</span>
-          <h3 className="mt-3 text-base font-semibold text-ink-900">No progress yet</h3>
+          <h3 className="mt-3 text-base font-semibold text-ink-900">{t('dashboard.learningPath.emptyTitle')}</h3>
           <p className="mt-1 max-w-xs text-sm text-ink-500">
-            Your learning path will appear here once you start a course.
+            {t('dashboard.learningPath.emptyBody')}
           </p>
           <Link
             to="/courses"
             className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:underline"
           >
-            Explore courses
+            {t('dashboard.learningPath.exploreCourses')}
             <ArrowRightIcon className="size-4" />
           </Link>
         </div>
@@ -31,7 +33,7 @@ export function LearningPathCard({ enrollments }: LearningPathCardProps) {
   }
 
   return (
-    <DashboardCard title="Your learning path" bodyClassName="space-y-4">
+    <DashboardCard title={t('dashboard.learningPath.heading')} bodyClassName="space-y-4">
       {enrollments.slice(0, 4).map((e) => (
         <div key={e.id}>
           <div className="flex items-center justify-between">

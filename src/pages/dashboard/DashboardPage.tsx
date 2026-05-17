@@ -8,12 +8,14 @@ import { WeeklyActivityCard } from '@/components/dashboard/WeeklyActivityCard';
 import { Spinner } from '@/components/ui/Spinner';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useHomeFeed, useOnboarding } from '@/features/home/hooks';
+import { useT } from '@/i18n/I18nProvider';
 import { WeeklyGoalModal } from './WeeklyGoalModal';
 
 export function DashboardPage() {
   const { user } = useAuth();
   const home = useHomeFeed();
   const onboarding = useOnboarding();
+  const t = useT();
   const [goalOpen, setGoalOpen] = useState(false);
 
   if (home.isLoading || onboarding.isLoading) {
@@ -27,9 +29,7 @@ export function DashboardPage() {
   if (home.error) {
     return (
       <div className="grid place-items-center py-24 text-center">
-        <p className="text-sm text-ink-500">
-          We couldn’t load your dashboard. Please refresh to try again.
-        </p>
+        <p className="text-sm text-ink-500">{t('dashboard.errorLoading')}</p>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export function DashboardPage() {
       </div>
 
       {recommended.length > 0 && (
-        <RecommendationsRow title="Recommend class for you" courses={recommended} />
+        <RecommendationsRow title={t('dashboard.recommendedTitle')} courses={recommended} />
       )}
 
       <WeeklyGoalModal

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import authIllustration from '@/assets/auth-illustration.png';
 import { LogoMark } from '@/components/brand/Logo';
+import { LanguageDropdown } from './LanguageDropdown';
 
 interface AuthSplitLayoutProps {
   children: ReactNode;
@@ -28,6 +29,9 @@ export function AuthSplitLayout({ children, footer }: AuthSplitLayoutProps) {
       </div>
 
       <div className="flex flex-col">
+        <div className="flex justify-end px-4 pt-4 lg:px-8">
+          <LanguageDropdown variant="light" />
+        </div>
         <div className="flex flex-1 items-center justify-center px-4 py-10 lg:px-12">
           <div className="w-full max-w-[400px]">
             <div className="mb-6 flex justify-center lg:hidden">

@@ -1,4 +1,4 @@
-import { forwardRef, useId, useState } from 'react';
+import { forwardRef, useId, useMemo, useState } from 'react';
 import { ChevronDownIcon } from '@/components/icons';
 import { cn } from '@/lib/cn';
 
@@ -23,11 +23,22 @@ export interface PhoneInputProps {
   value?: string;
   onChange?: (e164: string) => void;
   defaultCountry?: string;
+  /** Restrict the dial-code dropdown to this list of ISO-3166 codes. */
+  countries?: string[];
   error?: string;
   placeholder?: string;
   required?: boolean;
   name?: string;
   disabled?: boolean;
+}
+
+/** Match a stored e.164 number against the longest known dial-code prefix. */
+function detectCountry(value: string, choices: Country[]): Country | null {
+  if (!value) return null;
+  const match = [...choices]
+    .sort((a, b) => b.dial.length - a.dial.length)
+    .find((c) => value.startsWith(c.dial));
+  return match ?? null;
 }
 
 export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
@@ -37,6 +48,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       value = '',
       onChange,
       defaultCountry = 'ID',
+      countries,
       error,
       placeholder = 'Enter number',
       required,
@@ -47,9 +59,26 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
   ) {
     const reactId = useId();
     const inputId = `phone-${reactId}`;
-    const [country, setCountry] = useState<Country>(
-      () => COUNTRIES.find((c) => c.code === defaultCountry) ?? COUNTRIES[0],
+
+    // Filter the dropdown if the caller scoped it (e.g. UZ-only).
+    const choices = useMemo(
+      () =>
+        countries && countries.length > 0
+          ? COUNTRIES.filter((c) => countries.includes(c.code))
+          : COUNTRIES,
+      [countries],
     );
+
+    const [country, setCountry] = useState<Country>(() => {
+      // Prefer the country whose dial-code actually matches the stored value
+      // — otherwise the dropdown ends up showing one prefix while the input
+      // contains a different one (e.g. selector "+62" next to "+998…").
+      const detected = detectCountry(value, choices);
+      if (detected) return detected;
+      return (
+        choices.find((c) => c.code === defaultCountry) ?? choices[0] ?? COUNTRIES[0]
+      );
+    });
 
     // Strip the dial-code prefix from the e.164 string for display.
     const localNumber = value.startsWith(country.dial)
@@ -80,21 +109,24 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
           <label className="relative flex items-center gap-1.5 rounded-l-lg bg-ink-50 px-3 text-sm text-ink-700">
             <span className="text-base leading-none" aria-hidden>{country.flag}</span>
             <span className="font-medium">{country.dial}</span>
-            <ChevronDownIcon className="text-ink-400" />
+            {choices.length > 1 && <ChevronDownIcon className="text-ink-400" />}
             <select
               aria-label="Country dial code"
               value={country.code}
               onChange={(e) => {
-                const next = COUNTRIES.find((c) => c.code === e.target.value);
+                const next = choices.find((c) => c.code === e.target.value);
                 if (next) {
                   setCountry(next);
                   emit(localNumber, next);
                 }
               }}
-              className="absolute inset-0 cursor-pointer opacity-0"
-              disabled={disabled}
+              className={cn(
+                'absolute inset-0 opacity-0',
+                choices.length > 1 ? 'cursor-pointer' : 'pointer-events-none',
+              )}
+              disabled={disabled || choices.length <= 1}
             >
-              {COUNTRIES.map((c) => (
+              {choices.map((c) => (
                 <option key={c.code} value={c.code}>
                   {c.flag} {c.name} ({c.dial})
                 </option>

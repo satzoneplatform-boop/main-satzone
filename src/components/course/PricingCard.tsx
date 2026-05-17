@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import type { CourseDetail } from '@/types/api';
+import { useT } from '@/i18n/I18nProvider';
 
 interface PricingCardProps {
   course: CourseDetail;
@@ -19,8 +20,9 @@ export function PricingCard({
   isEnrolled,
   ctaLabel,
 }: PricingCardProps) {
+  const t = useT();
   const priceLabel = course.is_free
-    ? 'Free'
+    ? t('course.pricing.free')
     : `${course.currency} ${(course.price_cents / 100).toFixed(2)}`;
 
   // CTA copy:
@@ -30,10 +32,10 @@ export function PricingCard({
   const resolvedCta =
     ctaLabel ??
     (isEnrolled
-      ? 'Continue learning'
+      ? t('course.pricing.continueLearning')
       : course.is_free
-        ? 'Enroll for free'
-        : 'Enroll now');
+        ? t('course.pricing.enrollFree')
+        : t('course.pricing.enrollNow'));
 
   return (
     <aside className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
@@ -54,18 +56,18 @@ export function PricingCard({
           <p className="text-2xl font-semibold text-ink-900">{priceLabel}</p>
           <p className="text-xs text-ink-500">
             {isEnrolled
-              ? 'You’re enrolled — pick up where you left off'
+              ? t('course.pricing.enrolledHint')
               : course.is_free
-                ? 'No payment required'
-                : 'One-time purchase, lifetime access'}
+                ? t('course.pricing.freeHint')
+                : t('course.pricing.paidHint')}
           </p>
         </div>
 
         <ul className="space-y-2 text-sm text-ink-700">
-          <Perk>Full access to all course materials</Perk>
-          <Perk>Hands-on projects with feedback</Perk>
-          <Perk>Shareable certificate of completion</Perk>
-          <Perk>Lifetime access after enrollment</Perk>
+          <Perk>{t('course.pricing.perk.fullAccess')}</Perk>
+          <Perk>{t('course.pricing.perk.projects')}</Perk>
+          <Perk>{t('course.pricing.perk.certificate')}</Perk>
+          <Perk>{t('course.pricing.perk.lifetime')}</Perk>
         </ul>
 
         <Button fullWidth size="lg" onClick={onStart} loading={loading}>

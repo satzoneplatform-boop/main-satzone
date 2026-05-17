@@ -15,6 +15,7 @@ import {
 import { authErrorMessage } from '@/features/auth/hooks';
 import { HonorCodeModal } from './HonorCodeModal';
 import { cn } from '@/lib/cn';
+import { useT } from '@/i18n/I18nProvider';
 
 /**
  * SAT-styled assessment runner.
@@ -26,6 +27,7 @@ import { cn } from '@/lib/cn';
  *  - Auto-submit when the timer hits zero
  */
 export function AssessmentTakePage() {
+  const t = useT();
   const { slug, assessmentId } = useParams<{ slug: string; assessmentId: string }>();
   const navigate = useNavigate();
   const assessment = useAssessment(assessmentId);
@@ -82,7 +84,7 @@ export function AssessmentTakePage() {
   if (!assessment.data) {
     return (
       <div className="grid h-screen place-items-center bg-ink-50 text-center text-sm text-ink-500">
-        This assessment is unavailable.
+        {t('assessment.take.unavailable')}
       </div>
     );
   }
@@ -136,7 +138,7 @@ export function AssessmentTakePage() {
           <LogoMark size={28} />
           <div>
             <p className="text-xs uppercase tracking-wider text-ink-500">
-              {a.is_section_quiz ? 'Section quiz' : 'Assessment'}
+              {a.is_section_quiz ? t('assessment.take.sectionQuiz') : t('assessment.take.assessment')}
             </p>
             <p className="text-sm font-semibold text-ink-900">{a.title}</p>
           </div>
@@ -144,7 +146,7 @@ export function AssessmentTakePage() {
 
         <div className="flex items-center gap-4">
           <p className="text-xs text-ink-500">
-            {answeredCount} / {total} answered
+            {t('assessment.take.answeredCount', { answered: answeredCount, total })}
           </p>
           {secondsLeft != null && (
             <p
@@ -167,12 +169,14 @@ export function AssessmentTakePage() {
           <div className="mx-auto max-w-3xl space-y-4">
             <div className="flex items-center justify-between text-sm">
               <p className="text-ink-500">
-                Question{' '}
-                <span className="font-semibold text-ink-900">{activeIdx + 1}</span> of{' '}
+                {t('assessment.take.question')}{' '}
+                <span className="font-semibold text-ink-900">{activeIdx + 1}</span> {t('assessment.take.of')}{' '}
                 {total}
                 {current && (
                   <span className="ml-3 text-ink-400">
-                    · {current.points} pt{current.points === 1 ? '' : 's'}
+                    · {current.points === 1
+                      ? t('assessment.take.points', { n: current.points })
+                      : t('assessment.take.pointsPlural', { n: current.points })}
                   </span>
                 )}
               </p>
@@ -187,7 +191,9 @@ export function AssessmentTakePage() {
                       : 'border-ink-200 bg-white text-ink-600 hover:bg-ink-50',
                   )}
                 >
-                  {flagged.has(current.id) ? '🚩 Marked' : 'Mark for review'}
+                  {flagged.has(current.id)
+                    ? `🚩 ${t('assessment.take.marked')}`
+                    : t('assessment.take.markForReview')}
                 </button>
               )}
             </div>
@@ -209,20 +215,20 @@ export function AssessmentTakePage() {
                 disabled={activeIdx === 0}
                 onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
               >
-                ← Previous
+                ← {t('assessment.take.previous')}
               </Button>
               {activeIdx < total - 1 ? (
                 <Button
                   onClick={() => setActiveIdx((i) => Math.min(total - 1, i + 1))}
                 >
-                  Next →
+                  {t('assessment.take.next')} →
                 </Button>
               ) : (
                 <Button
                   onClick={() => setHonorOpen(true)}
                   disabled={submit.isPending}
                 >
-                  Review &amp; submit
+                  {t('assessment.take.reviewSubmit')}
                 </Button>
               )}
             </div>
@@ -231,7 +237,7 @@ export function AssessmentTakePage() {
 
         <aside className="hidden w-72 shrink-0 border-l border-ink-200 bg-white p-4 lg:block">
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
-            Question navigator
+            {t('assessment.take.navigator')}
           </p>
           <div className="mt-3 grid grid-cols-5 gap-2">
             {ordered.map((q, i) => {
@@ -251,9 +257,7 @@ export function AssessmentTakePage() {
                       : 'border-ink-200 bg-white text-ink-700 hover:bg-ink-50',
                   )}
                   aria-current={isCurrent ? 'true' : undefined}
-                  aria-label={`Question ${i + 1}${answered ? ', answered' : ''}${
-                    isFlagged ? ', flagged' : ''
-                  }`}
+                  aria-label={`${t('assessment.take.question')} ${i + 1}`}
                 >
                   {i + 1}
                   {isFlagged && (
@@ -265,12 +269,12 @@ export function AssessmentTakePage() {
           </div>
 
           <div className="mt-5 space-y-2 text-xs text-ink-600">
-            <Legend swatch="bg-brand-600 border-brand-600" label="Answered" />
-            <Legend swatch="bg-white border-ink-200" label="Unanswered" />
+            <Legend swatch="bg-brand-600 border-brand-600" label={t('assessment.take.legend.answered')} />
+            <Legend swatch="bg-white border-ink-200" label={t('assessment.take.legend.unanswered')} />
             <Legend
               swatch="bg-white border-ink-200"
               dot
-              label="Marked for review"
+              label={t('assessment.take.legend.flagged')}
             />
           </div>
 
@@ -280,12 +284,12 @@ export function AssessmentTakePage() {
               onClick={() => setHonorOpen(true)}
               disabled={submit.isPending}
             >
-              Submit assessment
+              {t('assessment.take.submit')}
             </Button>
             <p className="mt-2 text-center text-xs text-ink-500">
               {allAnswered
-                ? 'All questions answered.'
-                : `${total - answeredCount} unanswered`}
+                ? t('assessment.take.allAnswered')
+                : t('assessment.take.unanswered', { n: total - answeredCount })}
             </p>
           </div>
         </aside>
@@ -298,14 +302,14 @@ export function AssessmentTakePage() {
             navigate(`/courses/${slug}/assessments/${assessmentId}`)
           }
         >
-          Cancel
+          {t('assessment.take.cancel')}
         </Button>
         {error && <span className="text-sm text-danger-600">{error}</span>}
         <Button
           onClick={() => setHonorOpen(true)}
           disabled={submit.isPending || total === 0}
         >
-          Submit
+          {t('assessment.take.submitShort')}
         </Button>
       </footer>
 

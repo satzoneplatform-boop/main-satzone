@@ -2,6 +2,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { formatPrice } from '@/lib/format';
 import type { CourseDetail } from '@/types/api';
+import { useT } from '@/i18n/I18nProvider';
 
 interface CheckoutSummaryProps {
   course: CourseDetail;
@@ -14,13 +15,15 @@ export function CheckoutSummary({
   course,
   onSubmit,
   loading,
-  ctaLabel = 'Start free trial',
+  ctaLabel,
 }: CheckoutSummaryProps) {
+  const t = useT();
   const monthly = formatPrice(course.price_cents, course.currency, course.is_free);
+  const resolvedCta = ctaLabel ?? t('checkout.summary.startTrial');
   return (
     <aside className="space-y-4">
       <section className="rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
-        <h2 className="text-base font-semibold text-ink-900">Summary</h2>
+        <h2 className="text-base font-semibold text-ink-900">{t('checkout.summary.title')}</h2>
 
         <div className="mt-4 flex gap-3">
           <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-ink-100">
@@ -50,21 +53,23 @@ export function CheckoutSummary({
         </div>
 
         <ul className="mt-4 space-y-2.5 border-t border-ink-100 pt-4 text-sm">
-          <Row label="Subcription type" value="Monthly" />
+          <Row label={t('checkout.summary.subscriptionType')} value={t('checkout.summary.monthly')} />
           <Row
-            label="Monthly subcription"
-            value={course.is_free ? 'Free' : `${monthly} (After trial)`}
+            label={t('checkout.summary.monthlySubscription')}
+            value={course.is_free
+              ? t('course.pricing.free')
+              : t('checkout.summary.afterTrial', { price: monthly })}
           />
-          <Row label="Total trial" value="7-Days Free trial" />
+          <Row label={t('checkout.summary.totalTrial')} value={t('checkout.summary.trialDays')} />
         </ul>
 
         <div className="mt-4 flex items-baseline justify-between border-t border-ink-100 pt-4">
-          <span className="text-sm font-medium text-ink-900">Todays total</span>
+          <span className="text-sm font-medium text-ink-900">{t('checkout.summary.todaysTotal')}</span>
           <span className="text-lg font-semibold text-brand-600">$0.00</span>
         </div>
 
         <Button fullWidth size="lg" className="mt-4" loading={loading} onClick={onSubmit}>
-          {ctaLabel}
+          {resolvedCta}
         </Button>
       </section>
 
@@ -73,10 +78,9 @@ export function CheckoutSummary({
           ⓘ
         </span>
         <div>
-          <p className="font-semibold text-ink-900">About the payment</p>
+          <p className="font-semibold text-ink-900">{t('checkout.summary.aboutPayment')}</p>
           <p className="mt-1 text-xs text-ink-500">
-            Your subscription starts today with a 7-day free trial. If you choose to cancel during
-            the trial, you can do so from My Account before the trial ends and you won’t be charged.
+            {t('checkout.summary.aboutPaymentBody')}
           </p>
         </div>
       </section>
