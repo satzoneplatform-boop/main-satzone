@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react';
+import type { ReactElement, SVGProps } from 'react';
 import { MailIcon, PhoneIcon, ArrowRightIcon } from '@/components/icons';
 import { useT } from '@/i18n/I18nProvider';
 
@@ -56,7 +56,7 @@ export function ContactsPage() {
 
 interface ChannelCardProps {
   tone: 'brand' | 'teal' | 'sky';
-  Icon: (props: SVGProps<SVGSVGElement>) => JSX.Element;
+  Icon: (props: SVGProps<SVGSVGElement>) => ReactElement;
   label: string;
   value: string;
   href: string;
