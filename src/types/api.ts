@@ -359,3 +359,34 @@ export interface AvatarUploadResponse {
   avatar_url: string | null;
   size_bytes: number;
 }
+
+/** Instructor-side list row from `GET /instructor/courses/{id}/assessments`. */
+export interface AssessmentSummary {
+  id: string;
+  course_id: string;
+  section_id: string | null;
+  title: string;
+  description: string | null;
+  pass_percent: number;
+  time_limit_minutes: number | null;
+  max_attempts: number | null;
+  status: AssessmentStatus;
+  is_section_quiz: boolean;
+  questions_count: number;
+  created_at: string;
+}
+
+/** Partial-update payload for `PATCH /instructor/assessments/{id}`. */
+export interface AssessmentUpdatePayload {
+  title?: string;
+  description?: string | null;
+  instructions?: string | null;
+  section_id?: string | null;
+  time_limit_minutes?: number | null;
+  pass_percent?: number;
+  max_attempts?: number | null;
+  shuffle_questions?: boolean;
+  show_correct_answers?: boolean;
+  is_section_quiz?: boolean;
+  status?: AssessmentStatus;
+}

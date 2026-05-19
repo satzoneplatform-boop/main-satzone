@@ -21,6 +21,7 @@ import { ResetSuccessPage } from '@/pages/auth/ResetSuccessPage';
 import { VerifyPhonePage } from '@/pages/auth/VerifyPhonePage';
 import { AccountPage } from '@/pages/account/AccountPage';
 import { ContactsPage } from '@/pages/contacts/ContactsPage';
+import { AssessmentsAdminPage } from '@/pages/instructor/AssessmentsAdminPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { RedirectIfAuthed, RequireAuth } from './guards';
 
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
           { path: '/courses/:slug/learn', element: <CourseLearnPage /> },
           { path: '/courses/:slug/lessons/:lessonId', element: withSuspense(<LessonPlayerPage />) },
           { path: '/courses/:slug/assessments/:assessmentId', element: <AssessmentOverviewPage /> },
+          { path: '/instructor/courses/:slug/assessments', element: <AssessmentsAdminPage /> },
           { path: '/learning-path', element: <MyLearningsPage /> },
           { path: '/account', element: <AccountPage /> },
           { path: '/contacts', element: <ContactsPage /> },

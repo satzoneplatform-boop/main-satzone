@@ -140,7 +140,10 @@ function SectionBlock({
     ? section.lessons.every((l) => completedIds.has(l.id))
     : false;
 
-  const quizUnlocked = !status.data?.required || allLessonsDone || status.data?.passed;
+  // Quiz is always gated behind "all lessons in this section completed",
+  // regardless of the backend's `required` flag. Once passed, it stays
+  // unlocked so the learner can retake (within max_attempts).
+  const quizUnlocked = allLessonsDone || !!status.data?.passed;
 
   // Expand the module that contains the active lesson / assessment;
   // collapse the rest. Tracks user toggles after first render.

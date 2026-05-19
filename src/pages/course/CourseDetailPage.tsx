@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Spinner } from '@/components/ui/Spinner';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
@@ -19,6 +19,7 @@ import { useMyEnrollments } from '@/features/learning/hooks';
 import { enrollmentsApi } from '@/api/enrollments';
 import { ApiError } from '@/api/errors';
 import { useT } from '@/i18n/I18nProvider';
+import { useAuth } from '@/features/auth/AuthProvider';
 
 type Tab = 'overview' | 'instructor' | 'courses' | 'schedule' | 'testimonials';
 
@@ -27,6 +28,7 @@ export function CourseDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const course = useCourseDetail(slug);
   const curriculum = useCourseCurriculum(slug);
   const related = useRelatedCourses(slug);
@@ -90,13 +92,23 @@ export function CourseDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Breadcrumb
-        items={[
-          { label: t('course.breadcrumb.explore'), to: '/explore' },
-          { label: t('course.breadcrumb.searchResults'), to: '/explore/search' },
-          { label: t('course.breadcrumb.detail') },
-        ]}
-      />
+      <div className="flex items-center justify-between gap-3">
+        <Breadcrumb
+          items={[
+            { label: t('course.breadcrumb.explore'), to: '/explore' },
+            { label: t('course.breadcrumb.searchResults'), to: '/explore/search' },
+            { label: t('course.breadcrumb.detail') },
+          ]}
+        />
+        {(user?.role === 'instructor' || user?.role === 'admin') && (
+          <Link
+            to={`/instructor/courses/${slug}/assessments`}
+            className="rounded-md border border-ink-200 bg-white px-3 py-1.5 text-xs font-medium text-ink-700 hover:bg-ink-50"
+          >
+            Manage assessments
+          </Link>
+        )}
+      </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">

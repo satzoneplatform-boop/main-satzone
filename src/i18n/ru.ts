@@ -426,6 +426,11 @@ export const ru: Record<TranslationKey, string> = {
   'assessment.overview.numberOfQuestions': 'Количество вопросов',
   'assessment.overview.questionsCount': '{n} вопросов',
   'assessment.overview.moreQuestions': 'Ещё {n} вопросов в этом тестировании.',
+  'assessment.overview.questionsHiddenTitle': 'Вопросы скрыты до начала',
+  'assessment.overview.questionsHiddenBody': 'В этом тесте {n} вопрос(ов). Они появятся после нажатия «Начать» и подтверждения кодекса честности — таймер начнётся в этот момент.',
+  'assessment.overview.lockedCta': 'Закрыто — сначала пройдите уроки',
+  'assessment.overview.lockedTitle': 'Завершите все уроки модуля, чтобы открыть тест',
+  'assessment.overview.lockedBody': 'Тест откроется автоматически, как только вы завершите все уроки этого модуля.',
   'assessment.overview.minutes': '{n} мин',
   'assessment.overview.dash': '—',
 

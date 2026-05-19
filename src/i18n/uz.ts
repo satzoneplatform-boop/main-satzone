@@ -426,6 +426,11 @@ export const uz: Record<TranslationKey, string> = {
   'assessment.overview.numberOfQuestions': 'Savollar soni',
   'assessment.overview.questionsCount': '{n} ta savol',
   'assessment.overview.moreQuestions': 'Bu baholashda yana {n} ta savol bor.',
+  'assessment.overview.questionsHiddenTitle': 'Savollar boshlaganingizdan keyin ko‘rsatiladi',
+  'assessment.overview.questionsHiddenBody': 'Bu baholashda {n} ta savol bor. Ular Boshlash tugmasini bosib, halollik shartlarini tasdiqlaganingizdan keyin ko‘rinadi — taymer o‘sha paytda ishga tushadi.',
+  'assessment.overview.lockedCta': 'Qulflangan — avval darslarni yakunlang',
+  'assessment.overview.lockedTitle': 'Quiz ochilishi uchun modul darslarini yakunlang',
+  'assessment.overview.lockedBody': 'Bu quiz modulning barcha darslarini yakunlaganingizda avtomatik ochiladi.',
   'assessment.overview.minutes': '{n} daq',
   'assessment.overview.dash': '—',
 

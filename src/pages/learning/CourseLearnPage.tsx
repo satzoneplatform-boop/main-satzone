@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/Badge';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ProgressBar } from '@/components/ui/ProgressBar';
@@ -9,9 +10,12 @@ import {
   ArrowRightIcon,
   CheckIcon,
   CloseIcon,
+  FlagIcon,
   LockIcon,
   PlayIcon,
 } from '@/components/icons';
+import { assessmentsApi } from '@/api/assessments';
+import { ApiError } from '@/api/errors';
 import {
   useCourseCurriculum,
   useCourseDetail,
@@ -259,40 +263,178 @@ function ModulesContent({
         const sectionStart = runningIdx;
         runningIdx += section.lessons.length;
         return (
-          <section
+          <ModuleBlock
             key={section.id}
-            id={`section-${section.id}`}
-            className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]"
-          >
-            <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-              <h3 className="text-base font-semibold text-ink-900">
-                {t('learning.courseLearn.module', { order: section.order, title: section.title })}
-              </h3>
-              <span className="text-xs text-ink-500">
-                {t('learning.courseLearn.lessons', { n: section.lessons.length })}
-              </span>
-            </header>
-            <ul className="divide-y divide-ink-100">
-              {section.lessons.map((lesson, i) => {
-                const absIdx = sectionStart + i;
-                const locked = absIdx > firstLockedIdx;
-                const completed = completedIds.has(lesson.id);
-                return (
-                  <li key={lesson.id}>
-                    <LessonRow
-                      courseSlug={course.slug}
-                      lesson={lesson}
-                      completed={completed}
-                      locked={locked}
-                    />
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+            section={section}
+            courseSlug={course.slug}
+            completedIds={completedIds}
+            sectionStartIdx={sectionStart}
+            firstLockedIdx={firstLockedIdx}
+          />
         );
       })}
     </div>
+  );
+}
+
+function ModuleBlock({
+  section,
+  courseSlug,
+  completedIds,
+  sectionStartIdx,
+  firstLockedIdx,
+}: {
+  section: SectionRead;
+  courseSlug: string;
+  completedIds: Set<string>;
+  sectionStartIdx: number;
+  firstLockedIdx: number;
+}) {
+  const t = useT();
+  // Cheap status fetch — 404 means "no quiz on this section". Treated
+  // silently (the row just isn't rendered).
+  const quizStatus = useQuery({
+    queryKey: ['section', section.id, 'quiz', 'status'],
+    queryFn: () => assessmentsApi.sectionQuizStatus(section.id),
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const has404 =
+    quizStatus.error instanceof ApiError && quizStatus.error.status === 404;
+  const hasQuiz = !!quizStatus.data?.assessment_id && !has404;
+
+  const allLessonsDone = section.lessons.every((l) => completedIds.has(l.id));
+  // Always gate the quiz behind "all lessons in this section completed",
+  // regardless of the backend's `required` flag. Once passed, stays unlocked.
+  const quizUnlocked = allLessonsDone || !!quizStatus.data?.passed;
+
+  return (
+    <section
+      id={`section-${section.id}`}
+      className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]"
+    >
+      <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+        <h3 className="text-base font-semibold text-ink-900">
+          {t('learning.courseLearn.module', {
+            order: section.order,
+            title: section.title,
+          })}
+        </h3>
+        <span className="text-xs text-ink-500">
+          {t('learning.courseLearn.lessons', {
+            n: section.lessons.length + (hasQuiz ? 1 : 0),
+          })}
+        </span>
+      </header>
+      <ul className="divide-y divide-ink-100">
+        {section.lessons.map((lesson, i) => {
+          const absIdx = sectionStartIdx + i;
+          const locked = absIdx > firstLockedIdx;
+          const completed = completedIds.has(lesson.id);
+          return (
+            <li key={lesson.id}>
+              <LessonRow
+                courseSlug={courseSlug}
+                lesson={lesson}
+                completed={completed}
+                locked={locked}
+              />
+            </li>
+          );
+        })}
+        {hasQuiz && quizStatus.data?.assessment_id && (
+          <li>
+            <SectionQuizRow
+              courseSlug={courseSlug}
+              assessmentId={quizStatus.data.assessment_id}
+              passed={quizStatus.data.passed}
+              locked={!quizUnlocked}
+              attempts={quizStatus.data.attempts}
+              maxAttempts={quizStatus.data.max_attempts}
+            />
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
+function SectionQuizRow({
+  courseSlug,
+  assessmentId,
+  passed,
+  locked,
+  attempts,
+  maxAttempts,
+}: {
+  courseSlug: string;
+  assessmentId: string;
+  passed: boolean;
+  locked: boolean;
+  attempts: number;
+  maxAttempts: number | null;
+}) {
+  const navigate = useNavigate();
+  const to = `/courses/${courseSlug}/assessments/${assessmentId}`;
+
+  function go() {
+    if (locked) return;
+    navigate(to);
+  }
+
+  const meta = locked
+    ? 'Complete the lessons to unlock'
+    : maxAttempts == null
+      ? `${attempts} attempts`
+      : `${attempts}/${maxAttempts} attempts`;
+
+  return (
+    <button
+      type="button"
+      onClick={go}
+      disabled={locked}
+      aria-disabled={locked}
+      className={[
+        'flex w-full items-center gap-3 px-5 py-3 text-left text-sm',
+        locked ? 'cursor-not-allowed bg-ink-50/40' : 'hover:bg-ink-50',
+      ].join(' ')}
+    >
+      <span
+        className={
+          passed
+            ? 'grid size-7 place-items-center rounded-md bg-success-50 text-success-600'
+            : locked
+              ? 'grid size-7 place-items-center rounded-md bg-ink-100 text-ink-400'
+              : 'grid size-7 place-items-center rounded-md bg-warn-500/10 text-warn-500'
+        }
+      >
+        {passed ? (
+          <CheckIcon className="size-4" />
+        ) : locked ? (
+          <LockIcon className="size-3.5" />
+        ) : (
+          <FlagIcon className="size-3.5" />
+        )}
+      </span>
+      <span className="flex-1">
+        <span className="flex items-center gap-2">
+          <span
+            className={
+              locked
+                ? 'block font-medium text-ink-400'
+                : 'block font-medium text-ink-900'
+            }
+          >
+            Section quiz
+          </span>
+          {passed && <Badge tone="success">Passed</Badge>}
+          {locked && !passed && <Badge tone="neutral">Locked</Badge>}
+        </span>
+        <span className="block text-xs text-ink-500">{meta}</span>
+      </span>
+      {!locked && <ArrowRightIcon className="text-ink-400" />}
+    </button>
   );
 }
 

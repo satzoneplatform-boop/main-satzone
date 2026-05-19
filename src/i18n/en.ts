@@ -424,6 +424,11 @@ export const en = {
   'assessment.overview.numberOfQuestions': 'Number of questions',
   'assessment.overview.questionsCount': '{n} questions',
   'assessment.overview.moreQuestions': '{n} more questions in this assessment.',
+  'assessment.overview.questionsHiddenTitle': 'Questions hidden until you start',
+  'assessment.overview.questionsHiddenBody': 'This assessment has {n} question(s). They’ll appear once you click Start and confirm the honor code — the timer begins at that moment.',
+  'assessment.overview.lockedCta': 'Locked — complete lessons first',
+  'assessment.overview.lockedTitle': 'Finish the module’s lessons to unlock',
+  'assessment.overview.lockedBody': 'This quiz unlocks automatically once you’ve completed every lesson in its module.',
   'assessment.overview.minutes': '{n} Min',
   'assessment.overview.dash': '—',
 
