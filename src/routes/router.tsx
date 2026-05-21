@@ -22,6 +22,7 @@ import { VerifyPhonePage } from '@/pages/auth/VerifyPhonePage';
 import { AccountPage } from '@/pages/account/AccountPage';
 import { ContactsPage } from '@/pages/contacts/ContactsPage';
 import { AssessmentsAdminPage } from '@/pages/instructor/AssessmentsAdminPage';
+import { GoogleCallbackPage } from '@/pages/auth/GoogleCallbackPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { RedirectIfAuthed, RequireAuth } from './guards';
 
@@ -62,6 +63,9 @@ export const router = createBrowserRouter([
   { path: '/sign-up/check-email', element: <CheckEmailPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
   { path: '/reset-password/success', element: <ResetSuccessPage /> },
+  // OAuth handoff — must be always-public because the user arrives
+  // unauthenticated and this page is the one that completes sign-in.
+  { path: '/auth/google/callback', element: <GoogleCallbackPage /> },
 
   // Full-screen authed pages (no dashboard shell).
   // /verify-phone must live here — RequireAuth lets it through specifically
