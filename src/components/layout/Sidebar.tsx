@@ -38,7 +38,7 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const recent = (home.data?.continue_learning ?? []).slice(0, 4);
 
   const main: NavItemConfig[] = [
-    { to: '/', label: t('nav.dashboard'), icon: HomeIcon },
+    { to: '/dashboard', label: t('nav.dashboard'), icon: HomeIcon },
     { to: '/explore', label: t('nav.explore'), icon: GridIcon, badge: 2 },
     { to: '/learning-path', label: t('nav.myLearnings'), icon: BookIcon },
   ];

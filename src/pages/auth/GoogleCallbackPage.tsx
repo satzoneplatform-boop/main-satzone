@@ -81,7 +81,7 @@ export function GoogleCallbackPage() {
           );
           return;
         }
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       } catch {
         setError('Sign-in finished but loading your profile failed.');
       }

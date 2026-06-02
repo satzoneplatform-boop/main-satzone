@@ -1,5 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
+import { telegramApi } from '@/api/telegram';
 import { ApiError } from '@/api/errors';
 import { env } from '@/lib/env';
 
@@ -77,4 +78,36 @@ export function useResendPhoneCode() {
 export function googleSignInUrl(): string {
   // Strip the trailing /api/v1 if env.apiBaseUrl already points at it.
   return `${env.apiBaseUrl}/auth/google/login`;
+}
+
+/**
+ * Mint a Telegram-bot verification link. Call once when the verify page
+ * mounts; the resulting `state` feeds the polling hook below.
+ */
+export function useInitTelegram() {
+  return useMutation({ mutationFn: () => telegramApi.init() });
+}
+
+/**
+ * Poll `/auth/telegram/status` every 2 s while `state` is set. Stops
+ * polling automatically once the response says `verified` or `expired`.
+ * Returns the typed status object so the page can react to verified ↔
+ * expired transitions.
+ */
+export function useTelegramStatus(state: string | null) {
+  return useQuery({
+    queryKey: ['telegram', 'status', state],
+    queryFn: () => telegramApi.status(state!),
+    enabled: Boolean(state),
+    refetchInterval: (q) => {
+      const d = q.state.data;
+      if (!d) return 2000;
+      if (d.verified || d.expired) return false;
+      return 2000;
+    },
+    // Token may be redeemed on a different device; keep polling reliably.
+    refetchIntervalInBackground: true,
+    staleTime: 0,
+    retry: false,
+  });
 }

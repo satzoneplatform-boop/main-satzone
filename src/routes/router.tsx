@@ -23,6 +23,7 @@ import { AccountPage } from '@/pages/account/AccountPage';
 import { ContactsPage } from '@/pages/contacts/ContactsPage';
 import { AssessmentsAdminPage } from '@/pages/instructor/AssessmentsAdminPage';
 import { GoogleCallbackPage } from '@/pages/auth/GoogleCallbackPage';
+import { LandingPage } from '@/pages/LandingPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { RedirectIfAuthed, RequireAuth } from './guards';
 
@@ -59,6 +60,11 @@ export const router = createBrowserRouter([
     ],
   },
 
+  // Public marketing landing — visible to everyone (authed or not). When
+  // authed, the page surfaces a "Go to dashboard" CTA but doesn't auto-
+  // redirect (so authed users can still share / browse the public site).
+  { path: '/', element: <LandingPage /> },
+
   // Always-public pages.
   { path: '/sign-up/check-email', element: <CheckEmailPage /> },
   { path: '/reset-password', element: <ResetPasswordPage /> },
@@ -85,7 +91,7 @@ export const router = createBrowserRouter([
       {
         element: <DashboardShell />,
         children: [
-          { path: '/', element: <DashboardPage /> },
+          { path: '/dashboard', element: <DashboardPage /> },
           { path: '/explore', element: <ExplorePage /> },
           { path: '/explore/search', element: <SearchResultsPage /> },
           { path: '/courses/:slug', element: <CourseDetailPage /> },

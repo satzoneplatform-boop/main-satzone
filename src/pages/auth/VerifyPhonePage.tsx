@@ -1,223 +1,230 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { OTPInput } from '@/components/ui/OTPInput';
-import { PhoneInput } from '@/components/ui/PhoneInput';
+import { Spinner } from '@/components/ui/Spinner';
 import { AuthCenteredLayout } from '@/components/layout/AuthCenteredLayout';
 import { ApiError } from '@/api/errors';
 import { useAuth } from '@/features/auth/AuthProvider';
 import {
   authErrorMessage,
-  useResendPhoneCode,
-  useSubmitPhone,
-  useVerifyPhone,
+  useInitTelegram,
+  useTelegramStatus,
 } from '@/features/auth/hooks';
-import { signupStore } from '@/features/auth/signupStore';
-
-type Step = 'enter-phone' | 'enter-code';
-
-const RESEND_COOLDOWN_S = 30;
+import { useT } from '@/i18n/I18nProvider';
 
 /**
- * Phone-verification gate (FRONTEND.md §2).
+ * Telegram-bot phone verification gate (replaces SMS OTP).
  *
- * Backend stages the phone + a 6-digit code in Redis (15 min TTL) on
- * POST /auth/phone, then commits it on POST /auth/verify-phone {code}.
- * Until SMS is wired up the code is delivered to the user's email —
- * surface that wording, not "we texted you".
+ * Lifecycle:
+ *  1. On mount we POST /auth/telegram/init → get `{ state, link_url, expires_at }`.
+ *  2. We render `link_url` as a button + QR (api.qrserver.com renders it
+ *     to PNG so we don't need a QR client lib) and start polling
+ *     /auth/telegram/status?state=… every 2 s.
+ *  3. When status flips to `verified: true` we refresh /auth/me and
+ *     navigate to /dashboard.
+ *  4. If the link expires before the bot is opened, the user can click
+ *     "Get a new link" which re-runs step 1.
  */
 export function VerifyPhonePage() {
+  const t = useT();
   const navigate = useNavigate();
   const { user, refresh } = useAuth();
-  const draft = useMemo(() => signupStore.get(), []);
 
-  const [step, setStep] = useState<Step>(() =>
-    user?.phone_number ? 'enter-code' : 'enter-phone',
-  );
-  const [phone, setPhone] = useState<string>(
-    () => user?.phone_number ?? draft?.pendingPhone ?? '',
-  );
-  const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const [cooldown, setCooldown] = useState(0);
+  const init = useInitTelegram();
+  const [state, setState] = useState<string | null>(null);
+  const [linkUrl, setLinkUrl] = useState<string | null>(null);
+  const [initError, setInitError] = useState<string | null>(null);
 
-  const submitPhone = useSubmitPhone();
-  const verifyPhone = useVerifyPhone();
-  const resendCode = useResendPhoneCode();
-
-  // If the gate became false (verified), bounce home.
-  useEffect(() => {
-    if (user?.is_phone_verified) navigate('/', { replace: true });
-  }, [user?.is_phone_verified, navigate]);
-
-  // Resend cooldown timer.
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = window.setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => window.clearTimeout(t);
-  }, [cooldown]);
-
-  async function onSubmitPhone(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setInfo(null);
-    try {
-      await submitPhone.mutateAsync(phone);
-      setStep('enter-code');
-      setCooldown(RESEND_COOLDOWN_S);
-      setInfo("We've emailed your phone verification code (SMS coming soon).");
-    } catch (err) {
-      // 409 phone_already_verified means we can just refresh the user state
-      // and bounce them home.
-      if (err instanceof ApiError && err.code === 'phone_already_verified') {
-        await refresh();
-        navigate('/', { replace: true });
-        return;
-      }
-      setError(authErrorMessage(err));
-    }
+  // Kick off the verification on mount (and on "Get a new link").
+  function startVerification() {
+    setInitError(null);
+    setState(null);
+    setLinkUrl(null);
+    init.mutate(undefined, {
+      onSuccess: (res) => {
+        setState(res.state);
+        setLinkUrl(res.link_url);
+      },
+      onError: (err) => {
+        if (err instanceof ApiError && err.code === 'phone_already_verified') {
+          // Race: another tab finished verification — refresh and bounce.
+          void refresh().then(() => navigate('/dashboard', { replace: true }));
+          return;
+        }
+        if (err instanceof ApiError && err.code === 'telegram_not_configured') {
+          setInitError(t('verifyPhone.errorNotConfigured'));
+          return;
+        }
+        setInitError(authErrorMessage(err));
+      },
+    });
   }
 
-  async function onSubmitCode(e?: FormEvent) {
-    e?.preventDefault();
-    setError(null);
-    if (code.length !== 6) return;
-    try {
-      await verifyPhone.mutateAsync(code);
-      signupStore.clear();
+  useEffect(() => {
+    // If the gate is already cleared (e.g. user re-opened the tab after
+    // verifying elsewhere), don't init — just route home.
+    if (user?.is_phone_verified) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
+    startVerification();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Poll status while we have a live token.
+  const status = useTelegramStatus(state);
+
+  useEffect(() => {
+    if (!status.data?.verified) return;
+    // Verified — refresh the auth context, then route.
+    void (async () => {
       await refresh();
-      navigate('/', { replace: true });
-    } catch (err) {
-      setError(authErrorMessage(err));
-      // If the staged entry has expired, drive the user back to step 1.
-      if (err instanceof ApiError && err.code === 'phone_not_submitted') {
-        setStep('enter-phone');
-      }
-    }
-  }
+      navigate('/dashboard', { replace: true });
+    })();
+  }, [status.data?.verified, navigate, refresh]);
 
-  async function onResend() {
-    if (cooldown > 0) return;
-    setError(null);
-    setInfo(null);
-    try {
-      await resendCode.mutateAsync();
-      setCooldown(RESEND_COOLDOWN_S);
-      setInfo('A new code is on its way.');
-    } catch (err) {
-      if (err instanceof ApiError && err.code === 'phone_not_submitted') {
-        setStep('enter-phone');
-      }
-      setError(authErrorMessage(err));
-    }
-  }
+  const expired = !!status.data?.expired;
+  const verified = !!status.data?.verified;
 
   return (
     <AuthCenteredLayout>
-      <Card className="w-full max-w-md">
-        {step === 'enter-phone' ? (
-          <form onSubmit={onSubmitPhone} className="space-y-5">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
-                Verify your phone
-              </h1>
-              <p className="mt-1 text-sm text-ink-500">
-                Enter the phone number you'd like to use on Edura. We'll send a 6-digit code to
-                confirm it's yours.
-              </p>
-            </div>
+      <Card className="w-full max-w-md p-6 sm:p-8">
+        <header className="text-center">
+          <TelegramGlyph />
+          <h1 className="mt-4 text-xl font-semibold tracking-tight text-ink-900">
+            {t('verifyPhone.title')}
+          </h1>
+          <p className="mt-2 text-sm text-ink-500">{t('verifyPhone.subtitle')}</p>
+        </header>
 
-            {error && <ErrorBanner>{error}</ErrorBanner>}
-
-            <PhoneInput
-              label="Phone number"
-              required
-              value={phone}
-              onChange={setPhone}
-            />
-
-            <Button
-              type="submit"
-              fullWidth
-              size="lg"
-              loading={submitPhone.isPending}
-              disabled={phone.length < 5}
-            >
-              Send verification code
-            </Button>
-          </form>
-        ) : (
-          <form onSubmit={onSubmitCode} className="space-y-5">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
-                Enter the 6-digit code
-              </h1>
-              <p className="mt-1 text-sm text-ink-500">
-                We've sent a code to{' '}
-                <span className="font-medium text-ink-900">
-                  {phone || user?.phone_number || 'your phone'}
-                </span>
-                . SMS is coming soon — for now, check your email inbox.
-              </p>
-            </div>
-
-            {error && <ErrorBanner>{error}</ErrorBanner>}
-            {info && !error && (
-              <div className="rounded-md border border-brand-100 bg-brand-25 px-3 py-2 text-sm text-brand-700">
-                {info}
-              </div>
-            )}
-
-            <div className="flex justify-center">
-              <OTPInput
-                value={code}
-                onChange={setCode}
-                error={Boolean(error)}
-                autoFocus
-                onComplete={() => onSubmitCode()}
-              />
-            </div>
-
-            <Button
-              type="submit"
-              fullWidth
-              size="lg"
-              loading={verifyPhone.isPending}
-              disabled={code.length !== 6}
-            >
-              Verify phone
-            </Button>
-
-            <div className="flex items-center justify-between text-sm">
-              <button
-                type="button"
-                onClick={() => setStep('enter-phone')}
-                className="text-ink-500 hover:text-ink-700"
-              >
-                Use a different number
-              </button>
-              <button
-                type="button"
-                onClick={onResend}
-                disabled={cooldown > 0 || resendCode.isPending}
-                className="font-medium text-brand-600 hover:underline disabled:cursor-not-allowed disabled:text-ink-400"
-              >
-                {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
-              </button>
-            </div>
-          </form>
-        )}
+        {init.isPending && !linkUrl ? (
+          <div className="grid place-items-center py-10">
+            <Spinner />
+          </div>
+        ) : initError ? (
+          <ErrorPanel message={initError} onRetry={startVerification} t={t} />
+        ) : verified ? (
+          <SuccessPanel t={t} />
+        ) : expired ? (
+          <ExpiredPanel onRetry={startVerification} t={t} />
+        ) : linkUrl ? (
+          <ActivePanel linkUrl={linkUrl} t={t} />
+        ) : null}
       </Card>
     </AuthCenteredLayout>
   );
 }
 
-function ErrorBanner({ children }: { children: React.ReactNode }) {
+function ActivePanel({
+  linkUrl,
+  t,
+}: {
+  linkUrl: string;
+  t: ReturnType<typeof useT>;
+}) {
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(linkUrl)}`;
   return (
-    <div className="rounded-md border border-danger-500/30 bg-red-50 px-3 py-2 text-sm text-danger-600">
-      {children}
+    <div className="mt-6 space-y-5">
+      <a href={linkUrl} target="_blank" rel="noreferrer" className="block">
+        <Button fullWidth size="lg">
+          {t('verifyPhone.openInTelegram')}
+        </Button>
+      </a>
+
+      <div className="relative">
+        <div className="absolute inset-x-0 top-1/2 h-px bg-ink-100" />
+        <p className="relative mx-auto inline-block bg-white px-3 text-xs uppercase tracking-wider text-ink-400">
+          {t('verifyPhone.or')}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-ink-200 bg-ink-50 p-4 text-center">
+        <p className="text-xs text-ink-500">{t('verifyPhone.scanHint')}</p>
+        <img
+          src={qrSrc}
+          alt="Telegram verification QR"
+          width={180}
+          height={180}
+          className="mx-auto mt-3 rounded-md bg-white p-2 shadow-sm"
+        />
+      </div>
+
+      <div className="flex items-center justify-center gap-2 text-xs text-ink-500">
+        <Spinner size="sm" />
+        <span>{t('verifyPhone.waiting')}</span>
+      </div>
     </div>
+  );
+}
+
+function SuccessPanel({ t }: { t: ReturnType<typeof useT> }) {
+  return (
+    <div className="mt-6 grid place-items-center py-6 text-center">
+      <div className="grid size-12 place-items-center rounded-full bg-success-50 text-success-600">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="24" height="24">
+          <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+      <p className="mt-3 text-base font-semibold text-ink-900">
+        {t('verifyPhone.successTitle')}
+      </p>
+      <p className="mt-1 text-sm text-ink-500">{t('verifyPhone.successBody')}</p>
+    </div>
+  );
+}
+
+function ExpiredPanel({
+  onRetry,
+  t,
+}: {
+  onRetry: () => void;
+  t: ReturnType<typeof useT>;
+}) {
+  return (
+    <div className="mt-6 space-y-4 text-center">
+      <p className="text-sm text-ink-700">{t('verifyPhone.expired')}</p>
+      <Button fullWidth onClick={onRetry}>
+        {t('verifyPhone.getNewLink')}
+      </Button>
+    </div>
+  );
+}
+
+function ErrorPanel({
+  message,
+  onRetry,
+  t,
+}: {
+  message: string;
+  onRetry: () => void;
+  t: ReturnType<typeof useT>;
+}) {
+  return (
+    <div className="mt-6 space-y-4">
+      <div className="rounded-md border border-danger-500/40 bg-danger-50 px-3 py-2 text-sm text-danger-600">
+        {message}
+      </div>
+      <Button fullWidth variant="outline" onClick={onRetry}>
+        {t('verifyPhone.tryAgain')}
+      </Button>
+    </div>
+  );
+}
+
+/** Inline Telegram paper-plane mark, so we don't ship an extra asset. */
+function TelegramGlyph() {
+  return (
+    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#26A5E4]/10 text-[#26A5E4]">
+      <svg
+        viewBox="0 0 24 24"
+        width="26"
+        height="26"
+        fill="currentColor"
+        aria-hidden
+      >
+        <path d="M21.86 4.13a1 1 0 0 0-1.13-.21L3.4 10.74a1 1 0 0 0 .05 1.86l4.39 1.42 2.12 6.4a1 1 0 0 0 1.7.32l2.74-2.95 4.5 3.31a1 1 0 0 0 1.58-.57l2.99-13.55a1 1 0 0 0-.61-1.16zM9.62 13.39 17.4 7.7l-6.18 6.6-.04.04-.18 3.34-1.38-4.29z" />
+      </svg>
+    </span>
   );
 }

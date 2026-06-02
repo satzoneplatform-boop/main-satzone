@@ -33,7 +33,7 @@ export function RedirectIfAuthed() {
   const { status, user } = useAuth();
   if (status === 'loading') return <FullPageSpinner />;
   if (status === 'authenticated' && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return <Outlet />;
 }

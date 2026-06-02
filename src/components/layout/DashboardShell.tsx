@@ -7,7 +7,7 @@ import { useT } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/en';
 
 const TITLE_BY_PATH: Array<{ match: RegExp; titleKey: TranslationKey }> = [
-  { match: /^\/$/, titleKey: 'page.dashboard' },
+  { match: /^\/dashboard/, titleKey: 'page.dashboard' },
   { match: /^\/explore\/search/, titleKey: 'page.explore' },
   { match: /^\/explore/, titleKey: 'page.explore' },
   { match: /^\/courses\/[^/]+\/lessons\//, titleKey: 'page.myLearnings' },

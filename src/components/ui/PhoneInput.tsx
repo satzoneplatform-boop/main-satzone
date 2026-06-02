@@ -10,12 +10,18 @@ interface Country {
 }
 
 const COUNTRIES: Country[] = [
-  { code: 'ID', dial: '+62', flag: '🇮🇩', name: 'Indonesia' },
+  { code: 'UZ', dial: '+998', flag: '🇺🇿', name: 'Uzbekistan' },
+  { code: 'RU', dial: '+7', flag: '🇷🇺', name: 'Russia' },
+  { code: 'KZ', dial: '+7', flag: '🇰🇿', name: 'Kazakhstan' },
+  { code: 'KG', dial: '+996', flag: '🇰🇬', name: 'Kyrgyzstan' },
+  { code: 'TJ', dial: '+992', flag: '🇹🇯', name: 'Tajikistan' },
+  { code: 'TM', dial: '+993', flag: '🇹🇲', name: 'Turkmenistan' },
+  { code: 'TR', dial: '+90', flag: '🇹🇷', name: 'Turkey' },
   { code: 'US', dial: '+1', flag: '🇺🇸', name: 'United States' },
   { code: 'GB', dial: '+44', flag: '🇬🇧', name: 'United Kingdom' },
-  { code: 'UZ', dial: '+998', flag: '🇺🇿', name: 'Uzbekistan' },
-  { code: 'IN', dial: '+91', flag: '🇮🇳', name: 'India' },
   { code: 'DE', dial: '+49', flag: '🇩🇪', name: 'Germany' },
+  { code: 'IN', dial: '+91', flag: '🇮🇳', name: 'India' },
+  { code: 'ID', dial: '+62', flag: '🇮🇩', name: 'Indonesia' },
 ];
 
 export interface PhoneInputProps {
@@ -47,7 +53,7 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       label,
       value = '',
       onChange,
-      defaultCountry = 'ID',
+      defaultCountry = 'UZ',
       countries,
       error,
       placeholder = 'Enter number',
