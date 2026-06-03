@@ -1,5 +1,6 @@
 import { BookmarkIcon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
+import { cn } from '@/lib/cn';
 import type { CourseDetail } from '@/types/api';
 
 interface CourseHeroProps {
@@ -9,14 +10,39 @@ interface CourseHeroProps {
 }
 
 /**
- * Dark navy hero used at the top of the course detail page.
- * Shows institution badge, title, subtitle, and a bookmark toggle.
+ * Dark hero at the top of the course detail page. When the course has
+ * a `thumbnail_url`, it's used as the background image with a dark
+ * overlay so the title/subtitle stay readable. Otherwise we fall back
+ * to the navy gradient + grid pattern.
  */
 export function CourseHero({ course, saved = false, onToggleSave }: CourseHeroProps) {
   const inst = course.instructor;
+  const hasImage = Boolean(course.thumbnail_url);
+
   return (
-    <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ink-900 via-ink-900 to-brand-900 px-8 py-10 text-white">
-      <BackdropPattern />
+    <section
+      className={cn(
+        'relative overflow-hidden rounded-2xl px-8 py-10 text-white',
+        !hasImage && 'bg-gradient-to-br from-ink-900 via-ink-900 to-brand-900',
+      )}
+    >
+      {hasImage ? (
+        <>
+          <img
+            src={course.thumbnail_url ?? undefined}
+            alt=""
+            aria-hidden
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          {/* Dark overlay so the foreground text stays readable. */}
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-gradient-to-r from-ink-900/85 via-ink-900/65 to-ink-900/40"
+          />
+        </>
+      ) : (
+        <BackdropPattern />
+      )}
 
       <div className="relative flex items-start justify-between gap-6">
         <div className="max-w-2xl">
@@ -35,7 +61,7 @@ export function CourseHero({ course, saved = false, onToggleSave }: CourseHeroPr
             {course.title}
           </h1>
           {course.subtitle && (
-            <p className="mt-3 max-w-xl text-sm text-white/70">{course.subtitle}</p>
+            <p className="mt-3 max-w-xl text-sm text-white/80">{course.subtitle}</p>
           )}
         </div>
 

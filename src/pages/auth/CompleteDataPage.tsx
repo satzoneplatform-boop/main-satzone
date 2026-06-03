@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import { PhoneInput } from '@/components/ui/PhoneInput';
 import {
   PasswordStrengthMeter,
   evaluatePassword,
@@ -14,6 +13,12 @@ import { ChevronDownIcon } from '@/components/icons';
 import { useRegister, authErrorMessage } from '@/features/auth/hooks';
 import { signupStore } from '@/features/auth/signupStore';
 
+/**
+ * Sign-up wizard, step 2. Collects name + password and POSTs
+ * /auth/register (the deployed endpoint accepts only
+ * {email, full_name, password} — no phone). Phone verification
+ * happens later via the Telegram bot OTP flow.
+ */
 export function CompleteDataPage() {
   const navigate = useNavigate();
   const draft = useMemo(() => signupStore.get(), []);
@@ -21,7 +26,6 @@ export function CompleteDataPage() {
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +40,6 @@ export function CompleteDataPage() {
   const canSubmit =
     firstName.trim().length > 0 &&
     lastName.trim().length > 0 &&
-    phone.length > 4 &&
     passwordValid;
 
   async function onSubmit(e: FormEvent) {
@@ -48,8 +51,6 @@ export function CompleteDataPage() {
         full_name: `${firstName} ${lastName}`.trim(),
         password,
       });
-      // Phone is set after login per FRONTEND.md §2 — stash it for that step.
-      signupStore.set({ email: draft!.email, pendingPhone: phone });
       navigate('/sign-up/check-email', {
         state: { email: draft!.email },
         replace: true,
@@ -79,9 +80,8 @@ export function CompleteDataPage() {
               Complete data
             </h1>
             <p className="mt-1 text-sm text-ink-500">
-              Complete this information to create your main
-              <br />
-              profile on this dashboard.
+              We&apos;ll send a verification link to {draft.email}. You
+              can verify your phone later via Telegram.
             </p>
           </div>
 
@@ -109,13 +109,6 @@ export function CompleteDataPage() {
               onChange={(e) => setLastName(e.target.value)}
             />
           </div>
-
-          <PhoneInput
-            label="Phone number"
-            required
-            value={phone}
-            onChange={setPhone}
-          />
 
           <div>
             <PasswordInput

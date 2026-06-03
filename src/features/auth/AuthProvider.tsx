@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { authApi, type LoginPayload } from '@/api/auth';
+import { authApi, isPhoneLogin, type LoginCredentials } from '@/api/auth';
 import { ApiError } from '@/api/errors';
 import { tokenStore } from '@/api/tokenStore';
 import type { UserMe } from '@/types/api';
@@ -16,7 +16,8 @@ import type { UserMe } from '@/types/api';
 interface AuthContextValue {
   user: UserMe | null;
   status: 'loading' | 'authenticated' | 'unauthenticated';
-  login: (payload: LoginPayload) => Promise<UserMe>;
+  /** Pass `{email, password}` for email login or `{phone_number, password}` for phone login. */
+  login: (payload: LoginCredentials) => Promise<UserMe>;
   logout: () => Promise<void>;
   refresh: () => Promise<UserMe | null>;
 }
@@ -66,7 +67,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback<AuthContextValue['login']>(
     async (payload) => {
-      await authApi.login(payload);
+      if (isPhoneLogin(payload)) {
+        await authApi.loginByPhone(payload);
+      } else {
+        await authApi.login(payload);
+      }
       const me = await authApi.me();
       setUser(me);
       setStatus('authenticated');

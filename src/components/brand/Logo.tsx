@@ -7,7 +7,7 @@ interface LogoProps {
 }
 
 /**
- * IdrokHub mark — purple rounded square containing a stylized "+" cross.
+ * SATZone mark — purple rounded square containing a stylized "+" cross.
  * The wordmark sits to the right when `withWordmark` is true.
  */
 export function Logo({ size = 32, withWordmark = false, className }: LogoProps) {
@@ -19,7 +19,7 @@ export function Logo({ size = 32, withWordmark = false, className }: LogoProps) 
           className="text-ink-900 font-semibold tracking-tight"
           style={{ fontSize: Math.round(size * 0.6) }}
         >
-          IdrokHub
+          SATZone
         </span>
       )}
     </span>

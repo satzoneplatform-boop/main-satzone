@@ -2,10 +2,10 @@ import type { ReactElement, SVGProps } from 'react';
 import { MailIcon, PhoneIcon, ArrowRightIcon } from '@/components/icons';
 import { useT } from '@/i18n/I18nProvider';
 
-const TELEGRAM_HANDLE = 'idrokhub';
-const PHONE_DISPLAY = '+998 71 200 00 00';
-const PHONE_HREF = '+998712000000';
-const EMAIL = 'support@idrokhub.uz';
+const TELEGRAM_HANDLE = 'satzone';
+const PHONE_DISPLAY = '+998 55 588 11 15';
+const PHONE_HREF = '+998555881115';
+const EMAIL = 'satzoneplatform@gmail.com';
 
 export function ContactsPage() {
   const t = useT();

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
+import { CoursePreviewPlayer } from './CoursePreviewPlayer';
 import type { CourseDetail } from '@/types/api';
 import { useT } from '@/i18n/I18nProvider';
 
@@ -37,10 +38,20 @@ export function PricingCard({
         ? t('course.pricing.enrollFree')
         : t('course.pricing.enrollNow'));
 
+  // Preview-media preference: HLS video first, then thumbnail, then emoji.
+  const hasPreview =
+    course.has_preview_video && Boolean(course.preview_playback_url);
+
   return (
     <aside className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
       <div className="aspect-[16/9] overflow-hidden bg-ink-100">
-        {course.thumbnail_url ? (
+        {hasPreview ? (
+          <CoursePreviewPlayer
+            src={course.preview_playback_url!}
+            poster={course.thumbnail_url}
+            title={course.title}
+          />
+        ) : course.thumbnail_url ? (
           <img
             src={course.thumbnail_url}
             alt={course.title}

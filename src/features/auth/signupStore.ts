@@ -1,11 +1,10 @@
 /**
  * Sign-up wizard state.
  *
- * Step 1 (SignUpStartPage) collects an email and forwards to /sign-up/details.
- * Step 2 (CompleteDataPage) collects name + phone + password, then calls
- * POST /auth/register. The phone number is held in component state until
- * after login + email verification, at which point it is replayed via
- * /auth/phone (FRONTEND.md §2 — phone is set post-login, not at register).
+ * Step 1 (SignUpStartPage) collects an email and forwards to
+ * /sign-up/details. Step 2 (CompleteDataPage) collects name + password
+ * and calls POST /auth/register. Phone is NOT collected here — it's set
+ * later via the Telegram bot OTP flow on /auth/verify-phone.
  *
  * Held in sessionStorage so a refresh between steps doesn't lose the email.
  */
@@ -13,7 +12,6 @@ const KEY = 'edure.signup_draft';
 
 export interface SignupDraft {
   email: string;
-  pendingPhone?: string;
 }
 
 export const signupStore = {

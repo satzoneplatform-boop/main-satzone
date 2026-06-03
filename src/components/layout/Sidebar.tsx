@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { Logo, LogoMark } from '@/components/brand/Logo';
 import {
   BookIcon,
+  FlagIcon,
   GridIcon,
   HomeIcon,
   PanelLeftIcon,
@@ -41,12 +42,14 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
     { to: '/dashboard', label: t('nav.dashboard'), icon: HomeIcon },
     { to: '/explore', label: t('nav.explore'), icon: GridIcon, badge: 2 },
     { to: '/learning-path', label: t('nav.myLearnings'), icon: BookIcon },
+    { to: '/quizzes', label: t('nav.quizzes'), icon: FlagIcon },
   ];
 
   return (
     <aside
       className={cn(
-        'flex h-full shrink-0 flex-col bg-ink-900 py-4 text-ink-300 transition-[width] duration-200',
+        // Hidden on mobile — BottomNav takes over below the lg breakpoint.
+        'hidden lg:flex h-full shrink-0 flex-col bg-ink-900 py-4 text-ink-300 transition-[width] duration-200',
         collapsed ? 'w-[72px] px-2' : 'w-[260px] px-3',
       )}
     >

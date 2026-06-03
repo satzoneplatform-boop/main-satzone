@@ -1,6 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { authApi } from '@/api/auth';
-import { telegramApi } from '@/api/telegram';
 import { ApiError } from '@/api/errors';
 import { env } from '@/lib/env';
 
@@ -22,12 +21,12 @@ export function authErrorMessage(err: unknown, fallback = 'Something went wrong.
       return 'Too many attempts. Please wait a minute and try again.';
     case 'invalid_phone_code':
       return 'Wrong or expired code. Please try again.';
+    case 'phone_code_expired':
+      return 'That code expired. Open the bot again to get a fresh one.';
     case 'phone_code_attempts_exceeded':
       return 'Too many wrong codes. Request a new one.';
     case 'phone_taken':
       return 'This phone number is already in use.';
-    case 'phone_not_submitted':
-      return 'Please submit your phone number first.';
     case 'invalid_refresh_token':
     case 'refresh_expired':
     case 'token_reuse':
@@ -62,52 +61,15 @@ export function useVerifyEmail() {
   return useMutation({ mutationFn: (token: string) => authApi.verifyEmail(token) });
 }
 
-export function useSubmitPhone() {
-  return useMutation({ mutationFn: (phone: string) => authApi.submitPhone(phone) });
-}
-
+/**
+ * Submit the 6-to-8 digit OTP the Telegram bot DM'd the user.
+ * POST /auth/verify-phone { otp }.
+ */
 export function useVerifyPhone() {
-  return useMutation({ mutationFn: (code: string) => authApi.verifyPhone(code) });
-}
-
-export function useResendPhoneCode() {
-  return useMutation({ mutationFn: () => authApi.resendPhoneCode() });
+  return useMutation({ mutationFn: (otp: string) => authApi.verifyPhone(otp) });
 }
 
 /** Top-level navigation to the backend's Google OAuth start endpoint. */
 export function googleSignInUrl(): string {
-  // Strip the trailing /api/v1 if env.apiBaseUrl already points at it.
   return `${env.apiBaseUrl}/auth/google/login`;
-}
-
-/**
- * Mint a Telegram-bot verification link. Call once when the verify page
- * mounts; the resulting `state` feeds the polling hook below.
- */
-export function useInitTelegram() {
-  return useMutation({ mutationFn: () => telegramApi.init() });
-}
-
-/**
- * Poll `/auth/telegram/status` every 2 s while `state` is set. Stops
- * polling automatically once the response says `verified` or `expired`.
- * Returns the typed status object so the page can react to verified ↔
- * expired transitions.
- */
-export function useTelegramStatus(state: string | null) {
-  return useQuery({
-    queryKey: ['telegram', 'status', state],
-    queryFn: () => telegramApi.status(state!),
-    enabled: Boolean(state),
-    refetchInterval: (q) => {
-      const d = q.state.data;
-      if (!d) return 2000;
-      if (d.verified || d.expired) return false;
-      return 2000;
-    },
-    // Token may be redeemed on a different device; keep polling reliably.
-    refetchIntervalInBackground: true,
-    staleTime: 0,
-    retry: false,
-  });
 }

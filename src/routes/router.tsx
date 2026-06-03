@@ -22,7 +22,12 @@ import { VerifyPhonePage } from '@/pages/auth/VerifyPhonePage';
 import { AccountPage } from '@/pages/account/AccountPage';
 import { ContactsPage } from '@/pages/contacts/ContactsPage';
 import { AssessmentsAdminPage } from '@/pages/instructor/AssessmentsAdminPage';
+import { QuizzesPage } from '@/pages/quizzes/QuizzesPage';
+import { QuizCoursePage } from '@/pages/quizzes/QuizCoursePage';
+import { QuizSetupPage } from '@/pages/quizzes/QuizSetupPage';
+import { QuizPlayPage } from '@/pages/quizzes/QuizPlayPage';
 import { GoogleCallbackPage } from '@/pages/auth/GoogleCallbackPage';
+import { VerifyEmailPage } from '@/pages/auth/VerifyEmailPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { Spinner } from '@/components/ui/Spinner';
 import { RedirectIfAuthed, RequireAuth } from './guards';
@@ -72,6 +77,7 @@ export const router = createBrowserRouter([
   // OAuth handoff — must be always-public because the user arrives
   // unauthenticated and this page is the one that completes sign-in.
   { path: '/auth/google/callback', element: <GoogleCallbackPage /> },
+  { path: '/auth/verify-email', element: <VerifyEmailPage /> },
 
   // Full-screen authed pages (no dashboard shell).
   // /verify-phone must live here — RequireAuth lets it through specifically
@@ -104,6 +110,10 @@ export const router = createBrowserRouter([
           { path: '/learning-path', element: <MyLearningsPage /> },
           { path: '/account', element: <AccountPage /> },
           { path: '/contacts', element: <ContactsPage /> },
+          { path: '/quizzes', element: <QuizzesPage /> },
+          { path: '/quizzes/:slug', element: <QuizCoursePage /> },
+          { path: '/quizzes/:slug/sets/:setId', element: <QuizSetupPage /> },
+          { path: '/quizzes/:slug/sets/:setId/play', element: <QuizPlayPage /> },
           // Sidebar nav stubs — replace as those pages are designed.
           { path: '/courses', element: <ComingSoon title="Courses" /> },
           { path: '/notifications', element: <ComingSoon title="Notifications" /> },

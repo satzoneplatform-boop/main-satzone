@@ -9,43 +9,8 @@ import {
 import Hls from 'hls.js';
 import { ApiError } from '@/api/errors';
 import { Spinner } from '@/components/ui/Spinner';
-import { env } from '@/lib/env';
+import { rewriteHlsUrl } from '@/lib/hls';
 import { LessonVideoPlayer } from './LessonVideoPlayer';
-
-/**
- * Rewrite an absolute HLS URL onto the same origin our API client uses.
- *
- * The playback token in `?t=` is IP-bound. Our `/lessons/{id}/playback`
- * call goes through the API base (dev proxy with `xfwd: true`, or a prod
- * reverse proxy), so the backend binds the token to whatever IP it sees
- * via `X-Forwarded-For`. If hls.js then fetches an absolute backend URL
- * directly, the manifest request goes cross-origin — the backend sees
- * the raw TCP source IP (no XFF), it doesn't match, and you get
- * `401 playback_ip_mismatch`.
- *
- * Fix: when the API base is same-origin (starts with `/`), collapse the
- * absolute URL to a same-origin path. When the API base is absolute
- * (prod), swap the host/port to that origin so the fetch still routes
- * through the same proxy the rest of the app talks to.
- */
-function rewriteHlsUrl(url: string): string {
-  if (!url) return url;
-  try {
-    const u = new URL(url, window.location.origin);
-    const base = env.apiBaseUrl;
-    const apiV1 = u.pathname.indexOf('/api/v1');
-    const tail = apiV1 >= 0 ? u.pathname.slice(apiV1) : u.pathname;
-    if (base.startsWith('/')) {
-      // Dev proxy / same-origin reverse proxy mode.
-      return `${tail}${u.search}`;
-    }
-    // Absolute API base in prod: rewrite host but preserve the /api/v1+ tail.
-    const baseUrl = new URL(base, window.location.origin);
-    return `${baseUrl.origin}${tail}${u.search}`;
-  } catch {
-    return url;
-  }
-}
 
 /**
  * hls.js custom loader that rewrites every fetched URL through the API

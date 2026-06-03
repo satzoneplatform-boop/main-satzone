@@ -15,7 +15,7 @@ interface AuthCenteredLayoutProps {
  *  - Reset password form
  *  - Reset success card
  *
- * Header has the IdrokHub wordmark + locale switcher (slot).
+ * Header has the SATZone wordmark + locale switcher (slot).
  * Footer has © + legal links.
  */
 export function AuthCenteredLayout({
@@ -39,7 +39,7 @@ export function AuthCenteredLayout({
 
       {showFooter && (
         <footer className="flex items-center justify-between border-t border-transparent px-8 py-5 text-sm text-ink-500">
-          <span>@2025 edura</span>
+          <span>© 2026 SATZone</span>
           <div className="flex items-center gap-6">
             <a href="#" className="underline-offset-2 hover:underline">Privacy Policy</a>
             <a href="#" className="underline-offset-2 hover:underline">Terms of Services</a>

@@ -390,3 +390,53 @@ export interface AssessmentUpdatePayload {
   is_section_quiz?: boolean;
   status?: AssessmentStatus;
 }
+
+// ===== Quiz games (Duolingo-style vocabulary practice) =====
+// Backend spec: BACKEND-QUIZGAMES.md at repo root.
+
+export type QuizMode = 'mcq' | 'matching';
+
+export interface QuizItemRead {
+  id: string;
+  front_text: string;
+  back_text: string;
+  pronunciation: string | null;
+  front_image_url: string | null;
+  back_image_url: string | null;
+  hint: string | null;
+  order: number;
+}
+
+export interface QuizSetSummary {
+  id: string;
+  course_id: string;
+  section_id: string | null;
+  title: string;
+  description: string | null;
+  items_count: number;
+  status: AssessmentStatus;
+  order: number;
+}
+
+export interface QuizSetRead extends QuizSetSummary {
+  items: QuizItemRead[];
+}
+
+export interface QuizAttemptCreatePayload {
+  mode: QuizMode;
+  total_items: number;
+  correct_items: number;
+  duration_seconds?: number;
+}
+
+export interface QuizAttemptRead {
+  id: string;
+  set_id: string;
+  mode: QuizMode;
+  total_items: number;
+  correct_items: number;
+  score_percent: number;
+  duration_seconds: number | null;
+  started_at: string;
+  finished_at: string | null;
+}

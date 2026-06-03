@@ -38,7 +38,7 @@ export function PopularCourseCard({ course }: PopularCourseCardProps) {
               size={24}
             />
             <span className="truncate text-xs text-ink-600">
-              {course.instructor?.full_name ?? 'Edura instructor'}
+              {course.instructor?.full_name ?? 'SATZone instructor'}
             </span>
           </div>
           <span className="text-xs text-ink-500">

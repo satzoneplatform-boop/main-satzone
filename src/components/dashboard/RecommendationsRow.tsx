@@ -79,7 +79,7 @@ function CourseTile({ course }: { course: CourseSummary }) {
       <div className="flex flex-1 flex-col gap-2 p-4">
         <h3 className="line-clamp-2 text-sm font-semibold text-ink-900">{course.title}</h3>
         <p className="text-xs text-ink-500 truncate">
-          {course.instructor?.full_name ?? 'Edura instructor'}
+          {course.instructor?.full_name ?? 'SATZone instructor'}
         </p>
         <div className="mt-auto flex items-center justify-between text-xs">
           <span className="flex items-center gap-1 text-ink-700">

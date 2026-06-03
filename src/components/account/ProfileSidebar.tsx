@@ -39,7 +39,7 @@ export function ProfileSidebar({
       <div className="flex flex-col items-center text-center">
         <AvatarUploader user={user} />
         <p className="mt-3 text-base font-semibold text-ink-900">
-          {user.full_name || 'Idrokhub learner'}
+          {user.full_name || 'SATZone learner'}
         </p>
         <p className="text-xs text-ink-500">{user.email}</p>
         {user.phone_number && (

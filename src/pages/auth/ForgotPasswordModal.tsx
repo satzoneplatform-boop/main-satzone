@@ -45,7 +45,7 @@ export function ForgotPasswordModal({
         <div>
           <h2 className="text-xl font-semibold text-ink-900">Forgot password?</h2>
           <p className="mt-1 text-sm text-ink-500">
-            Enter the email address you use on Edura.
+            Enter the email address you use on SATZone.
             <br />
             We’ll send you a link to reset your password.
           </p>

@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
 import {
   ArrowRightIcon,
   BookIcon,
@@ -16,32 +17,37 @@ import { useT } from '@/i18n/I18nProvider';
 /**
  * Public marketing landing page shown at `/`.
  *
- *  - Hero with two primary CTAs (Sign up / Sign in, or Go to dashboard
- *    when the visitor is already authed)
- *  - "Why Idrokhub" feature grid
- *  - How-it-works 3-step section
- *  - Testimonial row (static copy — backend has no review feed yet)
- *  - Bottom CTA banner
- *  - Footer with contact links
- *
- * Inspired by the scoreup.uz layout the user shared. Lives outside the
- * dashboard shell so unauthed visitors can browse without a guard.
+ * Authed users are auto-redirected to `/dashboard` — the AuthProvider
+ * persists the refresh token in localStorage and re-hydrates the session
+ * on page load, so a returning visitor never sees the marketing page.
  */
 export function LandingPage() {
   const t = useT();
-  const { user } = useAuth();
-  const isAuthed = !!user;
+  const { user, status } = useAuth();
+
+  // Don't render anything until we know if the user is authed —
+  // otherwise we'd flash the landing page for a returning visitor.
+  if (status === 'loading') {
+    return (
+      <div className="grid min-h-screen place-items-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <PublicTopBar isAuthed={isAuthed} />
+      <PublicTopBar isAuthed={false} />
 
       <main className="flex-1">
-        <HeroSection isAuthed={isAuthed} />
+        <HeroSection isAuthed={false} />
         <FeaturesSection t={t} />
         <HowItWorksSection t={t} />
         <TestimonialsSection t={t} />
-        <FinalCtaSection isAuthed={isAuthed} t={t} />
+        <FinalCtaSection isAuthed={false} t={t} />
       </main>
 
       <PublicFooter t={t} />
@@ -54,7 +60,7 @@ function PublicTopBar({ isAuthed }: { isAuthed: boolean }) {
   return (
     <header className="sticky top-0 z-30 border-b border-ink-100 bg-white/85 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4 sm:px-6">
-        <Link to="/" aria-label="Idrokhub home" className="shrink-0">
+        <Link to="/" aria-label="SATZone home" className="shrink-0">
           <Logo withWordmark size={26} />
         </Link>
 

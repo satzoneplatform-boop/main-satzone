@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { BottomNav } from './BottomNav';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { SignOutModal } from '@/pages/dashboard/SignOutModal';
@@ -23,6 +24,7 @@ const TITLE_BY_PATH: Array<{ match: RegExp; titleKey: TranslationKey }> = [
   { match: /^\/help/, titleKey: 'page.help' },
   { match: /^\/account/, titleKey: 'page.account' },
   { match: /^\/contacts/, titleKey: 'page.contacts' },
+  { match: /^\/quizzes/, titleKey: 'page.quizzes' },
 ];
 
 export function DashboardShell() {
@@ -43,10 +45,12 @@ export function DashboardShell() {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar title={title} onSignOut={() => setSignOutOpen(true)} />
-        <main className="flex-1 overflow-auto px-8 py-6">
+        {/* pb-20 on mobile keeps content above the fixed BottomNav. */}
+        <main className="flex-1 overflow-auto px-4 py-6 pb-20 sm:px-8 lg:pb-6">
           <Outlet />
         </main>
       </div>
+      <BottomNav />
       <SignOutModal open={signOutOpen} onClose={() => setSignOutOpen(false)} />
     </div>
   );
