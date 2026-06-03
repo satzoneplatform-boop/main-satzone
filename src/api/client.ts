@@ -137,7 +137,16 @@ async function request<T>(
     throw err;
   }
 
-  if (!res.ok) throw await parseError(res);
+  if (!res.ok) {
+    const err = await parseError(res);
+    // Backend hard-gates every authed endpoint behind phone verification
+    // (FRONTEND.md §2). Surface the screen even when the cached /auth/me
+    // says the user is verified — AuthProvider listens and refreshes.
+    if (res.status === 403 && err.code === 'phone_not_verified') {
+      dispatchEvent(new CustomEvent('auth:phone_required', { detail: err }));
+    }
+    throw err;
+  }
   if (res.status === 204) return undefined as T;
 
   // 200 with empty body (rare) — guard against JSON parse error

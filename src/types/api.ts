@@ -391,52 +391,118 @@ export interface AssessmentUpdatePayload {
   status?: AssessmentStatus;
 }
 
-// ===== Quiz games (Duolingo-style vocabulary practice) =====
-// Backend spec: BACKEND-QUIZGAMES.md at repo root.
+// ===== Practice quizzes (Duolingo-style drills) =====
+// Backend contract: FRONTEND.md §4.9 + live OpenAPI at /api/v1/openapi.json.
+//
+// One pack per course (auto-created on first instructor write). Each pack
+// holds many quizzes; each quiz holds up to 50 items. Items are either
+// `mcq` (one correct option) or `matching` (pair lefts ↔ rights).
+// The answer key is stripped server-side — `is_correct` is never sent to
+// the student; matching sides are shuffled. Grading is per-item all-or-
+// nothing, surfaced via `PracticeAttemptResult.results[]`.
 
-export type QuizMode = 'mcq' | 'matching';
+export type PracticeItemType = 'mcq' | 'matching';
 
-export interface QuizItemRead {
+export interface MCQOptionRead {
   id: string;
-  front_text: string;
-  back_text: string;
-  pronunciation: string | null;
-  front_image_url: string | null;
-  back_image_url: string | null;
-  hint: string | null;
-  order: number;
+  text: string;
+  image_url: string | null;
 }
 
-export interface QuizSetSummary {
+export interface MCQDataStudent {
+  type: 'mcq';
+  prompt: string;
+  image_url: string | null;
+  options: MCQOptionRead[];
+}
+
+export interface MatchingSideStudent {
   id: string;
-  course_id: string;
-  section_id: string | null;
+  text: string;
+}
+
+export interface MatchingDataStudent {
+  type: 'matching';
+  prompt: string;
+  /** Server shuffles before sending — render in the order received. */
+  lefts: MatchingSideStudent[];
+  rights: MatchingSideStudent[];
+}
+
+export interface PracticeItemStudentRead {
+  id: string;
+  type: PracticeItemType;
+  order: number;
+  points: number;
+  data: MCQDataStudent | MatchingDataStudent;
+}
+
+export interface PracticeQuizStudentProgress {
+  completed: boolean;
+  best_score_percent: number;
+  attempts_count: number;
+  last_attempted_at: string | null;
+}
+
+export interface PracticeQuizStudentSummary {
+  id: string;
   title: string;
   description: string | null;
-  items_count: number;
-  status: AssessmentStatus;
   order: number;
+  is_published: boolean;
+  item_count: number;
+  progress: PracticeQuizStudentProgress;
 }
 
-export interface QuizSetRead extends QuizSetSummary {
-  items: QuizItemRead[];
+export interface PracticeQuizStudentRead extends PracticeQuizStudentSummary {
+  items: PracticeItemStudentRead[];
 }
 
-export interface QuizAttemptCreatePayload {
-  mode: QuizMode;
-  total_items: number;
-  correct_items: number;
-  duration_seconds?: number;
-}
-
-export interface QuizAttemptRead {
+export interface PracticePackStudentRead {
   id: string;
-  set_id: string;
-  mode: QuizMode;
-  total_items: number;
-  correct_items: number;
+  course_id: string;
+  title: string | null;
+  description: string | null;
+  /** Published quizzes only, server-sorted by order. */
+  quizzes: PracticeQuizStudentSummary[];
+}
+
+// ----- Submission shapes -----
+
+export interface MatchingPairAnswer {
+  left_id: string;
+  right_id: string;
+}
+
+export interface MCQAnswer {
+  item_id: string;
+  option_id: string;
+}
+
+export interface MatchingAnswer {
+  item_id: string;
+  pairs: MatchingPairAnswer[];
+}
+
+export type PracticeAnswer = MCQAnswer | MatchingAnswer;
+
+export interface PracticeAttemptCreate {
+  started_at?: string | null;
+  answers: PracticeAnswer[];
+}
+
+export interface PracticeItemResult {
+  item_id: string;
+  is_correct: boolean;
+  awarded_points: number;
+}
+
+export interface PracticeAttemptResult {
+  id: string;
+  quiz_id: string;
   score_percent: number;
-  duration_seconds: number | null;
-  started_at: string;
-  finished_at: string | null;
+  correct_count: number;
+  total_count: number;
+  completed_at: string;
+  results: PracticeItemResult[];
 }

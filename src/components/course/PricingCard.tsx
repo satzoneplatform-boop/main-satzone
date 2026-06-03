@@ -38,16 +38,16 @@ export function PricingCard({
         ? t('course.pricing.enrollFree')
         : t('course.pricing.enrollNow'));
 
-  // Preview-media preference: HLS video first, then thumbnail, then emoji.
-  const hasPreview =
-    course.has_preview_video && Boolean(course.preview_playback_url);
+  // Preview-media preference: direct MP4 preview when one is available
+  // (signed URL is minted on click), else thumbnail image, else emoji.
+  const hasPreview = course.has_preview_video;
 
   return (
     <aside className="overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
       <div className="aspect-[16/9] overflow-hidden bg-ink-100">
         {hasPreview ? (
           <CoursePreviewPlayer
-            src={course.preview_playback_url!}
+            slug={course.slug}
             poster={course.thumbnail_url}
             title={course.title}
           />

@@ -4,28 +4,27 @@ import { CheckIcon, FlagIcon, LockIcon, StarIcon } from '@/components/icons';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Spinner } from '@/components/ui/Spinner';
 import { useCourseDetail } from '@/features/course/hooks';
-import { useCourseQuizSets } from '@/features/quizzes/hooks';
+import { useCoursePracticePack } from '@/features/quizzes/hooks';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
-import type { QuizSetSummary } from '@/types/api';
+import type { PracticeQuizStudentSummary } from '@/types/api';
 
 /**
- * Duolingo-style quiz path. Renders the sets as a staggered vertical
- * lane of round nodes — the same visual language as the screenshot the
- * user shared. Locked nodes show a lock icon; completed ones show a
- * check; the next one to play is highlighted.
+ * Duolingo-style quiz path. The pack is keyed by course UUID, so we
+ * resolve the slug → course detail → course id before fetching.
  *
- * For now lock state is purely sequential (one before next). Once the
- * backend exposes `best_score_percent` per set we can flip nodes to
- * "completed" based on that.
+ * Lock state is sequential and progress-driven: a quiz unlocks once
+ * the previous one has been attempted at least once. The
+ * `best_score_percent` badge is the mastery signal (FRONTEND.md
+ * gotcha — completion ≠ mastery).
  */
 export function QuizCoursePage() {
   const { slug } = useParams<{ slug: string }>();
   const t = useT();
   const course = useCourseDetail(slug);
-  const sets = useCourseQuizSets(course.data?.id);
+  const pack = useCoursePracticePack(course.data?.id);
 
-  if (course.isLoading || sets.isLoading) {
+  if (course.isLoading || pack.isLoading) {
     return (
       <div className="grid place-items-center py-24">
         <Spinner size="lg" />
@@ -33,12 +32,13 @@ export function QuizCoursePage() {
     );
   }
 
-  // The most likely error is the backend's `/courses/{id}/quiz-sets`
-  // endpoint not being deployed yet — surface a friendly empty state.
-  const apiNotReady =
-    sets.error instanceof ApiError && sets.error.status === 404;
+  // 403 not_enrolled is the friendly enroll-prompt; other errors → empty.
+  const notEnrolled =
+    pack.error instanceof ApiError && pack.error.code === 'not_enrolled';
+  const otherError =
+    pack.error instanceof ApiError && pack.error.code !== 'not_enrolled';
 
-  const items = sets.data ?? [];
+  const quizzes = pack.data?.quizzes ?? [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -54,44 +54,46 @@ export function QuizCoursePage() {
           {t('quizzes.path')}
         </p>
         <h1 className="mt-1 text-2xl font-semibold sm:text-3xl">
-          {course.data?.title ?? 'SAT Zone'}
+          {pack.data?.title ?? course.data?.title ?? 'SAT Zone'}
         </h1>
         <p className="mt-2 max-w-xl text-sm text-white/85">
-          {t('quizzes.coursePathSubtitle')}
+          {pack.data?.description ?? t('quizzes.coursePathSubtitle')}
         </p>
       </header>
 
-      {apiNotReady ? (
+      {notEnrolled ? (
+        <EmptyState
+          title={t('quizzes.notEnrolledTitle')}
+          body={t('quizzes.notEnrolledBody')}
+        />
+      ) : otherError || !pack.data ? (
         <EmptyState
           title={t('quizzes.notReadyTitle')}
           body={t('quizzes.notReadyBody')}
         />
-      ) : items.length === 0 ? (
+      ) : quizzes.length === 0 ? (
         <EmptyState
           title={t('quizzes.emptyTitle')}
           body={t('quizzes.emptyBody')}
         />
       ) : (
-        <PathLane slug={slug!} sets={items} />
+        <PathLane slug={slug!} quizzes={quizzes} />
       )}
     </div>
   );
 }
 
-function PathLane({ slug, sets }: { slug: string; sets: QuizSetSummary[] }) {
-  // Sort by `order` so the path follows the instructor's intended sequence.
-  const ordered = [...sets].sort((a, b) => a.order - b.order);
-
-  // Sequential gate: until we have per-set completion data from the backend,
-  // unlock only the first node. Wire to real progress once the attempts
-  // endpoint is in.
-  const firstLockedIdx = 1;
-
+function PathLane({
+  slug,
+  quizzes,
+}: {
+  slug: string;
+  quizzes: PracticeQuizStudentSummary[];
+}) {
+  const ordered = [...quizzes].sort((a, b) => a.order - b.order);
   return (
     <ol className="relative mx-auto max-w-md py-4">
-      {ordered.map((s, i) => {
-        // Stagger the nodes left / center / right to give the path its
-        // signature zigzag without an SVG.
+      {ordered.map((q, i) => {
         const offset = i % 4;
         const align =
           offset === 0
@@ -101,13 +103,14 @@ function PathLane({ slug, sets }: { slug: string; sets: QuizSetSummary[] }) {
               : offset === 2
                 ? 'self-center'
                 : 'self-end mr-6';
-        const completed = false; // wire to attempts data when available
-        const locked = i > firstLockedIdx;
+        const prev = ordered[i - 1];
+        const locked = i > 0 && !prev?.progress.completed;
+        const completed = q.progress.completed;
         return (
-          <li key={s.id} className={cn('flex', align)}>
+          <li key={q.id} className={cn('flex', align)}>
             <PathNode
               slug={slug}
-              set={s}
+              quiz={q}
               index={i}
               completed={completed}
               locked={locked}
@@ -121,13 +124,13 @@ function PathLane({ slug, sets }: { slug: string; sets: QuizSetSummary[] }) {
 
 function PathNode({
   slug,
-  set,
+  quiz,
   index,
   completed,
   locked,
 }: {
   slug: string;
-  set: QuizSetSummary;
+  quiz: PracticeQuizStudentSummary;
   index: number;
   completed: boolean;
   locked: boolean;
@@ -168,11 +171,16 @@ function PathNode({
           locked ? 'text-ink-400' : 'text-ink-900',
         )}
       >
-        {set.title}
+        {quiz.title}
       </span>
       <span className="text-xs text-ink-500">
-        {t('quizzes.items', { n: set.items_count })}
+        {t('quizzes.items', { n: quiz.item_count })}
       </span>
+      {completed && quiz.progress.best_score_percent > 0 && (
+        <span className="text-[11px] font-semibold text-success-600">
+          {t('quizzes.best', { pct: quiz.progress.best_score_percent })}
+        </span>
+      )}
     </div>
   );
 
@@ -190,7 +198,7 @@ function PathNode({
 
   return (
     <Link
-      to={`/quizzes/${slug}/sets/${set.id}`}
+      to={`/quizzes/${slug}/q/${quiz.id}`}
       className="transition-transform hover:-translate-y-0.5"
     >
       {node}

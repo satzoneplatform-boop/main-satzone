@@ -65,6 +65,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener('auth:logout', handler);
   }, [queryClient]);
 
+  // Listen for the global phone-verify gate from the API client. When the
+  // backend returns 403 phone_not_verified we re-read /auth/me — that
+  // refresh flips `is_phone_verified` to false, RequireAuth notices on
+  // the next render and routes the user to /verify-phone.
+  useEffect(() => {
+    const handler = () => {
+      void refresh();
+    };
+    window.addEventListener('auth:phone_required', handler);
+    return () => window.removeEventListener('auth:phone_required', handler);
+  }, [refresh]);
+
   const login = useCallback<AuthContextValue['login']>(
     async (payload) => {
       if (isPhoneLogin(payload)) {

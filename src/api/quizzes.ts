@@ -1,38 +1,41 @@
 import { api } from './client';
 import type {
-  QuizAttemptCreatePayload,
-  QuizAttemptRead,
-  QuizSetRead,
-  QuizSetSummary,
+  PracticeAttemptCreate,
+  PracticeAttemptResult,
+  PracticePackStudentRead,
+  PracticeQuizStudentRead,
 } from '@/types/api';
 
 /**
- * Quiz-games endpoints (Duolingo-style vocabulary practice).
+ * Practice-quizzes API (FRONTEND.md §4.9). Endpoints live on the
+ * deployed backend at:
+ *   GET  /courses/{course_id}/practice              -> PracticePackStudentRead | null
+ *   GET  /practice/quizzes/{quiz_id}                -> PracticeQuizStudentRead
+ *   POST /practice/quizzes/{quiz_id}/attempts       -> PracticeAttemptResult
  *
- * Backend contract lives in BACKEND-QUIZGAMES.md at repo root. These calls
- * will 404 until the satzone backend ships the `/quiz-sets/*` router; the
- * frontend handles empty / error states gracefully.
+ * Enrollment-gated end-to-end — 403 not_enrolled if the student hasn't
+ * bought the parent course. The pack endpoint returns `null` (200) when
+ * the instructor hasn't created any quizzes yet; callers must handle
+ * that as an empty state.
  */
 export const quizzesApi = {
-  /** List published sets in a course (Duolingo path entries). */
-  listForCourse(courseId: string) {
-    return api.get<QuizSetSummary[]>(`/courses/${courseId}/quiz-sets`);
+  /** Pack lives on the course. `null` is a valid 200 response. */
+  pack(courseId: string) {
+    return api.get<PracticePackStudentRead | null>(
+      `/courses/${courseId}/practice`,
+    );
   },
 
-  /** Get a single set with all its items — payload for the game runner. */
-  detail(setId: string) {
-    return api.get<QuizSetRead>(`/quiz-sets/${setId}`);
+  /** Full quiz with items (server strips `is_correct` and shuffles matching sides). */
+  quiz(quizId: string) {
+    return api.get<PracticeQuizStudentRead>(`/practice/quizzes/${quizId}`);
   },
 
-  /** Persist a finished game session. */
-  recordAttempt(setId: string, payload: QuizAttemptCreatePayload) {
-    return api.post<QuizAttemptRead>(`/quiz-sets/${setId}/attempts`, {
-      json: payload,
-    });
-  },
-
-  /** History of my plays of this set (best score, last attempt, etc.). */
-  myAttempts(setId: string) {
-    return api.get<QuizAttemptRead[]>(`/quiz-sets/${setId}/attempts/me`);
+  /** Submit a full play-through. Unlimited replays. */
+  submitAttempt(quizId: string, body: PracticeAttemptCreate) {
+    return api.post<PracticeAttemptResult>(
+      `/practice/quizzes/${quizId}/attempts`,
+      { json: body },
+    );
   },
 };

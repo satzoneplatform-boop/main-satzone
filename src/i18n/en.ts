@@ -678,6 +678,22 @@ export const en = {
   'quizzes.result.tryAgain': 'Try again 📚',
   'quizzes.result.again': 'Play again',
   'quizzes.result.home': 'Back',
+  'quizzes.result.breakdown': 'Per-question breakdown',
+  'quizzes.attempts': '{n} attempts',
+  'quizzes.best': 'Best {pct}%',
+  'quizzes.best.label': 'Best score',
+  'quizzes.dir.mcq': 'Multiple choice',
+  'quizzes.dir.matching': 'Match the pairs',
+  'quizzes.feedback.correctShort': '✓ Correct',
+  'quizzes.feedback.wrongShort': '✗ Wrong',
+  'quizzes.howItWorks.title': 'How it works',
+  'quizzes.howItWorks.mix': 'Mix of multiple-choice and matching questions.',
+  'quizzes.howItWorks.allOrNothing':
+    'Each item is graded all-or-nothing — one wrong pair on a matching question = 0 points for that item.',
+  'quizzes.howItWorks.replay': 'Replay as many times as you like. Your best score is kept.',
+  'quizzes.matching.undo': 'Undo last pair',
+  'quizzes.notEnrolledTitle': 'Enrollment required',
+  'quizzes.notEnrolledBody': 'Enroll in this course to access its practice quizzes.',
 
   // Email verification landing page
   'verifyEmail.checking': 'Verifying your email…',

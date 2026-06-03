@@ -112,8 +112,8 @@ export const router = createBrowserRouter([
           { path: '/contacts', element: <ContactsPage /> },
           { path: '/quizzes', element: <QuizzesPage /> },
           { path: '/quizzes/:slug', element: <QuizCoursePage /> },
-          { path: '/quizzes/:slug/sets/:setId', element: <QuizSetupPage /> },
-          { path: '/quizzes/:slug/sets/:setId/play', element: <QuizPlayPage /> },
+          { path: '/quizzes/:slug/q/:quizId', element: <QuizSetupPage /> },
+          { path: '/quizzes/:slug/q/:quizId/play', element: <QuizPlayPage /> },
           // Sidebar nav stubs — replace as those pages are designed.
           { path: '/courses', element: <ComingSoon title="Courses" /> },
           { path: '/notifications', element: <ComingSoon title="Notifications" /> },
