@@ -328,6 +328,18 @@ export function PaypalIcon(props: IconProps) {
   );
 }
 
+export function PaymeIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <rect x="2" y="4" width="16" height="12" rx="2.5" fill="#33AAFF" />
+      <path
+        d="M6.4 7.2h3.1c1.5 0 2.4.9 2.4 2.2 0 1.4-.9 2.3-2.4 2.3H7.9v1.6H6.4V7.2Zm1.5 3.3h1.4c.6 0 1-.4 1-1s-.4-1-1-1H7.9v2Z"
+        fill="#fff"
+      />
+    </svg>
+  );
+}
+
 export function InfoIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
@@ -385,6 +397,45 @@ export function StarIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 20 20" fill="currentColor" width={20} height={20} aria-hidden {...props}>
       <path d="m10 2.5 2.4 4.86 5.36.78-3.88 3.78.92 5.34L10 14.74l-4.8 2.52.92-5.34L2.24 8.14l5.36-.78L10 2.5Z" />
+    </svg>
+  );
+}
+
+export function ChartIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <path d="M3 3v13a1 1 0 0 0 1 1h13" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <rect x="6" y="9" width="2.5" height="5" rx="0.6" fill="currentColor" />
+      <rect x="10.75" y="6" width="2.5" height="8" rx="0.6" fill="currentColor" />
+      <rect x="15.5" y="11" width="2.5" height="3" rx="0.6" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function TrendingUpIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <path d="M3 13l4-4 3 3 7-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13 5h4v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function TargetIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="10" cy="10" r="3.5" stroke="currentColor" strokeWidth="1.6" />
+      <circle cx="10" cy="10" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 6v4l2.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

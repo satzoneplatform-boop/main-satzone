@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import { CoursePreviewPlayer } from './CoursePreviewPlayer';
 import type { CourseDetail } from '@/types/api';
+import { formatPrice } from '@/lib/format';
 import { useT } from '@/i18n/I18nProvider';
 
 interface PricingCardProps {
@@ -22,9 +23,18 @@ export function PricingCard({
   ctaLabel,
 }: PricingCardProps) {
   const t = useT();
+  // Server-provided prices only: the course's own discounted price, if any.
+  const hasDiscount =
+    course.discount_price_cents != null &&
+    course.discount_price_cents < course.price_cents &&
+    !course.is_free;
   const priceLabel = course.is_free
     ? t('course.pricing.free')
-    : `${course.currency} ${(course.price_cents / 100).toFixed(2)}`;
+    : formatPrice(
+        hasDiscount ? course.discount_price_cents! : course.price_cents,
+        course.currency,
+        false,
+      );
 
   // CTA copy:
   //  - already enrolled            → "Continue learning"
@@ -64,7 +74,19 @@ export function PricingCard({
 
       <div className="space-y-4 p-5">
         <div>
-          <p className="text-2xl font-semibold text-ink-900">{priceLabel}</p>
+          <p className="flex items-baseline gap-2">
+            <span className="text-2xl font-semibold text-ink-900">{priceLabel}</span>
+            {hasDiscount && (
+              <span
+                className="text-sm text-ink-400 line-through"
+                aria-label={t('course.pricing.originalPrice', {
+                  price: formatPrice(course.price_cents, course.currency, false),
+                })}
+              >
+                {formatPrice(course.price_cents, course.currency, false)}
+              </span>
+            )}
+          </p>
           <p className="text-xs text-ink-500">
             {isEnrolled
               ? t('course.pricing.enrolledHint')

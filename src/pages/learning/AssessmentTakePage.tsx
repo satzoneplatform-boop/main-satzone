@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { LogoMark } from '@/components/brand/Logo';
@@ -7,6 +8,18 @@ import {
   QuestionCard,
   type QuestionAnswer,
 } from '@/components/learning/QuestionCard';
+import {
+  QuestionGrid,
+  QuestionLegend,
+  QuestionNavigatorSheet,
+} from '@/components/learning/QuestionNavigatorSheet';
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  FlagIcon,
+  GridIcon,
+} from '@/components/icons';
 import { ApiError } from '@/api/errors';
 import {
   useAssessment,
@@ -32,11 +45,13 @@ export function AssessmentTakePage() {
   const navigate = useNavigate();
   const assessment = useAssessment(assessmentId);
   const submit = useSubmitAssessment(assessmentId);
+  const reduce = useReducedMotion();
 
   const [answers, setAnswers] = useState<Record<string, QuestionAnswer>>({});
   const [flagged, setFlagged] = useState<Set<string>>(new Set());
   const [activeIdx, setActiveIdx] = useState(0);
   const [honorOpen, setHonorOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
 
@@ -45,15 +60,15 @@ export function AssessmentTakePage() {
     [assessment.data],
   );
 
-  // Initialize the countdown once the assessment loads (only when there's a limit).
-  const startedRef = useRef(false);
-  useEffect(() => {
-    if (startedRef.current) return;
-    const minutes = assessment.data?.time_limit_minutes;
-    if (!minutes) return;
-    startedRef.current = true;
-    setSecondsLeft(minutes * 60);
-  }, [assessment.data?.time_limit_minutes]);
+  // Initialize the countdown once the assessment loads (only when there's a
+  // limit) — adjust-during-render so the seed happens before paint and no
+  // setState runs inside an effect body.
+  const [timerSeeded, setTimerSeeded] = useState(false);
+  const limitMinutes = assessment.data?.time_limit_minutes;
+  if (!timerSeeded && limitMinutes) {
+    setTimerSeeded(true);
+    setSecondsLeft(limitMinutes * 60);
+  }
 
   // Tick the timer every second.
   useEffect(() => {
@@ -102,10 +117,20 @@ export function AssessmentTakePage() {
   const answeredCount = ordered.filter((q) => isAnswered(q.id)).length;
   const allAnswered = answeredCount === total;
 
+  const navItems = ordered.map((q) => ({
+    id: q.id,
+    answered: isAnswered(q.id),
+    flagged: flagged.has(q.id),
+  }));
+
   function toggleFlag(qId: string) {
     setFlagged((prev) => {
       const next = new Set(prev);
-      next.has(qId) ? next.delete(qId) : next.add(qId);
+      if (next.has(qId)) {
+        next.delete(qId);
+      } else {
+        next.add(qId);
+      }
       return next;
     });
   }
@@ -133,32 +158,48 @@ export function AssessmentTakePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-ink-50">
-      <header className="flex items-center justify-between border-b border-ink-200 bg-white px-6 py-3">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between gap-3 border-b border-ink-200 bg-white px-4 py-3 sm:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           <LogoMark size={28} />
-          <div>
+          <div className="min-w-0">
             <p className="text-xs uppercase tracking-wider text-ink-500">
               {a.is_section_quiz ? t('assessment.take.sectionQuiz') : t('assessment.take.assessment')}
             </p>
-            <p className="text-sm font-semibold text-ink-900">{a.title}</p>
+            <p className="truncate text-sm font-semibold text-ink-900">{a.title}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <p className="text-xs text-ink-500">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+          {/* Mobile question navigator trigger — the desktop palette is
+              hidden below lg, so this is the only way to jump/flag-scan. */}
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            className="flex min-h-11 items-center gap-1.5 rounded-md border border-ink-200 bg-white px-2.5 text-xs font-medium text-ink-700 hover:bg-ink-50 lg:hidden"
+            aria-label={t('assessment.take.openNavigator')}
+            aria-haspopup="dialog"
+          >
+            <GridIcon className="size-4" />
+            <span className="tabular-nums">
+              {answeredCount}/{total}
+            </span>
+          </button>
+          <p className="hidden text-xs text-ink-500 lg:block">
             {t('assessment.take.answeredCount', { answered: answeredCount, total })}
           </p>
           {secondsLeft != null && (
             <p
               className={cn(
-                'rounded-md border px-3 py-1 font-mono text-sm font-semibold tabular-nums',
+                'flex min-h-11 items-center gap-1.5 rounded-lg border px-3 font-mono text-sm font-semibold tabular-nums',
                 secondsLeft <= 60
                   ? 'border-danger-500/40 bg-danger-50 text-danger-600'
                   : 'border-ink-200 bg-white text-ink-900',
               )}
               aria-live="polite"
+              aria-label={t('assessment.take.timeLeft')}
             >
-              ⏱ {formatClock(secondsLeft)}
+              <ClockIcon className="size-4 shrink-0" aria-hidden />
+              {formatClock(secondsLeft)}
             </p>
           )}
         </div>
@@ -167,8 +208,8 @@ export function AssessmentTakePage() {
       <div className="flex flex-1">
         <main className="min-w-0 flex-1 overflow-auto px-4 py-6">
           <div className="mx-auto max-w-3xl space-y-4">
-            <div className="flex items-center justify-between text-sm">
-              <p className="text-ink-500">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <p className="min-w-0 text-ink-500">
                 {t('assessment.take.question')}{' '}
                 <span className="font-semibold text-ink-900">{activeIdx + 1}</span> {t('assessment.take.of')}{' '}
                 {total}
@@ -184,44 +225,58 @@ export function AssessmentTakePage() {
                 <button
                   type="button"
                   onClick={() => toggleFlag(current.id)}
+                  aria-pressed={flagged.has(current.id)}
                   className={cn(
-                    'rounded-md border px-2 py-1 text-xs font-medium',
+                    'flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors',
                     flagged.has(current.id)
-                      ? 'border-warn-500 bg-yellow-50 text-warn-500'
+                      ? 'border-warn-500 bg-warn-50 text-warn-600'
                       : 'border-ink-200 bg-white text-ink-600 hover:bg-ink-50',
                   )}
                 >
+                  <FlagIcon className="size-3.5 shrink-0" aria-hidden />
                   {flagged.has(current.id)
-                    ? `🚩 ${t('assessment.take.marked')}`
+                    ? t('assessment.take.marked')
                     : t('assessment.take.markForReview')}
                 </button>
               )}
             </div>
 
-            {current && (
-              <QuestionCard
-                index={activeIdx + 1}
-                question={current}
-                answer={answers[current.id] ?? { selectedOptionIds: [], text: '' }}
-                onChange={(next) =>
-                  setAnswers((prev) => ({ ...prev, [current.id]: next }))
-                }
-              />
-            )}
+            <AnimatePresence mode="wait">
+              {current && (
+                <motion.div
+                  key={current.id}
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, x: 16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={reduce ? { opacity: 0 } : { opacity: 0, x: -16 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <QuestionCard
+                    index={activeIdx + 1}
+                    question={current}
+                    answer={answers[current.id] ?? { selectedOptionIds: [], text: '' }}
+                    onChange={(next) =>
+                      setAnswers((prev) => ({ ...prev, [current.id]: next }))
+                    }
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between gap-3 pt-2">
               <Button
                 variant="outline"
                 disabled={activeIdx === 0}
+                leftIcon={<ChevronLeftIcon className="size-4" />}
                 onClick={() => setActiveIdx((i) => Math.max(0, i - 1))}
               >
-                ← {t('assessment.take.previous')}
+                {t('assessment.take.previous')}
               </Button>
               {activeIdx < total - 1 ? (
                 <Button
+                  rightIcon={<ChevronRightIcon className="size-4" />}
                   onClick={() => setActiveIdx((i) => Math.min(total - 1, i + 1))}
                 >
-                  {t('assessment.take.next')} →
+                  {t('assessment.take.next')}
                 </Button>
               ) : (
                 <Button
@@ -239,43 +294,12 @@ export function AssessmentTakePage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
             {t('assessment.take.navigator')}
           </p>
-          <div className="mt-3 grid grid-cols-5 gap-2">
-            {ordered.map((q, i) => {
-              const answered = isAnswered(q.id);
-              const isCurrent = i === activeIdx;
-              const isFlagged = flagged.has(q.id);
-              return (
-                <button
-                  key={q.id}
-                  type="button"
-                  onClick={() => setActiveIdx(i)}
-                  className={cn(
-                    'relative grid aspect-square place-items-center rounded-md border text-xs font-medium',
-                    isCurrent && 'ring-2 ring-brand-500 ring-offset-1',
-                    answered
-                      ? 'border-brand-600 bg-brand-600 text-white'
-                      : 'border-ink-200 bg-white text-ink-700 hover:bg-ink-50',
-                  )}
-                  aria-current={isCurrent ? 'true' : undefined}
-                  aria-label={`${t('assessment.take.question')} ${i + 1}`}
-                >
-                  {i + 1}
-                  {isFlagged && (
-                    <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-warn-500 ring-2 ring-white" />
-                  )}
-                </button>
-              );
-            })}
+          <div className="mt-3">
+            <QuestionGrid items={navItems} activeIdx={activeIdx} onJump={setActiveIdx} />
           </div>
 
-          <div className="mt-5 space-y-2 text-xs text-ink-600">
-            <Legend swatch="bg-brand-600 border-brand-600" label={t('assessment.take.legend.answered')} />
-            <Legend swatch="bg-white border-ink-200" label={t('assessment.take.legend.unanswered')} />
-            <Legend
-              swatch="bg-white border-ink-200"
-              dot
-              label={t('assessment.take.legend.flagged')}
-            />
+          <div className="mt-5">
+            <QuestionLegend />
           </div>
 
           <div className="mt-6">
@@ -295,7 +319,7 @@ export function AssessmentTakePage() {
         </aside>
       </div>
 
-      <footer className="flex items-center justify-between gap-3 border-t border-ink-200 bg-white px-6 py-3">
+      <footer className="flex items-center justify-between gap-3 border-t border-ink-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
         <Button
           variant="ghost"
           onClick={() =>
@@ -312,6 +336,20 @@ export function AssessmentTakePage() {
           {t('assessment.take.submitShort')}
         </Button>
       </footer>
+
+      <QuestionNavigatorSheet
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+        items={navItems}
+        activeIdx={activeIdx}
+        onJump={setActiveIdx}
+        answeredCount={answeredCount}
+        onSubmit={() => {
+          setNavOpen(false);
+          setHonorOpen(true);
+        }}
+        submitDisabled={submit.isPending || total === 0}
+      />
 
       <HonorCodeModal
         open={honorOpen}
@@ -331,28 +369,3 @@ function formatClock(totalSeconds: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
-function Legend({
-  swatch,
-  label,
-  dot,
-}: {
-  swatch: string;
-  label: string;
-  dot?: boolean;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span
-        className={cn(
-          'relative grid size-5 place-items-center rounded-md border',
-          swatch,
-        )}
-      >
-        {dot && (
-          <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-warn-500 ring-2 ring-white" />
-        )}
-      </span>
-      <span>{label}</span>
-    </div>
-  );
-}

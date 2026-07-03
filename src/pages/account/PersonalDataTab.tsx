@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -46,12 +46,17 @@ export function PersonalDataTab() {
     [t],
   );
 
-  useEffect(() => {
-    if (!user) return;
-    const [first, ...rest] = user.full_name.split(' ');
-    setFirstName(first ?? '');
-    setLastName(rest.join(' '));
-  }, [user]);
+  // Sync the name fields when the auth user lands / changes — done during
+  // render (adjust-state pattern) instead of via a setState-in-effect.
+  const [prevUser, setPrevUser] = useState<typeof user>(null);
+  if (user !== prevUser) {
+    setPrevUser(user);
+    if (user) {
+      const [first, ...rest] = user.full_name.split(' ');
+      setFirstName(first ?? '');
+      setLastName(rest.join(' '));
+    }
+  }
 
   const save = useMutation({
     mutationFn: (full_name: string) => meApi.update({ full_name }),
@@ -177,9 +182,10 @@ function Banner({
 }) {
   return (
     <div
+      role={tone === 'error' ? 'alert' : 'status'}
       className={
         tone === 'error'
-          ? 'rounded-md border border-danger-500/30 bg-red-50 px-3 py-2 text-sm text-danger-600'
+          ? 'rounded-md border border-danger-500/30 bg-danger-50 px-3 py-2 text-sm text-danger-600'
           : 'rounded-md border border-brand-100 bg-brand-25 px-3 py-2 text-sm text-brand-700'
       }
     >

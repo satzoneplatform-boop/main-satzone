@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { BottomNav } from './BottomNav';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
+import { PageTransition } from '@/components/motion/PageTransition';
 import { SignOutModal } from '@/pages/dashboard/SignOutModal';
 import { useT } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/en';
@@ -19,6 +20,7 @@ const TITLE_BY_PATH: Array<{ match: RegExp; titleKey: TranslationKey }> = [
   { match: /^\/courses\/[^/]+/, titleKey: 'page.explore' },
   { match: /^\/courses/, titleKey: 'page.courses' },
   { match: /^\/learning-path/, titleKey: 'page.myLearnings' },
+  { match: /^\/analytics/, titleKey: 'page.analytics' },
   { match: /^\/notifications/, titleKey: 'page.notifications' },
   { match: /^\/inbox/, titleKey: 'page.inbox' },
   { match: /^\/help/, titleKey: 'page.help' },
@@ -45,9 +47,11 @@ export function DashboardShell() {
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar title={title} onSignOut={() => setSignOutOpen(true)} />
-        {/* pb-20 on mobile keeps content above the fixed BottomNav. */}
-        <main className="flex-1 overflow-auto px-4 py-6 pb-20 sm:px-8 lg:pb-6">
-          <Outlet />
+        {/* pb-24 on mobile keeps content above the fixed BottomNav (~56px + safe area). */}
+        <main className="flex-1 overflow-auto px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-6">
+          <PageTransition key={location.pathname} className="mx-auto w-full max-w-7xl">
+            <Outlet />
+          </PageTransition>
         </main>
       </div>
       <BottomNav />

@@ -25,6 +25,8 @@ export function Switch({
       onClick={() => onChange(!checked)}
       className={cn(
         'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors',
+        // Invisible expanded hit area so the touch target reaches ~44px.
+        "after:absolute after:-inset-2.5 after:content-['']",
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500',
         checked ? 'bg-brand-600' : 'bg-ink-200',
         disabled && 'cursor-not-allowed opacity-50',

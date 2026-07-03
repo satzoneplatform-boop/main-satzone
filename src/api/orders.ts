@@ -5,6 +5,8 @@ export interface CreateOrderPayload {
   item_kind: OrderItemKind;
   course_id?: string | null;
   program_id?: string | null;
+  /** Optional promo code (course orders only). Server re-validates + prices. */
+  promocode?: string | null;
 }
 
 export const ordersApi = {

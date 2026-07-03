@@ -62,7 +62,7 @@ export function SignUpStartPage() {
           type="email"
           autoComplete="email"
           required
-          placeholder="Ex: hendrick.fin@gmail.com"
+          placeholder={t('auth.signIn.emailPlaceholder')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />

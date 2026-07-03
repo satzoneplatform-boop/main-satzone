@@ -111,7 +111,7 @@ export function SignInPage() {
               aria-selected={mode === 'email'}
               onClick={() => setMode('email')}
               className={cn(
-                'rounded-md py-2 transition-colors',
+                'min-h-11 rounded-md py-2 transition-colors',
                 mode === 'email'
                   ? 'bg-white text-ink-900 shadow-sm'
                   : 'text-ink-500 hover:text-ink-700',
@@ -125,7 +125,7 @@ export function SignInPage() {
               aria-selected={mode === 'phone'}
               onClick={() => setMode('phone')}
               className={cn(
-                'rounded-md py-2 transition-colors',
+                'min-h-11 rounded-md py-2 transition-colors',
                 mode === 'phone'
                   ? 'bg-white text-ink-900 shadow-sm'
                   : 'text-ink-500 hover:text-ink-700',
@@ -136,7 +136,10 @@ export function SignInPage() {
           </div>
 
           {error && (
-            <div className="rounded-md border border-danger-500/30 bg-red-50 px-3 py-2 text-sm text-danger-600">
+            <div
+              role="alert"
+              className="rounded-xl border border-danger-500/30 bg-danger-50 px-3 py-2.5 text-sm text-danger-600"
+            >
               {error}
             </div>
           )}
@@ -168,8 +171,8 @@ export function SignInPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2 text-ink-600">
+          <div className="flex min-h-11 flex-wrap items-center justify-between gap-2 text-sm">
+            <label className="flex cursor-pointer items-center gap-2 py-2 text-ink-600">
               <input
                 type="checkbox"
                 checked={remember}
@@ -184,7 +187,7 @@ export function SignInPage() {
                 setRecoveryEmail(email);
                 setModal('forgot');
               }}
-              className="font-medium text-brand-600 hover:underline"
+              className="rounded-md py-2 font-medium text-brand-600 hover:underline"
             >
               {t('auth.signIn.forgotPassword')}
             </button>

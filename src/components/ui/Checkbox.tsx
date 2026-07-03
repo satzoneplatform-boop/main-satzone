@@ -17,7 +17,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   return (
     <label
       htmlFor={inputId}
-      className={cn('flex cursor-pointer items-start gap-3', className)}
+      className={cn(
+        'flex cursor-pointer items-start gap-3 has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60',
+        className,
+      )}
     >
       <span className="relative grid place-items-center pt-0.5">
         <input
@@ -32,7 +35,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
           aria-hidden
           className={cn(
             'grid size-5 place-items-center rounded-md border transition-colors',
-            'peer-focus-visible:ring-2 peer-focus-visible:ring-brand-100',
+            'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500',
             checked
               ? 'border-brand-600 bg-brand-600 text-white'
               : 'border-ink-300 bg-white',

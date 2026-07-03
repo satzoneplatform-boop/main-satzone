@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
+import { ProgressBar } from '@/components/ui/ProgressBar';
 import { CalendarIcon, CheckIcon } from '@/components/icons';
 import { cn } from '@/lib/cn';
 import type { UserMe } from '@/types/api';
@@ -107,6 +108,22 @@ export function WeeklyActivityCard({
         </div>
       </div>
 
+      {/* Real minutes vs. the saved weekly goal. */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between gap-2 text-xs text-ink-500">
+          <span className="min-w-0 truncate">
+            {t('dashboard.weeklyActivity.goalProgress', {
+              done: studiedMinutes,
+              goal: weeklyGoalMinutes,
+            })}
+          </span>
+          <span className="shrink-0 font-medium text-ink-900">
+            {Math.min(100, Math.round((studiedMinutes / weeklyGoalMinutes) * 100))}%
+          </span>
+        </div>
+        <ProgressBar value={studiedMinutes} max={weeklyGoalMinutes} size="sm" />
+      </div>
+
       <div className="grid grid-cols-2 gap-3 border-t border-ink-100 pt-4">
         <Stat label={t('dashboard.weeklyActivity.hoursStudied')} value={`${hours}`} unit={t('dashboard.weeklyActivity.unit.hrs')} />
         <Stat label={t('dashboard.weeklyActivity.activeTime')} value={`${mins}`} unit={t('dashboard.weeklyActivity.unit.min')} />
@@ -115,7 +132,7 @@ export function WeeklyActivityCard({
       <button
         type="button"
         onClick={onSetPlan}
-        className="flex items-center gap-2 text-sm font-medium text-brand-600 hover:underline"
+        className="flex min-h-11 items-center gap-2 text-sm font-medium text-brand-600 hover:underline"
       >
         <CalendarIcon className="size-4" />
         {t('dashboard.weeklyActivity.setLearningPlan')}

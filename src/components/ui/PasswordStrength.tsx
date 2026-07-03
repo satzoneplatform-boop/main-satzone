@@ -1,23 +1,8 @@
 import { CheckCircleFilled, XCircleFilled } from '@/components/icons';
+import { useT } from '@/i18n/I18nProvider';
+import type { TranslationKey } from '@/i18n/en';
 import { cn } from '@/lib/cn';
-
-export interface PasswordChecks {
-  uppercase: boolean;
-  number: boolean;
-  length: boolean;
-}
-
-export function evaluatePassword(value: string): PasswordChecks {
-  return {
-    uppercase: /[A-Z]/.test(value),
-    number: /[0-9]/.test(value),
-    length: value.length >= 8,
-  };
-}
-
-export function passwordStrength(checks: PasswordChecks): 0 | 1 | 2 | 3 {
-  return (Number(checks.uppercase) + Number(checks.number) + Number(checks.length)) as 0 | 1 | 2 | 3;
-}
+import { evaluatePassword, passwordStrength } from '@/lib/password';
 
 interface PasswordStrengthMeterProps {
   value: string;
@@ -31,14 +16,15 @@ const SEGMENT_COLOR: Record<number, string> = {
   3: 'bg-success-500',
 };
 
-const HEADLINE: Record<number, string> = {
-  0: 'Weak password. Must contain :',
-  1: 'Weak password. Must contain :',
-  2: 'Almost there. Must contain :',
-  3: 'Strong password.',
+const HEADLINE_KEY: Record<number, TranslationKey> = {
+  0: 'ui.password.weak',
+  1: 'ui.password.weak',
+  2: 'ui.password.almost',
+  3: 'ui.password.strong',
 };
 
 export function PasswordStrengthMeter({ value, className }: PasswordStrengthMeterProps) {
+  const t = useT();
   const checks = evaluatePassword(value);
   const score = passwordStrength(checks);
 
@@ -57,11 +43,11 @@ export function PasswordStrengthMeter({ value, className }: PasswordStrengthMete
       </div>
 
       <div>
-        <p className="text-xs font-medium text-ink-700">{HEADLINE[score]}</p>
+        <p className="text-xs font-medium text-ink-700">{t(HEADLINE_KEY[score])}</p>
         <ul className="mt-2 space-y-1.5">
-          <RequirementRow ok={checks.uppercase} label="At least 1 uppercase" />
-          <RequirementRow ok={checks.number} label="At least 1 number" />
-          <RequirementRow ok={checks.length} label="At least 8 characters" />
+          <RequirementRow ok={checks.uppercase} label={t('ui.password.reqUppercase')} />
+          <RequirementRow ok={checks.number} label={t('ui.password.reqNumber')} />
+          <RequirementRow ok={checks.length} label={t('ui.password.reqLength')} />
         </ul>
       </div>
     </div>

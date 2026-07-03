@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { onboardingApi } from '@/api/onboarding';
 import { useOnboarding } from '@/features/home/hooks';
+import { useT } from '@/i18n/I18nProvider';
 
+/** Language endonyms — deliberately not translated. */
 const LANGUAGES = [
   { value: 'en', label: 'English' },
   { value: 'uz', label: 'O‘zbekcha' },
@@ -15,13 +17,8 @@ const LANGUAGES = [
   { value: 'fr', label: 'Français' },
 ];
 
-const PROFICIENCY = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-];
-
 export function LanguageTab() {
+  const t = useT();
   const queryClient = useQueryClient();
   const onboarding = useOnboarding();
   const [locale, setLocale] = useState('en');
@@ -32,12 +29,26 @@ export function LanguageTab() {
   const [proficiency, setProficiency] = useState('beginner');
   const [info, setInfo] = useState<string | null>(null);
 
-  useEffect(() => {
+  const PROFICIENCY = useMemo(
+    () => [
+      { value: 'beginner', label: t('account.preferences.difficulty.beginner') },
+      { value: 'intermediate', label: t('account.preferences.difficulty.intermediate') },
+      { value: 'advanced', label: t('account.preferences.difficulty.advanced') },
+    ],
+    [t],
+  );
+
+  // Sync the form when the onboarding data lands / changes — done during
+  // render (adjust-state pattern) instead of via a setState-in-effect.
+  const [prevData, setPrevData] = useState<typeof onboarding.data>(undefined);
+  if (onboarding.data !== prevData) {
+    setPrevData(onboarding.data);
     const profile = onboarding.data?.profile;
-    if (!profile) return;
-    setLocale(profile.locale || 'en');
-    if (profile.skill_level) setProficiency(profile.skill_level);
-  }, [onboarding.data]);
+    if (profile) {
+      setLocale(profile.locale || 'en');
+      if (profile.skill_level) setProficiency(profile.skill_level);
+    }
+  }
 
   const save = useMutation({
     mutationFn: () =>
@@ -47,7 +58,7 @@ export function LanguageTab() {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['onboarding'] });
-      setInfo('Language preferences saved.');
+      setInfo(t('account.language.saved'));
       setTimeout(() => setInfo(null), 2500);
     },
   });
@@ -65,18 +76,21 @@ export function LanguageTab() {
   return (
     <div className="space-y-5">
       <header>
-        <h2 className="text-base font-semibold text-ink-900">Language</h2>
+        <h2 className="text-base font-semibold text-ink-900">{t('account.language.title')}</h2>
       </header>
 
       {info && (
-        <div className="rounded-md border border-brand-100 bg-brand-25 px-3 py-2 text-sm text-brand-700">
+        <div
+          role="status"
+          className="rounded-md border border-brand-100 bg-brand-25 px-3 py-2 text-sm text-brand-700"
+        >
           {info}
         </div>
       )}
 
       <Group
-        title="Interface language"
-        description="Controls the language used in menus, buttons, and system messages across the platform."
+        title={t('account.language.interface.title')}
+        description={t('account.language.interface.description')}
       >
         <Select
           options={LANGUAGES}
@@ -86,8 +100,8 @@ export function LanguageTab() {
       </Group>
 
       <Group
-        title="Course content language"
-        description="Choose the preferred language for course content. We'll prioritize courses available in this language."
+        title={t('account.language.content.title')}
+        description={t('account.language.content.description')}
       >
         <Select
           options={LANGUAGES}
@@ -97,8 +111,8 @@ export function LanguageTab() {
       </Group>
 
       <Group
-        title="Subtitles & Captions"
-        description="Customize subtitle behavior for video lessons."
+        title={t('account.language.subtitles.title')}
+        description={t('account.language.subtitles.description')}
       >
         <Select
           options={LANGUAGES}
@@ -106,20 +120,20 @@ export function LanguageTab() {
           onChange={(e) => setSubtitleLocale(e.target.value)}
         />
         <ToggleRow
-          label="Enable subtitles by default"
+          label={t('account.language.subtitles.enable')}
           checked={subtitlesOn}
           onChange={setSubtitlesOn}
         />
         <ToggleRow
-          label="Auto translate subtitles when available"
+          label={t('account.language.subtitles.autoTranslate')}
           checked={autoTranslate}
           onChange={setAutoTranslate}
         />
       </Group>
 
       <Group
-        title="Language Proficiency"
-        description="Helps us recommend courses at the right level."
+        title={t('account.language.proficiency.title')}
+        description={t('account.language.proficiency.description')}
       >
         <Select
           options={PROFICIENCY}
@@ -130,10 +144,10 @@ export function LanguageTab() {
 
       <footer className="flex items-center justify-end gap-3 border-t border-ink-100 pt-4">
         <Button variant="outline" type="button" onClick={reset}>
-          Reset
+          {t('common.reset')}
         </Button>
         <Button onClick={() => save.mutate()} loading={save.isPending}>
-          Save
+          {t('common.save')}
         </Button>
       </footer>
     </div>
@@ -168,7 +182,7 @@ function ToggleRow({
   onChange: (next: boolean) => void;
 }) {
   return (
-    <label className="flex items-center justify-between gap-3 text-sm text-ink-700">
+    <label className="flex min-h-11 items-center justify-between gap-3 text-sm text-ink-700">
       {label}
       <Switch checked={checked} onChange={onChange} label={label} />
     </label>

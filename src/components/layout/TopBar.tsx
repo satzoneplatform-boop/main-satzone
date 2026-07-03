@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Avatar } from '@/components/ui/Avatar';
 import {
   ChevronDownIcon,
@@ -30,7 +31,7 @@ export function TopBar({ title, onSignOut }: TopBarProps) {
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-ink-800 bg-ink-900 px-6 text-white">
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-ink-800 bg-ink-900 px-4 text-white sm:px-6 lg:px-8">
       <h1 className="text-base font-semibold tracking-tight text-white">{title}</h1>
 
       <div className="ml-auto flex items-center gap-2">
@@ -71,6 +72,7 @@ function AccountMenu({
   userAvatar?: string | null;
 }) {
   const { t } = useI18n();
+  const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -103,7 +105,9 @@ function AccountMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         className={cn(
-          'flex h-9 items-center gap-2 rounded-md border border-ink-800 bg-ink-800/70 py-1 pl-1 pr-2 text-left transition-colors',
+          'relative flex h-9 items-center gap-2 rounded-md border border-ink-800 bg-ink-800/70 py-1 pl-1 pr-2 text-left transition-colors duration-150',
+          // Invisible expanded hit area — keeps the touch target ≥44px on mobile.
+          "after:absolute after:-inset-1.5 after:content-['']",
           'hover:bg-ink-800',
         )}
       >
@@ -114,37 +118,43 @@ function AccountMenu({
         <ChevronDownIcon className="text-ink-400" />
       </button>
 
-      {open && (
-        <div
-          role="menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 overflow-hidden rounded-lg border border-ink-200 bg-white text-ink-900 shadow-lg"
-        >
-          <Link
-            to="/account"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 border-b border-ink-100 px-3 py-3 hover:bg-ink-50"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="menu"
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: reduce ? 0 : 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute right-0 top-[calc(100%+6px)] z-30 w-56 overflow-hidden rounded-xl border border-ink-200 bg-white text-ink-900 shadow-[var(--shadow-dropdown)]"
           >
-            <Avatar shape="square" name={userName} src={userAvatar} size={36} />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{userName ?? t('common.you')}</p>
-              <p className="truncate text-xs text-ink-500">{t('topbar.viewProfile')}</p>
-            </div>
-          </Link>
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false);
-              onSignOut();
-            }}
-            className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-danger-600 hover:bg-danger-50"
-          >
-            <LogoutIcon />
-            <span>{t('topbar.signOut')}</span>
-          </button>
-        </div>
-      )}
+            <Link
+              to="/account"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 border-b border-ink-100 px-3 py-3 transition-colors duration-150 hover:bg-ink-50"
+            >
+              <Avatar shape="square" name={userName} src={userAvatar} size={36} />
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{userName ?? t('common.you')}</p>
+                <p className="truncate text-xs text-ink-500">{t('topbar.viewProfile')}</p>
+              </div>
+            </Link>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onSignOut();
+              }}
+              className="flex min-h-11 w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-danger-600 transition-colors duration-150 hover:bg-danger-50"
+            >
+              <LogoutIcon />
+              <span>{t('topbar.signOut')}</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

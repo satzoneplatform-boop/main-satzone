@@ -26,8 +26,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       )}
       <div
         className={cn(
-          'relative rounded-lg border bg-white shadow-[var(--shadow-input)] transition-colors',
+          'relative rounded-xl border bg-white shadow-[var(--shadow-input)] transition-colors',
           'focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100',
+          'has-[select:disabled]:bg-ink-50',
           error ? 'border-danger-500' : 'border-ink-200',
         )}
       >
@@ -37,7 +38,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
           value={value}
           aria-invalid={Boolean(error) || undefined}
           className={cn(
-            'h-11 w-full appearance-none rounded-lg bg-transparent px-3 pr-9 text-sm text-ink-900 focus:outline-none',
+            'h-11 w-full appearance-none rounded-xl bg-transparent px-3 pr-9 text-sm text-ink-900 focus:outline-none disabled:cursor-not-allowed disabled:text-ink-400',
             !value && 'text-ink-400',
             className,
           )}

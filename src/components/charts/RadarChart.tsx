@@ -24,8 +24,8 @@ export function RadarChart({
   size = 200,
   className,
   rings = 4,
-  fill = 'rgba(99, 91, 255, 0.18)',
-  stroke = '#615FFF',
+  fill = 'rgba(37, 99, 235, 0.16)',
+  stroke = '#2563EB',
 }: RadarChartProps) {
   const cx = size / 2;
   const cy = size / 2;

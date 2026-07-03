@@ -4,12 +4,13 @@ import { AuthCenteredLayout } from '@/components/layout/AuthCenteredLayout';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import {
-  evaluatePassword,
-} from '@/components/ui/PasswordStrength';
+import { PasswordStrengthMeter } from '@/components/ui/PasswordStrength';
+import { evaluatePassword } from '@/lib/password';
 import { useResetPassword, authErrorMessage } from '@/features/auth/hooks';
+import { useT } from '@/i18n/I18nProvider';
 
 export function ResetPasswordPage() {
+  const t = useT();
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const reset = useResetPassword();
@@ -32,7 +33,7 @@ export function ResetPasswordPage() {
     e.preventDefault();
     setError(null);
     if (!matches) {
-      setError('Passwords do not match.');
+      setError(t('auth.reset.mismatch'));
       return;
     }
     try {
@@ -49,39 +50,49 @@ export function ResetPasswordPage() {
         <form onSubmit={onSubmit} className="space-y-5">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
-              Reset your password
+              {t('auth.reset.title')}
             </h1>
             <p className="mt-1 text-sm text-ink-500">
-              Changing password for{' '}
-              <span className="font-medium text-brand-600">
-                {email || 'your account'}
+              {t('auth.reset.changingFor')}{' '}
+              <span className="font-medium break-all text-brand-600">
+                {email || t('auth.reset.yourAccount')}
               </span>
             </p>
           </div>
 
           {error && (
-            <div className="rounded-md border border-danger-500/30 bg-red-50 px-3 py-2 text-sm text-danger-600">
+            <div
+              role="alert"
+              className="rounded-xl border border-danger-500/30 bg-danger-50 px-3 py-2.5 text-sm text-danger-600"
+            >
               {error}
             </div>
           )}
 
-          <PasswordInput
-            label="Password"
-            required
-            autoComplete="new-password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div>
+            <PasswordInput
+              label={t('auth.signIn.password')}
+              required
+              autoComplete="new-password"
+              placeholder={t('auth.reset.passwordPlaceholder')}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            {password && (
+              <div className="mt-3">
+                <PasswordStrengthMeter value={password} />
+              </div>
+            )}
+          </div>
 
           <PasswordInput
-            label="Confirm password"
+            label={t('auth.reset.confirmLabel')}
             required
             autoComplete="new-password"
-            placeholder="Re enter password"
+            placeholder={t('auth.reset.confirmPlaceholder')}
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
-            error={confirm && !matches ? 'Passwords do not match.' : undefined}
+            error={confirm && !matches ? t('auth.reset.mismatch') : undefined}
           />
 
           <Button
@@ -91,7 +102,7 @@ export function ResetPasswordPage() {
             loading={reset.isPending}
             disabled={!canSubmit}
           >
-            Confirm
+            {t('auth.reset.confirm')}
           </Button>
 
           <Button
@@ -101,7 +112,7 @@ export function ResetPasswordPage() {
             size="lg"
             onClick={() => navigate('/sign-in')}
           >
-            Wrong email?
+            {t('auth.reset.wrongEmail')}
           </Button>
         </form>
       </Card>

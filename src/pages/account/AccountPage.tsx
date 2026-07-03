@@ -10,11 +10,13 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { SignOutModal } from '@/pages/dashboard/SignOutModal';
 import type { CertificateRead } from '@/types/api';
 import { useT } from '@/i18n/I18nProvider';
+import { LanguageTab } from './LanguageTab';
 import { NotificationTab } from './NotificationTab';
 import { PersonalDataTab } from './PersonalDataTab';
 import { PreferencesTab } from './PreferencesTab';
+import { SecurityTab } from './SecurityTab';
 
-type Tab = 'personal' | 'notification' | 'preferences';
+type Tab = 'personal' | 'notification' | 'preferences' | 'security' | 'language';
 
 export function AccountPage() {
   const { user } = useAuth();
@@ -26,6 +28,8 @@ export function AccountPage() {
     { value: 'personal', label: t('account.tabs.personal') },
     { value: 'notification', label: t('account.tabs.notification') },
     { value: 'preferences', label: t('account.tabs.preferences') },
+    { value: 'security', label: t('account.tabs.security') },
+    { value: 'language', label: t('account.tabs.language') },
   ];
 
   const enrollments = useQuery({
@@ -72,17 +76,22 @@ export function AccountPage() {
             />
           </div>
 
-          <section className="rounded-2xl border border-ink-200 bg-white p-6 shadow-[var(--shadow-card)]">
-            <Tabs
-              items={tabs}
-              value={tab}
-              onChange={(v) => setTab(v as Tab)}
-              variant="underline"
-              className="mb-6"
-            />
+          <section className="min-w-0 rounded-2xl border border-ink-200 bg-white p-4 shadow-[var(--shadow-card)] sm:p-6">
+            {/* Horizontal scroll keeps all five tabs reachable at 360px. */}
+            <div className="mb-6 overflow-x-auto">
+              <Tabs
+                items={tabs}
+                value={tab}
+                onChange={(v) => setTab(v as Tab)}
+                variant="underline"
+                className="min-w-max whitespace-nowrap"
+              />
+            </div>
             {tab === 'personal' && <PersonalDataTab />}
             {tab === 'notification' && <NotificationTab />}
             {tab === 'preferences' && <PreferencesTab />}
+            {tab === 'security' && <SecurityTab />}
+            {tab === 'language' && <LanguageTab />}
           </section>
         </div>
       </div>

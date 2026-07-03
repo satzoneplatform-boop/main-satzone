@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -39,12 +39,17 @@ export function WeeklyGoalModal({ open, onClose, initialMinutes = 0 }: WeeklyGoa
     [t],
   );
 
-  useEffect(() => {
-    if (!open) return;
-    const next = new Set<number>();
-    for (let i = 0; i < initialDays; i++) next.add(i + 1); // Mon-first default
-    setSelected(next);
-  }, [open, initialDays]);
+  // Re-seed the selection whenever the modal (re)opens or the saved goal
+  // changes — adjust-during-render pattern instead of a setState-in-effect.
+  const [prevSeed, setPrevSeed] = useState<{ open: boolean; days: number } | null>(null);
+  if (prevSeed?.open !== open || prevSeed?.days !== initialDays) {
+    setPrevSeed({ open, days: initialDays });
+    if (open) {
+      const next = new Set<number>();
+      for (let i = 0; i < initialDays; i++) next.add(i + 1); // Mon-first default
+      setSelected(next);
+    }
+  }
 
   const save = useMutation({
     mutationFn: (minutes: number) =>
@@ -89,7 +94,8 @@ export function WeeklyGoalModal({ open, onClose, initialMinutes = 0 }: WeeklyGoa
                   type="button"
                   onClick={() => toggle(d.key)}
                   className={cn(
-                    'flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors',
+                    'flex min-h-11 w-full items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors',
+                    'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500',
                     checked
                       ? 'border-brand-500 bg-brand-25 text-ink-900'
                       : 'border-ink-200 bg-white text-ink-700 hover:border-ink-300',
@@ -114,6 +120,12 @@ export function WeeklyGoalModal({ open, onClose, initialMinutes = 0 }: WeeklyGoa
             );
           })}
         </ul>
+
+        {selected.size > 0 && (
+          <p role="status" className="text-center text-xs text-ink-500">
+            {t('dashboard.weeklyGoal.summary', { n: selected.size, h: selected.size })}
+          </p>
+        )}
 
         <div className="flex items-center gap-3">
           <Button variant="outline" fullWidth onClick={onReset}>

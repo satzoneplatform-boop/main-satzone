@@ -1,26 +1,33 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Spinner } from '@/components/ui/Spinner';
-import { Textarea } from '@/components/ui/Textarea';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { CheckoutSummary } from '@/components/checkout/CheckoutSummary';
-import { MethodPickerCard } from '@/components/checkout/MethodPickerCard';
-import {
-  CloseIcon,
-  CreditCardIcon,
-  InfoIcon,
-  PaypalIcon,
-} from '@/components/icons';
+import { PromoCodeInput } from '@/components/checkout/PromoCodeInput';
+import type { PromocodePreview } from '@/api/promocodes';
+import { LockIcon, PaymeIcon } from '@/components/icons';
 import { ApiError } from '@/api/errors';
 import { enrollmentsApi } from '@/api/enrollments';
+import { ordersApi } from '@/api/orders';
 import { useCourseDetail } from '@/features/course/hooks';
 import type { EnrollmentRead } from '@/types/api';
 import { useT } from '@/i18n/I18nProvider';
 
-type Method = 'card' | 'paypal';
+/** Backend promo/order error codes → friendly i18n keys for the pay banner. */
+const PAY_ERROR_KEY: Record<string, string> = {
+  promocode_not_found: 'checkout.promo.err.notFound',
+  promocode_wrong_course: 'checkout.promo.err.wrongCourse',
+  promocode_inactive: 'checkout.promo.err.inactive',
+  promocode_expired: 'checkout.promo.err.expired',
+  promocode_not_started: 'checkout.promo.err.notStarted',
+  promocode_exhausted: 'checkout.promo.err.exhausted',
+  promocode_min_amount: 'checkout.promo.err.minAmount',
+  promocode_first_purchase_only: 'checkout.promo.err.firstPurchase',
+  promocode_user_limit: 'checkout.promo.err.userLimit',
+  promocode_already_used: 'checkout.promo.err.alreadyUsed',
+  promocode_makes_free: 'checkout.promo.err.makesFree',
+};
 
 export function CheckoutPage() {
   const t = useT();
@@ -28,10 +35,12 @@ export function CheckoutPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const course = useCourseDetail(slug);
-  const [method, setMethod] = useState<Method>('paypal');
-  const [showCardNote, setShowCardNote] = useState(true);
+  const [promo, setPromo] = useState<PromocodePreview | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const enroll = useMutation<EnrollmentRead, ApiError, void>({
+  // Free courses use the legitimate free-enrollment path; paid courses go
+  // through the real order → Payme hosted-checkout flow.
+  const freeEnroll = useMutation<EnrollmentRead, ApiError, void>({
     mutationFn: () => enrollmentsApi.enroll(course.data!.id),
     onSuccess: (data) => {
       void queryClient.invalidateQueries({ queryKey: ['home'] });
@@ -40,17 +49,47 @@ export function CheckoutPage() {
         replace: true,
       });
     },
-    onError: (err) => {
-      if (err.code === 'phone_not_verified') navigate('/verify-phone');
-    },
+    onError: (err) => handleMutationError(err),
   });
 
+  const payWithPayme = useMutation<void, ApiError, void>({
+    mutationFn: async () => {
+      // Create (or reuse) the pending order at the server-computed price,
+      // passing the applied promo code so the server re-validates + reprices.
+      const order = await ordersApi.create({
+        item_kind: 'course',
+        course_id: course.data!.id,
+        promocode: promo?.code ?? null,
+      });
+      const returnUrl = `${window.location.origin}/courses/${slug}/checkout/success?order=${order.id}`;
+      const res = await ordersApi.payPayme(order.id, returnUrl);
+      if (!res.checkout_url) {
+        throw new ApiError(502, 'payment_no_url', 'No checkout URL', null);
+      }
+      // Hand off to Payme's hosted page. On success Payme confirms the order
+      // via the merchant callback and redirects back to returnUrl.
+      window.location.assign(res.checkout_url);
+    },
+    onError: (err) => handleMutationError(err),
+  });
+
+  function handleMutationError(err: ApiError) {
+    if (err.code === 'phone_not_verified') {
+      navigate('/verify-phone');
+      return;
+    }
+    // A promo that lapsed between preview and order creation: drop it so the
+    // user can retry at full price, and surface the precise reason.
+    if (err.code in PAY_ERROR_KEY) {
+      setPromo(null);
+      setError(t(PAY_ERROR_KEY[err.code] as never));
+      return;
+    }
+    setError(err.message || t('checkout.payError'));
+  }
+
   if (course.isLoading) {
-    return (
-      <div className="grid place-items-center py-24">
-        <Spinner size="lg" />
-      </div>
-    );
+    return <CheckoutSkeleton />;
   }
 
   if (course.error || !course.data) {
@@ -61,12 +100,13 @@ export function CheckoutPage() {
     );
   }
 
-  function onCheckout(e?: FormEvent) {
-    e?.preventDefault();
-    // Free / trial enroll path. A real paid-plan path needs a payment-intent
-    // endpoint that is not yet exposed in FRONTEND.md — wire that in once
-    // the backend ships /me/payments or equivalent.
-    enroll.mutate();
+  const isFree = course.data.is_free;
+  const submitting = freeEnroll.isPending || payWithPayme.isPending;
+
+  function onCheckout() {
+    setError(null);
+    if (isFree) freeEnroll.mutate();
+    else payWithPayme.mutate();
   }
 
   return (
@@ -81,154 +121,105 @@ export function CheckoutPage() {
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <form onSubmit={onCheckout} className="space-y-6">
+        <div className="space-y-6">
           <header>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
+            <h1 className="text-2xl font-bold tracking-tight text-navy-900">
               {t('checkout.title')}
             </h1>
-            <p className="mt-1 text-sm text-ink-500">
-              {t('checkout.subtitle')}
-            </p>
+            <p className="mt-1 text-sm text-ink-500">{t('checkout.subtitle')}</p>
           </header>
 
-          <section>
-            <h2 className="text-sm font-semibold text-ink-900">{t('checkout.chooseMethod')}</h2>
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <MethodPickerCard
-                name="method"
-                value="card"
-                selected={method === 'card'}
-                onSelect={() => setMethod('card')}
-                icon={<CreditCardIcon />}
-                title={t('checkout.method.card.title')}
-                subtitle={t('checkout.method.card.subtitle')}
-              />
-              <MethodPickerCard
-                name="method"
-                value="paypal"
-                selected={method === 'paypal'}
-                onSelect={() => setMethod('paypal')}
-                icon={<PaypalIcon />}
-                title={t('checkout.method.paypal.title')}
-                subtitle={t('checkout.method.paypal.subtitle')}
-              />
-            </div>
-          </section>
+          {!isFree && (
+            <>
+              <section>
+                <h2 className="text-sm font-semibold text-navy-900">
+                  {t('checkout.chooseMethod')}
+                </h2>
+                <div className="mt-3 flex items-start gap-3 rounded-2xl border border-brand-500/40 bg-brand-50/50 p-4">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white text-brand-600 shadow-sm">
+                    <PaymeIcon className="size-6" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-navy-900">
+                      {t('checkout.payme.title')}
+                    </p>
+                    <p className="mt-1 text-sm text-ink-600">
+                      {t('checkout.payme.body')}
+                    </p>
+                    <p className="mt-2 inline-flex items-center gap-1.5 text-xs text-ink-500">
+                      <LockIcon className="size-3.5" />
+                      {t('checkout.payme.secure')}
+                    </p>
+                  </div>
+                </div>
+              </section>
 
-          {method === 'card' ? (
-            <CardForm
-              showCardNote={showCardNote}
-              onCloseNote={() => setShowCardNote(false)}
-            />
-          ) : (
-            <PaypalPanel />
+              <PromoCodeInput
+                courseId={course.data.id}
+                applied={promo}
+                onApplied={setPromo}
+                onRemoved={() => setPromo(null)}
+              />
+            </>
           )}
-        </form>
+
+          {isFree && (
+            <section className="rounded-2xl border border-ink-200 bg-white p-5 text-sm text-ink-600 shadow-[var(--shadow-card)]">
+              {t('checkout.freeBody')}
+            </section>
+          )}
+
+          {error && (
+            <div
+              role="alert"
+              className="rounded-xl border border-danger-500/30 bg-danger-50 px-3.5 py-2.5 text-sm text-danger-600"
+            >
+              {error}
+            </div>
+          )}
+        </div>
 
         <CheckoutSummary
           course={course.data}
-          loading={enroll.isPending}
-          onSubmit={() => onCheckout()}
+          promo={promo}
+          loading={submitting}
+          ctaLabel={isFree ? t('checkout.freeCta') : t('checkout.payCta')}
+          onSubmit={onCheckout}
         />
       </div>
-
-      {enroll.error && enroll.error.code !== 'phone_not_verified' && (
-        <div className="rounded-md border border-danger-500/30 bg-red-50 px-3 py-2 text-sm text-danger-600">
-          {enroll.error.message || t('checkout.trialError')}
-        </div>
-      )}
     </div>
   );
 }
 
-function CardForm({
-  showCardNote,
-  onCloseNote,
-}: {
-  showCardNote: boolean;
-  onCloseNote: () => void;
-}) {
-  const t = useT();
-  const COUNTRIES = useMemo(
-    () => [
-      { value: 'US', label: t('account.personalData.country.US') },
-      { value: 'GB', label: t('account.personalData.country.GB') },
-      { value: 'DE', label: t('account.personalData.country.DE') },
-      { value: 'FR', label: t('account.personalData.country.FR') },
-      { value: 'ID', label: t('account.personalData.country.ID') },
-      { value: 'UZ', label: t('account.personalData.country.UZ') },
-    ],
-    [t],
-  );
+/** Truthful loading frame that mirrors the checkout's two-column layout. */
+function CheckoutSkeleton() {
   return (
-    <div className="space-y-6">
-      <section>
-        <h2 className="text-sm font-semibold text-ink-900">{t('checkout.payment')}</h2>
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label={t('checkout.cardNumber')} placeholder={t('checkout.cardNumberPlaceholder')} inputMode="numeric" />
-          <Input label={t('checkout.cardName')} placeholder={t('checkout.cardNamePlaceholder')} />
-          <Input label={t('checkout.expiredDate')} placeholder="MM/YY" inputMode="numeric" />
-          <Input label={t('checkout.cvv')} placeholder={t('checkout.cvvPlaceholder')} inputMode="numeric" maxLength={4} />
-        </div>
-
-        {showCardNote && (
-          <div className="mt-4 flex items-start gap-3 rounded-xl border border-ink-200 bg-ink-50 p-3 text-sm text-ink-700">
-            <InfoIcon className="mt-0.5 shrink-0 text-ink-500" />
-            <p className="flex-1">
-              {t('checkout.cardNote')}
-            </p>
-            <button
-              type="button"
-              onClick={onCloseNote}
-              aria-label={t('checkout.dismiss')}
-              className="text-ink-400 hover:text-ink-700"
-            >
-              <CloseIcon />
-            </button>
+    <div aria-hidden className="space-y-6">
+      <Skeleton className="h-4 w-64" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-52" />
+            <Skeleton className="h-4 w-72 max-w-full" />
           </div>
-        )}
-      </section>
-
-      <section>
-        <h2 className="text-sm font-semibold text-ink-900">{t('checkout.billing')}</h2>
-        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label={t('checkout.firstName')} placeholder={t('checkout.firstNamePlaceholder')} autoComplete="given-name" />
-          <Input label={t('checkout.lastName')} placeholder={t('checkout.lastNamePlaceholder')} autoComplete="family-name" />
-          <Select
-            label={t('checkout.country')}
-            placeholder={t('checkout.countryPlaceholder')}
-            options={COUNTRIES}
-            defaultValue=""
-            autoComplete="country"
-          />
-          <Input label={t('checkout.city')} placeholder={t('checkout.cityPlaceholder')} autoComplete="address-level2" />
-          <div className="sm:col-span-2">
-            <Textarea
-              label={t('checkout.address')}
-              placeholder={t('checkout.addressPlaceholder')}
-              autoComplete="street-address"
-              rows={3}
-            />
+          <Skeleton className="h-28 w-full rounded-2xl" />
+          <Skeleton className="h-11 w-full rounded-xl sm:w-96" />
+        </div>
+        <div className="rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)]">
+          <div className="flex gap-3">
+            <Skeleton className="size-16 rounded-lg" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          </div>
+          <div className="mt-5 space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-12 w-full rounded-xl" />
           </div>
         </div>
-      </section>
+      </div>
     </div>
-  );
-}
-
-function PaypalPanel() {
-  const t = useT();
-  return (
-    <section className="rounded-2xl border border-ink-200 bg-white py-16 text-center shadow-[var(--shadow-card)]">
-      <PaypalIcon className="mx-auto size-10" />
-      <h3 className="mt-4 text-base font-semibold text-ink-900">{t('checkout.paypal.title')}</h3>
-      <p className="mt-2 px-8 text-sm text-ink-500">
-        {t('checkout.paypal.body')}
-      </p>
-      <p className="mx-auto mt-6 inline-flex max-w-sm items-start gap-2 rounded-xl border border-ink-200 bg-ink-50 px-3 py-2 text-left text-xs text-ink-600">
-        <InfoIcon className="mt-0.5 size-4 shrink-0 text-ink-500" />
-        {t('checkout.paypal.trialNote')}
-      </p>
-    </section>
   );
 }

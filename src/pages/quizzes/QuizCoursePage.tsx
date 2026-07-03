@@ -2,7 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import { ApiError } from '@/api/errors';
 import { CheckIcon, FlagIcon, LockIcon, StarIcon } from '@/components/icons';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
-import { Spinner } from '@/components/ui/Spinner';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useCourseDetail } from '@/features/course/hooks';
 import { useCoursePracticePack } from '@/features/quizzes/hooks';
 import { useT } from '@/i18n/I18nProvider';
@@ -26,8 +26,17 @@ export function QuizCoursePage() {
 
   if (course.isLoading || pack.isLoading) {
     return (
-      <div className="grid place-items-center py-24">
-        <Spinner size="lg" />
+      <div className="mx-auto max-w-3xl space-y-6" aria-hidden>
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
+        <div className="mx-auto flex max-w-md flex-col items-center gap-8 py-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex flex-col items-center gap-2">
+              <Skeleton circle className="size-20" />
+              <Skeleton className="h-4 w-32" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -92,7 +101,7 @@ function PathLane({
 }) {
   const ordered = [...quizzes].sort((a, b) => a.order - b.order);
   return (
-    <ol className="relative mx-auto max-w-md py-4">
+    <ol className="relative mx-auto flex max-w-md flex-col py-4">
       {ordered.map((q, i) => {
         const offset = i % 4;
         const align =

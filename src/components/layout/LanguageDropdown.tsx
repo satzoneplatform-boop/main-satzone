@@ -50,7 +50,9 @@ export function LanguageDropdown({ variant = 'dark' }: LanguageDropdownProps) {
         aria-expanded={open}
         aria-label={t('topbar.language')}
         className={cn(
-          'flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors',
+          'relative flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-sm transition-colors duration-150',
+          // Invisible expanded hit area — keeps the touch target ≥44px on mobile.
+          "after:absolute after:-inset-1.5 after:content-['']",
           isDark
             ? 'border-ink-800 bg-ink-800/70 text-ink-300 hover:bg-ink-800 hover:text-white'
             : 'border-ink-200 bg-white text-ink-700 hover:bg-ink-50',
@@ -64,7 +66,7 @@ export function LanguageDropdown({ variant = 'dark' }: LanguageDropdownProps) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+6px)] z-30 w-44 overflow-hidden rounded-lg border border-ink-200 bg-white text-ink-900 shadow-lg"
+          className="absolute right-0 top-[calc(100%+6px)] z-30 w-44 overflow-hidden rounded-xl border border-ink-200 bg-white text-ink-900 shadow-[var(--shadow-dropdown)]"
         >
           {LANGUAGES.map((lang) => (
             <button
@@ -77,8 +79,8 @@ export function LanguageDropdown({ variant = 'dark' }: LanguageDropdownProps) {
                 setOpen(false);
               }}
               className={cn(
-                'flex w-full items-center justify-between px-3 py-2.5 text-left text-sm',
-                'hover:bg-ink-50',
+                'flex min-h-11 w-full items-center justify-between px-3 py-2.5 text-left text-sm',
+                'transition-colors duration-150 hover:bg-ink-50',
                 lang.value === locale && 'bg-brand-50 text-brand-700 font-medium',
               )}
             >

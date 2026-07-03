@@ -106,8 +106,8 @@ export function AssessmentOverviewPage() {
   ];
 
   return (
-    <div className="-mx-8 -my-6 flex h-[calc(100vh-72px)] min-h-0 flex-col bg-white">
-      <header className="border-b border-ink-200 px-6 py-3">
+    <div className="-mx-4 -mt-6 -mb-24 flex h-[calc(100vh-72px)] min-h-0 flex-col bg-white sm:-mx-6 lg:-mx-8 lg:-mb-6">
+      <header className="border-b border-ink-200 px-4 py-3 sm:px-6">
         <Breadcrumb
           items={[
             { label: t('learning.lesson.coursesBreadcrumb'), to: '/learning-path' },
@@ -124,12 +124,14 @@ export function AssessmentOverviewPage() {
           activeId={assessmentId}
         />
 
-        <main className="min-w-0 flex-1 overflow-auto px-6 py-6">
+        <main className="min-w-0 flex-1 overflow-auto px-4 py-5 pb-28 sm:px-6 lg:py-6 lg:pb-6">
           <div className="mx-auto max-w-4xl space-y-6">
             <section className="grid grid-cols-2 gap-4 rounded-2xl border border-ink-200 bg-white p-5 shadow-[var(--shadow-card)] sm:grid-cols-5">
               {stats.map((s) => (
-                <div key={s.label}>
-                  <p className="text-xl font-semibold text-ink-900">{s.value}</p>
+                <div key={s.label} className="min-w-0">
+                  <p className="truncate text-lg font-semibold text-ink-900 sm:text-xl">
+                    {s.value}
+                  </p>
                   <p className="mt-1 text-xs text-ink-500">{s.label}</p>
                 </div>
               ))}
@@ -137,6 +139,7 @@ export function AssessmentOverviewPage() {
                 <Button
                   onClick={() => setStartOpen(true)}
                   leftIcon={locked ? <LockIcon className="size-4" /> : undefined}
+                  className="w-full sm:w-auto"
                   disabled={
                     locked ||
                     (attemptsAllowed != null && attemptsUsed >= attemptsAllowed)
@@ -152,7 +155,7 @@ export function AssessmentOverviewPage() {
             </section>
 
             {locked && (
-              <section className="flex items-start gap-3 rounded-2xl border border-warn-500/40 bg-yellow-50 p-4 text-sm text-ink-700">
+              <section className="flex items-start gap-3 rounded-2xl border border-warn-500/40 bg-warn-50 p-4 text-sm text-ink-700">
                 <span className="grid size-8 shrink-0 place-items-center rounded-md bg-warn-500/15 text-warn-500">
                   <LockIcon className="size-4" />
                 </span>
@@ -200,6 +203,47 @@ export function AssessmentOverviewPage() {
                 })}
               </p>
             </section>
+
+            {attempts.length > 0 && (
+              <section className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
+                <header className="border-b border-ink-100 px-5 py-4">
+                  <h2 className="text-base font-semibold text-ink-900">
+                    {t('assessment.overview.historyTitle')}
+                  </h2>
+                </header>
+                <ul className="divide-y divide-ink-100">
+                  {attempts.map((s) => (
+                    <li
+                      key={s.id}
+                      className="flex items-center justify-between gap-3 px-5 py-3 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium text-ink-900">
+                          {t('assessment.overview.attemptLabel', {
+                            n: s.attempt_number,
+                          })}
+                        </p>
+                        {s.submitted_at && (
+                          <p className="text-xs text-ink-500">
+                            {new Date(s.submitted_at).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-3">
+                        <span className="font-semibold tabular-nums text-ink-900">
+                          {Math.round(s.score_percent)}%
+                        </span>
+                        <Badge tone={s.passed ? 'success' : 'neutral'}>
+                          {s.passed
+                            ? t('assessment.overview.passedBadge')
+                            : t('assessment.overview.failedBadge')}
+                        </Badge>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         </main>
       </div>

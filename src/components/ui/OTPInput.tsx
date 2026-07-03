@@ -4,6 +4,7 @@ import {
   type ClipboardEvent,
   type KeyboardEvent,
 } from 'react';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
 interface OTPInputProps {
@@ -32,6 +33,7 @@ export function OTPInput({
   className,
   onComplete,
 }: OTPInputProps) {
+  const t = useT();
   const refs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -98,7 +100,7 @@ export function OTPInput({
           maxLength={1}
           value={digit}
           disabled={disabled}
-          aria-label={`Digit ${i + 1}`}
+          aria-label={t('ui.otpDigit', { n: i + 1 })}
           aria-invalid={error || undefined}
           onChange={(e) => setDigit(i, e.target.value)}
           onKeyDown={(e) => onKeyDown(e, i)}

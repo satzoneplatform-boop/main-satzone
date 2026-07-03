@@ -50,6 +50,10 @@ export function LessonVideoPlayer({
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const seekTrackRef = useRef<HTMLDivElement | null>(null);
+  // Mutable handle to the <video> element for imperative writes
+  // (volume/mute/rate/seek). Mirrors the `videoEl` state, which exists
+  // only to drive effects and rendering.
+  const videoElRef = useRef<HTMLVideoElement | null>(null);
   const lastTimeRef = useRef(0);
   const scrubbingRef = useRef(false);
   const onVideoElementRef = useRef(onVideoElement);
@@ -69,7 +73,17 @@ export function LessonVideoPlayer({
   const [lastMove, setLastMove] = useState(() => Date.now());
 
   const handleRef = useCallback((el: HTMLVideoElement | null) => {
+    videoElRef.current = el;
     setVideoEl(el);
+    // Sync UI state from the element's current properties as soon as it
+    // mounts (event-driven, rather than synchronously inside an effect).
+    if (el) {
+      setVideoDuration(Number.isFinite(el.duration) ? el.duration : 0);
+      setVolume(el.volume);
+      setMuted(el.muted);
+      setRate(el.playbackRate);
+      setIsPlaying(!el.paused);
+    }
     onVideoElementRef.current?.(el);
   }, []);
 
@@ -105,12 +119,6 @@ export function LessonVideoPlayer({
     videoEl.addEventListener('timeupdate', onTime);
     videoEl.addEventListener('volumechange', onVol);
     videoEl.addEventListener('ratechange', onRate);
-
-    setVideoDuration(Number.isFinite(videoEl.duration) ? videoEl.duration : 0);
-    setVolume(videoEl.volume);
-    setMuted(videoEl.muted);
-    setRate(videoEl.playbackRate);
-    setIsPlaying(!videoEl.paused);
 
     return () => {
       videoEl.removeEventListener('play', onPlay);
@@ -151,42 +159,45 @@ export function LessonVideoPlayer({
   }, [showSpeedMenu]);
 
   function play() {
-    videoEl?.play().catch((err) => {
-      // eslint-disable-next-line no-console
+    videoElRef.current?.play().catch((err) => {
       console.error('[lesson-player] video.play() rejected:', err);
     });
   }
   function togglePlay() {
-    if (!videoEl) return;
-    if (videoEl.paused)
-      videoEl.play().catch((err) => {
-        // eslint-disable-next-line no-console
+    const el = videoElRef.current;
+    if (!el) return;
+    if (el.paused)
+      el.play().catch((err) => {
         console.error('[lesson-player] video.play() rejected:', err);
       });
-    else videoEl.pause();
+    else el.pause();
   }
   function toggleMute() {
-    if (!videoEl) return;
-    videoEl.muted = !videoEl.muted;
-    if (!videoEl.muted && videoEl.volume === 0) videoEl.volume = 0.5;
+    const el = videoElRef.current;
+    if (!el) return;
+    el.muted = !el.muted;
+    if (!el.muted && el.volume === 0) el.volume = 0.5;
   }
   function setPlayerVolume(v: number) {
-    if (!videoEl) return;
-    videoEl.volume = v;
-    videoEl.muted = v === 0;
+    const el = videoElRef.current;
+    if (!el) return;
+    el.volume = v;
+    el.muted = v === 0;
   }
   function setPlayerRate(r: number) {
-    if (!videoEl) return;
-    videoEl.playbackRate = r;
+    const el = videoElRef.current;
+    if (!el) return;
+    el.playbackRate = r;
   }
   // Free seeking in both directions. The backend's segment-rate limiter
   // (FRONTEND.md §5.1) still throttles excessive scrubbing — if it kicks
   // in, hls.js surfaces a fatal NETWORK_ERROR and VideoPlayer re-mints
   // the token via its standard refresh path.
   function seekTo(t: number) {
-    if (!videoEl || !Number.isFinite(t)) return;
-    const max = Number.isFinite(videoEl.duration) ? videoEl.duration : t;
-    videoEl.currentTime = Math.max(0, Math.min(max, t));
+    const el = videoElRef.current;
+    if (!el || !Number.isFinite(t)) return;
+    const max = Number.isFinite(el.duration) ? el.duration : t;
+    el.currentTime = Math.max(0, Math.min(max, t));
   }
 
   // Pointer-based scrubbing on the progress track. We avoid a native
@@ -202,7 +213,7 @@ export function LessonVideoPlayer({
     return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   }
   function onScrubStart(e: React.PointerEvent) {
-    if (!videoEl || duration <= 0) return;
+    if (!videoElRef.current || duration <= 0) return;
     scrubbingRef.current = true;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     seekTo(pctFromClientX(e.clientX) * duration);
@@ -233,8 +244,9 @@ export function LessonVideoPlayer({
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (!videoEl) return;
-    const dur = videoEl.duration;
+    const el = videoElRef.current;
+    if (!el) return;
+    const dur = el.duration;
     if (e.key === ' ' || e.key === 'k') {
       e.preventDefault();
       togglePlay();
@@ -246,10 +258,10 @@ export function LessonVideoPlayer({
       toggleMute();
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      seekTo(videoEl.currentTime - 5);
+      seekTo(el.currentTime - 5);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      seekTo(videoEl.currentTime + 5);
+      seekTo(el.currentTime + 5);
     } else if (e.key === 'Home') {
       e.preventDefault();
       seekTo(0);

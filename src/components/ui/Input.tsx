@@ -27,9 +27,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       )}
       <div
         className={cn(
-          'flex items-center gap-2 rounded-lg border bg-white px-3 transition-colors',
+          'flex items-center gap-2 rounded-xl border bg-white px-3 transition-colors',
           'focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100',
-          'shadow-[var(--shadow-input)]',
+          'shadow-[var(--shadow-input)] has-[input:disabled]:bg-ink-50',
           error
             ? 'border-danger-500 focus-within:border-danger-500 focus-within:ring-red-100'
             : 'border-ink-200',

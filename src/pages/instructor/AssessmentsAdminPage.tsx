@@ -4,13 +4,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Spinner } from '@/components/ui/Spinner';
+import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { useCourseCurriculum, useCourseDetail } from '@/features/course/hooks';
 import { adminApi, instructorApi } from '@/api/instructor';
 import { ApiError } from '@/api/errors';
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useT } from '@/i18n/I18nProvider';
 import type {
   AssessmentStatus,
   AssessmentSummary,
@@ -33,6 +34,7 @@ import type {
 export function AssessmentsAdminPage() {
   const { slug } = useParams<{ slug: string }>();
   const { user } = useAuth();
+  const t = useT();
   const course = useCourseDetail(slug);
   const curriculum = useCourseCurriculum(slug);
 
@@ -47,10 +49,8 @@ export function AssessmentsAdminPage() {
     return (
       <div className="grid place-items-center py-24 text-center">
         <div>
-          <p className="text-sm font-semibold text-ink-900">Instructors only</p>
-          <p className="mt-1 text-sm text-ink-500">
-            This page is restricted to instructor and admin accounts.
-          </p>
+          <p className="text-sm font-semibold text-navy-900">{t('admin.assess.instructorsOnly')}</p>
+          <p className="mt-1 text-sm text-ink-500">{t('admin.assess.instructorsOnlyBody')}</p>
         </div>
       </div>
     );
@@ -58,8 +58,11 @@ export function AssessmentsAdminPage() {
 
   if (course.isLoading || curriculum.isLoading) {
     return (
-      <div className="grid place-items-center py-24">
-        <Spinner size="lg" />
+      <div className="space-y-4">
+        <Skeleton className="h-4 w-64" />
+        <Skeleton className="h-8 w-96 max-w-full" />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
     );
   }
@@ -67,16 +70,18 @@ export function AssessmentsAdminPage() {
   if (!course.data) {
     return (
       <div className="grid place-items-center py-24 text-center">
-        <p className="text-sm text-ink-500">Course not found.</p>
+        <p className="text-sm text-ink-500">{t('admin.assess.courseNotFound')}</p>
       </div>
     );
   }
 
   const sections = curriculum.data?.sections ?? [];
   const sectionLabel = (id: string | null): string => {
-    if (!id) return '— none —';
+    if (!id) return t('admin.assess.sectionNone');
     const s = sections.find((x) => x.id === id);
-    return s ? `Module ${s.order}: ${s.title}` : 'Unknown section';
+    return s
+      ? t('admin.assess.moduleLabel', { n: s.order, title: s.title })
+      : t('admin.assess.sectionUnknown');
   };
 
   const items = assessments.data?.items ?? [];
@@ -85,48 +90,44 @@ export function AssessmentsAdminPage() {
     <div className="space-y-6">
       <Breadcrumb
         items={[
-          { label: 'Explore', to: '/explore' },
+          { label: t('nav.explore'), to: '/explore' },
           { label: course.data.title, to: `/courses/${slug}` },
-          { label: 'Assessments admin' },
+          { label: t('admin.assess.breadcrumb') },
         ]}
       />
 
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink-900">
-          Assessments — {course.data.title}
+        <h1 className="text-2xl font-bold tracking-tight text-navy-900">
+          {t('admin.assess.title', { course: course.data.title })}
         </h1>
-        <p className="max-w-2xl text-sm text-ink-500">
-          For an assessment to appear under a module on the student side, it
-          needs <b>status&nbsp;=&nbsp;published</b>, <b>is_section_quiz&nbsp;=&nbsp;true</b>,
-          and a valid <b>section</b>. Misconfigured ones are flagged below.
-        </p>
+        <p className="max-w-2xl text-sm text-ink-500">{t('admin.assess.intro')}</p>
       </header>
 
       <div className="rounded-md border border-ink-200 bg-ink-50 px-3 py-2 text-xs text-ink-600">
-        Signed in as <b>{user?.email ?? '—'}</b> · role:{' '}
-        <b className="text-ink-900">{user?.role ?? '—'}</b>
+        {t('admin.assess.signedInAs', {
+          email: user?.email ?? '—',
+          role: user?.role ?? '—',
+        })}
       </div>
 
       {assessments.isLoading ? (
-        <div className="grid place-items-center py-12">
-          <Spinner />
+        <div className="space-y-3">
+          <SkeletonCard />
+          <SkeletonCard />
         </div>
       ) : assessments.error instanceof ApiError ? (
         <div className="rounded-2xl border border-danger-500/40 bg-danger-50 p-6 text-sm text-danger-600">
-          <p className="font-semibold">Couldn’t load assessments.</p>
+          <p className="font-semibold">{t('admin.assess.loadErrorTitle')}</p>
           <p className="mt-1 text-xs">
-            Status {assessments.error.status} · code{' '}
-            <code>{assessments.error.code}</code>
+            {t('admin.assess.loadErrorMeta', {
+              status: assessments.error.status,
+              code: assessments.error.code,
+            })}
           </p>
           <p className="mt-1 text-xs">{assessments.error.message}</p>
           {assessments.error.status === 403 && (
             <>
-              <p className="mt-3 text-xs text-ink-700">
-                The backend only returns assessments for courses owned by the
-                authenticated instructor. If this is your account, make sure
-                your instructor profile is set up (PUT /instructor/me/profile)
-                and that you’re the instructor of this course.
-              </p>
+              <p className="mt-3 text-xs text-ink-700">{t('admin.assess.forbiddenHint')}</p>
               {user?.role === 'admin' && course.data && (
                 <TakeOwnershipButton
                   courseId={course.data.id}
@@ -137,13 +138,9 @@ export function AssessmentsAdminPage() {
           )}
         </div>
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-ink-200 bg-white p-8 text-center text-sm text-ink-500">
-          <p>No assessments returned for this course.</p>
-          <p className="mt-2 text-xs">
-            The endpoint scopes results to the courses your instructor
-            account owns — if assessments do exist server-side but live
-            under a different instructor, this list will be empty.
-          </p>
+        <div className="rounded-2xl border border-dashed border-ink-300 bg-white p-8 text-center text-sm text-ink-500">
+          <p>{t('admin.assess.emptyTitle')}</p>
+          <p className="mt-2 text-xs">{t('admin.assess.emptyBody')}</p>
         </div>
       ) : (
         <ul className="space-y-3">
@@ -173,6 +170,7 @@ function AssessmentRow({
   sections: { id: string; order: number; title: string }[];
   courseId: string;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -187,41 +185,49 @@ function AssessmentRow({
   );
 
   const reasons: string[] = [];
-  if (a.status !== 'published') reasons.push(`status is "${a.status}"`);
-  if (!a.is_section_quiz) reasons.push('is_section_quiz=false');
-  if (!a.section_id) reasons.push('no section');
-  else if (!sections.some((s) => s.id === a.section_id))
-    reasons.push('section_id points to a section not in this course');
+  if (a.status !== 'published') {
+    reasons.push(t('admin.assess.reason.status', { status: a.status }));
+  }
+  if (!a.is_section_quiz) reasons.push(t('admin.assess.reason.notSectionQuiz'));
+  if (!a.section_id) reasons.push(t('admin.assess.reason.noSection'));
+  else if (!sections.some((s) => s.id === a.section_id)) {
+    reasons.push(t('admin.assess.reason.foreignSection'));
+  }
 
   return (
     <li className="rounded-2xl border border-ink-200 bg-white p-4 shadow-[var(--shadow-card)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-base font-semibold text-ink-900">{a.title}</h2>
+            <h2 className="min-w-0 truncate text-base font-semibold text-navy-900">{a.title}</h2>
             <StatusBadge status={a.status} />
             {a.is_section_quiz ? (
-              <Badge tone="brand">Section quiz</Badge>
+              <Badge tone="brand">{t('admin.assess.badge.sectionQuiz')}</Badge>
             ) : (
-              <Badge tone="neutral">Not a section quiz</Badge>
+              <Badge tone="neutral">{t('admin.assess.badge.notSectionQuiz')}</Badge>
             )}
             {visible ? (
-              <Badge tone="success">Visible to students</Badge>
+              <Badge tone="success">{t('admin.assess.badge.visible')}</Badge>
             ) : (
-              <Badge tone="danger">Hidden from students</Badge>
+              <Badge tone="danger">{t('admin.assess.badge.hidden')}</Badge>
             )}
           </div>
           <p className="mt-1 text-xs text-ink-500">
-            Section: <span className="font-medium text-ink-700">{sectionLabel(a.section_id)}</span>
+            {t('admin.assess.meta.section')}:{' '}
+            <span className="font-medium text-ink-700">{sectionLabel(a.section_id)}</span>
             {' · '}
-            {a.questions_count} question{a.questions_count === 1 ? '' : 's'}
+            {a.questions_count === 1
+              ? t('admin.assess.meta.question', { n: a.questions_count })
+              : t('admin.assess.meta.questions', { n: a.questions_count })}
             {' · '}
-            pass {a.pass_percent}%
-            {a.time_limit_minutes ? ` · ${a.time_limit_minutes} min` : ''}
+            {t('admin.assess.meta.pass', { pct: a.pass_percent })}
+            {a.time_limit_minutes
+              ? ` · ${t('admin.assess.meta.minutes', { n: a.time_limit_minutes })}`
+              : ''}
           </p>
           {!visible && reasons.length > 0 && (
             <p className="mt-2 text-xs text-danger-600">
-              Hidden because: {reasons.join('; ')}.
+              {t('admin.assess.hiddenBecause', { reasons: reasons.join('; ') })}
             </p>
           )}
         </div>
@@ -229,16 +235,19 @@ function AssessmentRow({
           <Button
             variant="ghost"
             size="sm"
+            className="min-h-11"
             onClick={() => navigate(`/assessments/${a.id}`)}
           >
-            Preview
+            {t('admin.assess.preview')}
           </Button>
           <Button
             variant={editing ? 'ghost' : 'outline'}
             size="sm"
+            className="min-h-11"
             onClick={() => setEditing((v) => !v)}
+            aria-expanded={editing}
           >
-            {editing ? 'Close' : 'Edit'}
+            {editing ? t('admin.assess.closeEdit') : t('admin.assess.edit')}
           </Button>
         </div>
       </div>
@@ -274,6 +283,7 @@ function EditPanel({
   onCancel: () => void;
   onSaved: () => void;
 }) {
+  const t = useT();
   const [status, setStatus] = useState<AssessmentStatus>(a.status);
   const [isSectionQuiz, setIsSectionQuiz] = useState<boolean>(a.is_section_quiz);
   const [sectionId, setSectionId] = useState<string>(a.section_id ?? '');
@@ -304,37 +314,39 @@ function EditPanel({
   return (
     <div className="mt-4 grid gap-4 rounded-xl border border-ink-200 bg-ink-50 p-4 sm:grid-cols-3">
       <Select
-        label="Section"
+        label={t('admin.assess.field.section')}
         options={[
-          { value: '', label: '— none (course-level) —' },
+          { value: '', label: t('admin.assess.sectionNoneOption') },
           ...sections.map((s) => ({
             value: s.id,
-            label: `Module ${s.order}: ${s.title}`,
+            label: t('admin.assess.moduleLabel', { n: s.order, title: s.title }),
           })),
         ]}
         value={sectionId}
         onChange={(e) => setSectionId(e.target.value)}
       />
       <Select
-        label="Status"
+        label={t('admin.assess.field.status')}
         options={[
-          { value: 'draft', label: 'Draft' },
-          { value: 'published', label: 'Published' },
-          { value: 'archived', label: 'Archived' },
+          { value: 'draft', label: t('admin.assess.status.draft') },
+          { value: 'published', label: t('admin.assess.status.published') },
+          { value: 'archived', label: t('admin.assess.status.archived') },
         ]}
         value={status}
         onChange={(e) => setStatus(e.target.value as AssessmentStatus)}
       />
       <div className="flex flex-col gap-1.5">
-        <span className="text-sm font-medium text-ink-900">Is section quiz</span>
+        <span className="text-sm font-medium text-ink-900">
+          {t('admin.assess.field.sectionQuiz')}
+        </span>
         <div className="flex h-11 items-center">
           <Switch
             checked={isSectionQuiz}
             onChange={setIsSectionQuiz}
-            label="Mark as section quiz"
+            label={t('admin.assess.field.sectionQuizToggle')}
           />
           <span className="ml-2 text-xs text-ink-500">
-            {isSectionQuiz ? 'Yes' : 'No'}
+            {isSectionQuiz ? t('admin.assess.yes') : t('admin.assess.no')}
           </span>
         </div>
       </div>
@@ -344,26 +356,33 @@ function EditPanel({
           <Button
             variant="ghost"
             size="sm"
+            className="min-h-11"
             onClick={() => {
               setStatus('published');
               setIsSectionQuiz(true);
               if (!sectionId) setSectionId(sections[0].id);
             }}
           >
-            Pre-fill: make visible (section 1, published)
+            {t('admin.assess.prefill')}
           </Button>
         )}
         <div className="ml-auto flex items-center gap-2">
           {save.error instanceof ApiError && (
-            <span className="text-xs text-danger-600">
+            <span role="alert" className="text-xs text-danger-600">
               {save.error.message}
             </span>
           )}
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
+          <Button variant="ghost" size="sm" className="min-h-11" onClick={onCancel}>
+            {t('common.cancel')}
           </Button>
-          <Button size="sm" onClick={onSave} disabled={!dirty} loading={save.isPending}>
-            Save changes
+          <Button
+            size="sm"
+            className="min-h-11"
+            onClick={onSave}
+            disabled={!dirty}
+            loading={save.isPending}
+          >
+            {t('admin.assess.save')}
           </Button>
         </div>
       </div>
@@ -372,9 +391,14 @@ function EditPanel({
 }
 
 function StatusBadge({ status }: { status: AssessmentStatus }) {
-  if (status === 'published') return <Badge tone="success">Published</Badge>;
-  if (status === 'archived') return <Badge tone="neutral">Archived</Badge>;
-  return <Badge tone="warn">Draft</Badge>;
+  const t = useT();
+  if (status === 'published') {
+    return <Badge tone="success">{t('admin.assess.status.published')}</Badge>;
+  }
+  if (status === 'archived') {
+    return <Badge tone="neutral">{t('admin.assess.status.archived')}</Badge>;
+  }
+  return <Badge tone="warn">{t('admin.assess.status.draft')}</Badge>;
 }
 
 /**
@@ -389,6 +413,7 @@ function TakeOwnershipButton({
   courseId: string;
   fallbackName: string;
 }) {
+  const t = useT();
   const queryClient = useQueryClient();
   const reassign = useMutation({
     mutationFn: async () => {
@@ -412,19 +437,20 @@ function TakeOwnershipButton({
     <div className="mt-3 flex flex-col items-start gap-2">
       <Button
         size="sm"
+        className="min-h-11"
         onClick={() => reassign.mutate()}
         loading={reassign.isPending}
       >
-        Take ownership of this course (admin)
+        {t('admin.assess.takeOwnership')}
       </Button>
       {reassign.error instanceof ApiError && (
-        <p className="text-xs text-danger-600">
-          Reassign failed: {reassign.error.message}
+        <p role="alert" className="text-xs text-danger-600">
+          {t('admin.assess.reassignFailed', { message: reassign.error.message })}
         </p>
       )}
       {reassign.isSuccess && (
-        <p className="text-xs text-success-600">
-          Ownership transferred — reloading the list…
+        <p role="status" className="text-xs text-success-600">
+          {t('admin.assess.reassignSuccess')}
         </p>
       )}
     </div>

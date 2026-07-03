@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -99,10 +99,13 @@ export function PreferencesTab() {
 
   const [form, setForm] = useState<FormState>(initial);
 
-  // Re-hydrate when the server data lands / changes.
-  useEffect(() => {
+  // Re-hydrate when the server data lands / changes — done during render
+  // (adjust-state pattern) instead of via a setState-in-effect.
+  const [prevInitial, setPrevInitial] = useState(initial);
+  if (initial !== prevInitial) {
+    setPrevInitial(initial);
     setForm(initial);
-  }, [initial]);
+  }
 
   const save = useMutation({
     mutationFn: (payload: OnboardingUpdate) => onboardingApi.update(payload),

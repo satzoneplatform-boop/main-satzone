@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { CloseIcon } from '@/components/icons';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
 interface FilterChipProps {
@@ -9,6 +10,7 @@ interface FilterChipProps {
 }
 
 export function FilterChip({ children, onRemove, className }: FilterChipProps) {
+  const t = useT();
   return (
     <span
       className={cn(
@@ -20,9 +22,9 @@ export function FilterChip({ children, onRemove, className }: FilterChipProps) {
       {onRemove && (
         <button
           type="button"
-          aria-label="Remove filter"
+          aria-label={t('ui.removeFilter')}
           onClick={onRemove}
-          className="grid size-4 place-items-center rounded-full text-ink-400 hover:bg-ink-200 hover:text-ink-700"
+          className="-my-0.5 -mr-1 grid size-5 place-items-center rounded-full text-ink-500 transition-colors duration-150 hover:bg-ink-200 hover:text-ink-700"
         >
           <CloseIcon className="size-3" />
         </button>

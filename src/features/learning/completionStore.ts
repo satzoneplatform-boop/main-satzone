@@ -84,12 +84,16 @@ export function useCompletedLessons(
     () => (enrollmentId ? read(enrollmentId) : new Set()),
   );
 
+  // Adjust-during-render: re-read the snapshot when the enrollment changes
+  // instead of setting state synchronously inside the effect.
+  const [prevId, setPrevId] = useState(enrollmentId);
+  if (prevId !== enrollmentId) {
+    setPrevId(enrollmentId);
+    setSnapshot(enrollmentId ? read(enrollmentId) : new Set());
+  }
+
   useEffect(() => {
-    if (!enrollmentId) {
-      setSnapshot(new Set());
-      return;
-    }
-    setSnapshot(read(enrollmentId));
+    if (!enrollmentId) return;
     function onLocal(e: Event) {
       const detail = (e as CustomEvent<{ enrollmentId: string }>).detail;
       if (detail?.enrollmentId === enrollmentId) {

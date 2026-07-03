@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
@@ -9,15 +9,16 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { Textarea } from '@/components/ui/Textarea';
 import {
+  BookIcon,
   CloseIcon,
   DownloadIcon,
+  PanelLeftIcon,
   SearchIcon,
 } from '@/components/icons';
-import {
-  VideoPlayer,
-  playbackErrorLabel,
-} from '@/components/player/VideoPlayer';
-import { CurriculumNav } from '@/components/learning/CurriculumNav';
+import { VideoPlayer } from '@/components/player/VideoPlayer';
+import { playbackErrorLabel } from '@/components/player/playbackError';
+import { CurriculumNav, CurriculumSheet } from '@/components/learning/CurriculumNav';
+import { CompletionCelebration } from '@/components/learning/CompletionCelebration';
 import { ApiError } from '@/api/errors';
 import {
   useCourseCurriculum,
@@ -47,11 +48,17 @@ type Tab = 'transcripts' | 'notes' | 'downloads';
 export function LessonPlayerPage() {
   const { slug, lessonId } = useParams<{ slug: string; lessonId: string }>();
   const t = useT();
+  const navigate = useNavigate();
   const course = useCourseDetail(slug);
   const curriculum = useCourseCurriculum(slug);
   const enrollments = useMyEnrollments({ size: 50 });
   const playback = useLessonPlayback(lessonId);
   const [tab, setTab] = useState<Tab>('transcripts');
+  // Mobile curriculum sheet — CurriculumNav is desktop-only (hidden < lg).
+  const [curriculumOpen, setCurriculumOpen] = useState(false);
+  // Celebration fires once when this lesson first transitions to complete.
+  const [celebrate, setCelebrate] = useState(false);
+  const celebratedRef = useRef(false);
 
   const tabs: TabItem<Tab>[] = [
     { value: 'transcripts', label: t('learning.lesson.transcripts') },
@@ -96,6 +103,11 @@ export function LessonPlayerPage() {
     // sequential lock in the curriculum nav updates immediately.
     if (completed) {
       completionStore.markComplete(enrollment.id, lessonId);
+      // Fire the celebration once per lesson view.
+      if (!celebratedRef.current) {
+        celebratedRef.current = true;
+        setCelebrate(true);
+      }
     }
   }
 
@@ -117,6 +129,8 @@ export function LessonPlayerPage() {
     return orderedLessonIds.length; // everything completed
   }, [orderedLessonIds, completedIds]);
   const currentIndex = lessonId ? orderedLessonIds.indexOf(lessonId) : -1;
+  const nextLessonId =
+    currentIndex >= 0 ? orderedLessonIds[currentIndex + 1] : undefined;
   const isLockedLesson =
     currentIndex >= 0 && currentIndex > firstLockedIndex;
 
@@ -182,15 +196,28 @@ export function LessonPlayerPage() {
   const authoritativeDuration = computedDuration > 0 ? computedDuration : null;
 
   return (
-    <div className="-mx-8 -my-6 flex h-[calc(100vh-72px)] min-h-0 flex-col bg-white">
-      <header className="border-b border-ink-200 px-6 py-3">
-        <Breadcrumb
-          items={[
-            { label: t('learning.lesson.coursesBreadcrumb'), to: '/learning-path' },
-            { label: course.data.title, to: `/courses/${slug}/learn` },
-            { label: lesson?.title ?? t('learning.lesson.lessonLabel') },
-          ]}
-        />
+    <div className="-mx-4 -mt-6 -mb-24 flex h-[calc(100vh-72px)] min-h-0 flex-col bg-white sm:-mx-6 lg:-mx-8 lg:-mb-6">
+      <header className="flex items-center justify-between gap-3 border-b border-ink-200 px-4 py-3 sm:px-6">
+        <div className="min-w-0">
+          <Breadcrumb
+            items={[
+              { label: t('learning.lesson.coursesBreadcrumb'), to: '/learning-path' },
+              { label: course.data.title, to: `/courses/${slug}/learn` },
+              { label: lesson?.title ?? t('learning.lesson.lessonLabel') },
+            ]}
+          />
+        </div>
+        {/* Mobile curriculum trigger — the sidebar outline is hidden < lg. */}
+        <button
+          type="button"
+          onClick={() => setCurriculumOpen(true)}
+          aria-haspopup="dialog"
+          aria-label={t('learning.curriculum.browse')}
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-ink-200 bg-white px-2.5 text-xs font-medium text-ink-700 hover:bg-ink-50 lg:hidden"
+        >
+          <PanelLeftIcon className="size-4" />
+          <span className="hidden sm:inline">{t('learning.curriculum.browse')}</span>
+        </button>
       </header>
 
       <div className="flex min-h-0 flex-1">
@@ -202,7 +229,7 @@ export function LessonPlayerPage() {
           enforceSequentialLock
         />
 
-        <main className="min-w-0 flex-1 overflow-auto px-6 py-6">
+        <main className="min-w-0 flex-1 overflow-auto px-4 py-5 pb-28 sm:px-6 lg:py-6 lg:pb-6">
           <div className="mx-auto max-w-4xl space-y-5">
             <VideoPlayer
               src={playback.data?.hls_url ?? null}
@@ -242,6 +269,29 @@ export function LessonPlayerPage() {
           </div>
         </main>
       </div>
+
+      <CurriculumSheet
+        open={curriculumOpen}
+        onClose={() => setCurriculumOpen(false)}
+        curriculum={curriculum.data}
+        courseSlug={slug!}
+        activeId={lessonId}
+        completedIds={completedIds}
+        enforceSequentialLock
+      />
+
+      <CompletionCelebration
+        open={celebrate}
+        onClose={() => setCelebrate(false)}
+        onContinue={
+          nextLessonId
+            ? () => {
+                setCelebrate(false);
+                navigate(`/courses/${slug}/lessons/${nextLessonId}`);
+              }
+            : undefined
+        }
+      />
     </div>
   );
 }
@@ -318,8 +368,13 @@ function NotesTab({ lessonId }: { lessonId: string }) {
       ) : notes.length === 0 ? (
         <div className="grid place-items-center rounded-2xl border border-dashed border-ink-200 bg-ink-50 py-16 text-center text-sm text-ink-500">
           <div>
-            <span aria-hidden className="text-4xl">📗</span>
-            <p className="mt-2">{t('learning.lesson.emptyNotes')}</p>
+            <span
+              aria-hidden
+              className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600"
+            >
+              <BookIcon className="size-6" />
+            </span>
+            <p className="mt-3">{t('learning.lesson.emptyNotes')}</p>
           </div>
         </div>
       ) : (
@@ -341,7 +396,7 @@ function NotesTab({ lessonId }: { lessonId: string }) {
                 onClick={() => remove.mutate(n.id)}
                 aria-label={t('learning.lesson.deleteNote')}
                 disabled={remove.isPending}
-                className="text-ink-400 hover:text-ink-700 disabled:opacity-50"
+                className="-m-2 grid size-11 shrink-0 place-items-center rounded-full text-ink-400 hover:bg-ink-50 hover:text-ink-700 disabled:opacity-50"
               >
                 <CloseIcon />
               </button>
@@ -414,8 +469,13 @@ function DownloadsTab({ lessonId }: { lessonId: string }) {
     return (
       <div className="grid place-items-center rounded-2xl border border-dashed border-ink-200 bg-ink-50 py-16 text-center text-sm text-ink-500">
         <div>
-          <span aria-hidden className="text-4xl">📎</span>
-          <p className="mt-2">{t('learning.lesson.emptyDownloads')}</p>
+          <span
+            aria-hidden
+            className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600"
+          >
+            <DownloadIcon className="size-6" />
+          </span>
+          <p className="mt-3">{t('learning.lesson.emptyDownloads')}</p>
         </div>
       </div>
     );
@@ -434,12 +494,12 @@ function DownloadsTab({ lessonId }: { lessonId: string }) {
               key={file.id}
               className="flex items-center justify-between px-5 py-3 text-sm"
             >
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 place-items-center rounded-lg bg-ink-100 text-xs font-semibold text-ink-700">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-ink-100 text-xs font-semibold text-ink-700">
                   {fileKindLabel(file)}
                 </span>
-                <div>
-                  <p className="font-medium text-ink-900">{file.title}</p>
+                <div className="min-w-0">
+                  <p className="truncate font-medium text-ink-900">{file.title}</p>
                   <p className="text-xs text-ink-500">
                     {formatBytes(file.file_size_bytes)}
                   </p>
@@ -451,8 +511,8 @@ function DownloadsTab({ lessonId }: { lessonId: string }) {
                   download={file.title}
                   target="_blank"
                   rel="noreferrer"
-                  aria-label={`Download ${file.title}`}
-                  className="grid size-8 place-items-center rounded-md text-ink-500 hover:bg-ink-50 hover:text-ink-700"
+                  aria-label={t('learning.lesson.downloadFile', { title: file.title })}
+                  className="grid size-11 shrink-0 place-items-center rounded-lg text-ink-500 hover:bg-ink-50 hover:text-ink-700"
                 >
                   <DownloadIcon />
                 </a>
