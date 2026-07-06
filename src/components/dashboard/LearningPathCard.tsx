@@ -36,11 +36,11 @@ export function LearningPathCard({ enrollments }: LearningPathCardProps) {
     <DashboardCard title={t('dashboard.learningPath.heading')} bodyClassName="space-y-4">
       {enrollments.slice(0, 4).map((e) => (
         <div key={e.id}>
-          <div className="flex items-center justify-between">
-            <p className="truncate text-sm font-medium text-ink-900">
+          <div className="flex items-center justify-between gap-3">
+            <p className="min-w-0 truncate text-sm font-medium text-ink-900">
               {e.course.title}
             </p>
-            <span className="text-xs font-medium text-ink-500">
+            <span className="shrink-0 text-xs font-medium tabular-nums text-ink-500">
               {Math.round(e.progress_percent)}%
             </span>
           </div>

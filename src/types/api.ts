@@ -327,6 +327,9 @@ export interface OrderRead {
   course_id: string | null;
   program_id: string | null;
   amount_cents: number;
+  original_amount_cents: number | null;
+  discount_cents: number;
+  promocode_id: string | null;
   currency: string;
   status: OrderStatus;
   provider: PaymentProvider | null;

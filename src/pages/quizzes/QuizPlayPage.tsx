@@ -1,8 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { ScoreRing } from '@/components/ui/ScoreRing';
+import { CheckIcon, ChevronLeftIcon } from '@/components/icons';
+import { Stagger, StaggerItem } from '@/components/motion/Stagger';
 import { useCourseDetail } from '@/features/course/hooks';
 import {
   usePracticeQuiz,
@@ -44,8 +48,10 @@ export function QuizPlayPage() {
   const course = useCourseDetail(slug);
   const submit = useSubmitPracticeAttempt(quizId, course.data?.id);
 
-  // Wall-clock start so we can report `started_at` on submit.
-  const startedAtRef = useRef<string>(new Date().toISOString());
+  // Wall-clock start so we can report `started_at` on submit. useState's
+  // lazy initializer runs exactly once per mount and, unlike a ref, is
+  // safe to read during render.
+  const [startedAt] = useState<string>(() => new Date().toISOString());
 
   if (quiz.isLoading) {
     return (
@@ -81,11 +87,11 @@ export function QuizPlayPage() {
     <div className="flex min-h-screen flex-col bg-ink-50">
       <QuizRunner
         quiz={quiz.data}
-        startedAt={startedAtRef.current}
+        startedAt={startedAt}
         backTo={`/quizzes/${slug}`}
         onSubmit={(answers) =>
           submit.mutateAsync({
-            started_at: startedAtRef.current,
+            started_at: startedAt,
             answers,
           })
         }
@@ -236,9 +242,10 @@ function McqRunner({
 }) {
   const t = useT();
   const data = item.data as MCQDataStudent;
+  const reduce = useReducedMotion();
   // Re-shuffle on mount so option order isn't predictable. Stable across
-  // re-renders via useMemo keyed on item id.
-  const options = useMemo(() => shuffle(data.options), [item.id, data.options]);
+  // re-renders via useMemo (options identity changes when the item does).
+  const options = useMemo(() => shuffle(data.options), [data.options]);
 
   const [picked, setPicked] = useState<string | null>(null);
 
@@ -253,7 +260,7 @@ function McqRunner({
       <p className="text-xs uppercase tracking-wider text-ink-500">
         {t('quizzes.dir.mcq')}
       </p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink-900">
+      <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">
         {data.prompt}
       </h1>
       {data.image_url && (
@@ -268,20 +275,28 @@ function McqRunner({
         {options.map((opt, i) => {
           const isPicked = opt.id === picked;
           return (
-            <button
+            <motion.button
               key={opt.id}
               type="button"
               onClick={() => pick(opt.id)}
               disabled={answered}
+              whileTap={answered || reduce ? undefined : { scale: 0.99 }}
+              whileHover={answered || reduce ? undefined : { y: -1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 26 }}
               className={cn(
-                'flex items-center gap-3 rounded-xl border p-4 text-left text-base font-medium transition-colors',
+                'flex min-h-[52px] items-center gap-3.5 rounded-xl border p-4 text-left text-base font-medium transition-colors',
                 isPicked
-                  ? 'border-brand-500 bg-brand-50 text-brand-700 ring-2 ring-brand-100'
-                  : 'border-ink-200 bg-white hover:bg-ink-50',
-                answered && !isPicked && 'opacity-60',
+                  ? 'border-brand-500 bg-brand-50 text-brand-700 ring-1 ring-brand-300'
+                  : 'border-ink-200 bg-white hover:border-brand-300 hover:bg-ink-50',
+                answered && !isPicked && 'opacity-50',
               )}
             >
-              <span className="grid size-7 shrink-0 place-items-center rounded-md bg-ink-100 text-xs font-semibold text-ink-700">
+              <span
+                className={cn(
+                  'grid size-8 shrink-0 place-items-center rounded-lg text-sm font-bold transition-colors',
+                  isPicked ? 'bg-brand-600 text-white' : 'bg-ink-100 text-ink-600',
+                )}
+              >
                 {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'][i] ?? String(i + 1)}
               </span>
               <span className="flex-1">{opt.text}</span>
@@ -289,10 +304,15 @@ function McqRunner({
                 <img
                   src={opt.image_url}
                   alt=""
-                  className="h-10 w-10 shrink-0 rounded object-cover"
+                  className="h-11 w-11 shrink-0 rounded-lg border border-ink-200 object-cover"
                 />
               )}
-            </button>
+              {isPicked && (
+                <span className="grid size-5 shrink-0 place-items-center rounded-full bg-brand-600 text-white">
+                  <CheckIcon className="size-3.5" />
+                </span>
+              )}
+            </motion.button>
           );
         })}
       </div>
@@ -365,11 +385,11 @@ function MatchingRunner({
       <p className="text-xs uppercase tracking-wider text-ink-500">
         {t('quizzes.dir.matching')}
       </p>
-      <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink-900">
+      <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink-900 sm:text-3xl">
         {data.prompt}
       </h1>
 
-      <div className="mt-6 grid grid-cols-2 gap-3">
+      <div className="mt-6 grid min-w-0 grid-cols-2 gap-2 sm:gap-3">
         <div className="space-y-3">
           {data.lefts.map((l) => (
             <MatchTileButton
@@ -398,7 +418,7 @@ function MatchingRunner({
         <button
           type="button"
           onClick={undo}
-          className="mx-auto mt-4 block text-xs text-ink-500 underline-offset-2 hover:text-ink-700 hover:underline"
+          className="mx-auto mt-3 flex min-h-11 items-center px-3 text-xs text-ink-500 underline-offset-2 hover:text-ink-700 hover:underline"
         >
           {t('quizzes.matching.undo')}
         </button>
@@ -424,7 +444,7 @@ function MatchTileButton({
       onClick={onPick}
       disabled={locked}
       className={cn(
-        'grid min-h-[60px] place-items-center rounded-xl border bg-white p-3 text-center text-sm font-semibold transition-colors',
+        'grid min-h-[60px] w-full place-items-center break-words rounded-xl border bg-white p-3 text-center text-sm font-semibold transition-colors',
         locked && 'border-dashed border-ink-200 bg-ink-50 text-ink-300',
         selected &&
           !locked &&
@@ -453,6 +473,7 @@ function ResultScreen({
   onPlayAgain: () => void;
 }) {
   const t = useT();
+  const reduce = useReducedMotion();
   const messageKey =
     result.score_percent === 100
       ? 'quizzes.result.perfect'
@@ -464,23 +485,37 @@ function ResultScreen({
 
   // Build a quick lookup so per-item review can show the prompt.
   const itemById = new Map(items.map((it) => [it.id, it]));
+  const passed = result.score_percent >= 80;
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-10">
-      <div className="rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-[var(--shadow-card)]">
+      <motion.div
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        className="rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-[var(--shadow-card)]"
+      >
         <p className="text-xs uppercase tracking-wider text-ink-500">
           {t('quizzes.result.title')}
         </p>
-        <p className="mt-2 text-5xl font-semibold text-brand-600">
-          {result.score_percent}%
-        </p>
-        <p className="mt-1 text-sm text-ink-500">
+        <div className="mt-4 grid place-items-center">
+          <ScoreRing
+            value={result.score_percent}
+            max={100}
+            suffix="%"
+            size={148}
+            strokeWidth={12}
+            ringClassName={passed ? 'text-success-500' : 'text-brand-600'}
+            valueClassName={passed ? 'text-success-600' : 'text-brand-600'}
+          />
+        </div>
+        <p className="mt-3 text-sm text-ink-500">
           {t('quizzes.result.line', {
             correct: result.correct_count,
             total: result.total_count,
           })}
         </p>
-        <p className="mt-4 text-base font-semibold text-ink-900">
+        <p className="mt-2 text-base font-semibold text-navy-900">
           {t(messageKey as never)}
         </p>
         <div className="mt-6 flex gap-2">
@@ -493,49 +528,51 @@ function ResultScreen({
             </Button>
           </Link>
         </div>
-      </div>
+      </motion.div>
 
       {result.results.length > 0 && (
-        <section className="mt-6 space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+        <section className="mt-6">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-ink-500">
             {t('quizzes.result.breakdown')}
           </p>
-          {result.results.map((r, i) => {
-            const it = itemById.get(r.item_id);
-            const prompt =
-              it && (it.data.type === 'mcq' ? it.data.prompt : it.data.prompt);
-            return (
-              <div
-                key={r.item_id}
-                className={cn(
-                  'flex items-start gap-3 rounded-xl border bg-white p-3 text-sm',
-                  r.is_correct
-                    ? 'border-success-200 bg-success-50/40'
-                    : 'border-danger-200 bg-danger-50/40',
-                )}
-              >
-                <span
+          <Stagger className="space-y-2" stagger={0.05}>
+            {result.results.map((r, i) => {
+              const it = itemById.get(r.item_id);
+              const prompt =
+                it && (it.data.type === 'mcq' ? it.data.prompt : it.data.prompt);
+              return (
+                <StaggerItem
+                  key={r.item_id}
                   className={cn(
-                    'grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white',
-                    r.is_correct ? 'bg-success-500' : 'bg-danger-500',
+                    'flex items-start gap-3 rounded-xl border bg-white p-3 text-sm',
+                    r.is_correct
+                      ? 'border-success-200 bg-success-50/40'
+                      : 'border-danger-200 bg-danger-50/40',
                   )}
                 >
-                  {i + 1}
-                </span>
-                <span className="flex-1 text-ink-700">{prompt ?? r.item_id}</span>
-                <span
-                  className={cn(
-                    'shrink-0 text-xs font-semibold',
-                    r.is_correct ? 'text-success-600' : 'text-danger-600',
-                  )}
-                >
-                  {r.is_correct
-                    ? t('quizzes.feedback.correctShort')
-                    : t('quizzes.feedback.wrongShort')}
-                </span>
-              </div>
-            );
-          })}
+                  <span
+                    className={cn(
+                      'grid size-6 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-white',
+                      r.is_correct ? 'bg-success-500' : 'bg-danger-500',
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="flex-1 text-ink-700">{prompt ?? r.item_id}</span>
+                  <span
+                    className={cn(
+                      'shrink-0 text-xs font-semibold',
+                      r.is_correct ? 'text-success-600' : 'text-danger-600',
+                    )}
+                  >
+                    {r.is_correct
+                      ? t('quizzes.feedback.correctShort')
+                      : t('quizzes.feedback.wrongShort')}
+                  </span>
+                </StaggerItem>
+              );
+            })}
+          </Stagger>
         </section>
       )}
     </main>
@@ -563,8 +600,14 @@ function Header({
   return (
     <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-ink-200 bg-white px-4 py-3">
       <Link to={backTo}>
-        <Button variant="ghost" size="sm" onClick={onQuit}>
-          ‹ {t('common.cancel')}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="min-h-11"
+          leftIcon={<ChevronLeftIcon className="size-4" />}
+          onClick={onQuit}
+        >
+          {t('common.cancel')}
         </Button>
       </Link>
       <div className="flex-1">

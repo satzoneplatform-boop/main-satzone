@@ -3,7 +3,7 @@ import { ApiError } from '@/api/errors';
 import { ArrowRightIcon, CheckIcon } from '@/components/icons';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
+import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { usePracticeQuiz } from '@/features/quizzes/hooks';
 import { useT } from '@/i18n/I18nProvider';
 
@@ -20,8 +20,14 @@ export function QuizSetupPage() {
 
   if (quiz.isLoading) {
     return (
-      <div className="grid place-items-center py-24">
-        <Spinner size="lg" />
+      <div className="mx-auto max-w-2xl space-y-6" aria-hidden>
+        <Skeleton className="h-4 w-48" />
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-4 w-40" />
+        </div>
+        <SkeletonCard />
+        <Skeleton className="h-12 w-full rounded-xl" />
       </div>
     );
   }

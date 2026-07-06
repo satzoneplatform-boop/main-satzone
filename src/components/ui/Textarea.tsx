@@ -30,8 +30,9 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={describedBy}
         className={cn(
-          'w-full rounded-lg border bg-white p-3 text-sm text-ink-900 placeholder:text-ink-400',
+          'w-full rounded-xl border bg-white p-3 text-sm text-ink-900 placeholder:text-ink-400',
           'shadow-[var(--shadow-input)] focus:outline-none focus:ring-2 focus:ring-brand-100',
+          'disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400',
           error
             ? 'border-danger-500 focus:border-danger-500 focus:ring-red-100'
             : 'border-ink-200 focus:border-brand-500',

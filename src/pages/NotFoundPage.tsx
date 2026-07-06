@@ -1,19 +1,33 @@
 import { Link } from 'react-router-dom';
+import { LogoMark } from '@/components/brand/Logo';
+import { Button } from '@/components/ui/Button';
+import { ArrowRightIcon } from '@/components/icons';
+import { Reveal } from '@/components/motion/Reveal';
+import { useT } from '@/i18n/I18nProvider';
 
 export function NotFoundPage() {
+  const t = useT();
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-50 p-6 text-center">
-      <div>
-        <p className="text-sm font-medium text-brand-600">404</p>
-        <h1 className="mt-2 text-3xl font-semibold text-slate-900">Page not found</h1>
-        <p className="mt-2 text-slate-600">The page you’re looking for doesn’t exist.</p>
-        <Link
-          to="/"
-          className="mt-6 inline-flex rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
-        >
-          Back home
-        </Link>
-      </div>
+    <div className="grid min-h-screen place-items-center bg-ink-50 p-6">
+      <Reveal onView={false} className="w-full max-w-md">
+        <div className="rounded-2xl border border-ink-200 bg-white p-8 text-center shadow-[var(--shadow-card)] sm:p-10">
+          <div className="flex justify-center">
+            <LogoMark size={40} />
+          </div>
+          <p className="mt-6 text-5xl font-bold tracking-tight text-brand-600">404</p>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink-900">
+            {t('notFound.title')}
+          </h1>
+          <p className="mt-2 text-sm leading-relaxed text-ink-500">{t('notFound.body')}</p>
+          <div className="mt-8 flex justify-center">
+            <Link to="/dashboard">
+              <Button size="lg" rightIcon={<ArrowRightIcon />}>
+                {t('notFound.back')}
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Reveal>
     </div>
   );
 }

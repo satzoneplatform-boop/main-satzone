@@ -26,16 +26,17 @@ export function VerifyEmailPage() {
   // StrictMode double-fires every effect in dev; the second call would
   // hit "invalid_token" because the first one already consumed the row.
   const ranRef = useRef(false);
-  const [error, setError] = useState<string | null>(null);
+  // A missing token is knowable at mount, so it's derived in the lazy
+  // initializer instead of set from inside the effect.
+  const [error, setError] = useState<string | null>(() =>
+    token ? null : t('verifyEmail.missingToken'),
+  );
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     if (ranRef.current) return;
     ranRef.current = true;
-    if (!token) {
-      setError(t('verifyEmail.missingToken'));
-      return;
-    }
+    if (!token) return;
     verify.mutate(token, {
       onSuccess: () => setDone(true),
       onError: (err) => {
@@ -50,13 +51,13 @@ export function VerifyEmailPage() {
         setError(authErrorMessage(err));
       },
     });
-  }, [token, verify, t]);
+  }, [token, verify]);
 
   return (
     <AuthCenteredLayout>
       <Card className="w-full max-w-md p-6 text-center sm:p-8">
-        {verify.isPending && !done && !error ? (
-          <div className="grid place-items-center py-10">
+        {!done && !error ? (
+          <div role="status" className="grid place-items-center py-10">
             <Spinner size="lg" />
             <p className="mt-3 text-sm text-ink-500">{t('verifyEmail.checking')}</p>
           </div>
@@ -80,7 +81,7 @@ export function VerifyEmailPage() {
             </Button>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div role="alert" className="space-y-4">
             <div className="mx-auto grid size-14 place-items-center rounded-2xl bg-danger-50 text-danger-500">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="28" height="28">
                 <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />

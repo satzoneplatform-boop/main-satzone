@@ -4,9 +4,9 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Spinner } from '@/components/ui/Spinner';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
-import { SearchIcon } from '@/components/icons';
+import { ArrowRightIcon, BookIcon, BookmarkIcon, SearchIcon } from '@/components/icons';
 import { useMyEnrollments } from '@/features/learning/hooks';
 import { useT } from '@/i18n/I18nProvider';
 import type { EnrollmentRead } from '@/types/api';
@@ -54,15 +54,11 @@ export function MyLearningsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs text-ink-500">
-        <span>{t('learning.myLearnings.courseType')}</span>
-        <span>·</span>
-        <span>{t('learning.myLearnings.lastModified')}</span>
-      </div>
-
       {enrollments.isLoading ? (
-        <div className="grid place-items-center py-24">
-          <Spinner size="lg" />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <TileSkeleton key={i} />
+          ))}
         </div>
       ) : tab === 'saved' ? (
         <SavedPlaceholder />
@@ -90,7 +86,7 @@ function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
   return (
     <Link
       to={next}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-md"
+      className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-ink-100">
         {c.thumbnail_url && (
@@ -136,15 +132,42 @@ function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
   );
 }
 
+function TileSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]"
+    >
+      <Skeleton className="aspect-[16/10] w-full rounded-none" />
+      <div className="space-y-3 p-4">
+        <Skeleton className="h-4 w-4/5" />
+        <div className="flex items-center gap-2">
+          <Skeleton circle className="size-5" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <Skeleton className="h-2 w-full" />
+      </div>
+    </div>
+  );
+}
+
 function EmptyEnrollments() {
   const t = useT();
   return (
-    <div className="grid place-items-center py-16 text-center text-sm text-ink-500">
+    <div className="grid place-items-center rounded-2xl border border-dashed border-ink-200 bg-white py-16 text-center text-sm text-ink-500">
       <div>
-        <span aria-hidden className="text-4xl">📘</span>
+        <span
+          aria-hidden
+          className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600"
+        >
+          <BookIcon className="size-6" />
+        </span>
         <p className="mt-3">{t('learning.myLearnings.noMatches')}</p>
-        <Link to="/explore" className="mt-2 inline-block text-brand-600 hover:underline">
-          {t('learning.myLearnings.exploreLink')}
+        <Link
+          to="/explore"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 font-medium text-brand-600 hover:bg-brand-50"
+        >
+          {t('learning.myLearnings.exploreLink')} <ArrowRightIcon className="size-4" />
         </Link>
       </div>
     </div>
@@ -154,12 +177,20 @@ function EmptyEnrollments() {
 function SavedPlaceholder() {
   const t = useT();
   return (
-    <div className="grid place-items-center py-16 text-center text-sm text-ink-500">
+    <div className="grid place-items-center rounded-2xl border border-dashed border-ink-200 bg-white py-16 text-center text-sm text-ink-500">
       <div>
-        <span aria-hidden className="text-4xl">🔖</span>
+        <span
+          aria-hidden
+          className="mx-auto grid size-12 place-items-center rounded-2xl bg-brand-50 text-brand-600"
+        >
+          <BookmarkIcon className="size-6" />
+        </span>
         <p className="mt-3">{t('learning.myLearnings.savedTitle')}</p>
-        <Link to="/explore" className="mt-2 inline-block text-brand-600 hover:underline">
-          {t('learning.myLearnings.findSaved')}
+        <Link
+          to="/explore"
+          className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 font-medium text-brand-600 hover:bg-brand-50"
+        >
+          {t('learning.myLearnings.findSaved')} <ArrowRightIcon className="size-4" />
         </Link>
       </div>
     </div>

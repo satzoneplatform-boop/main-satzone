@@ -25,6 +25,11 @@ function bucket(enrollments: EnrollmentRead[]): BucketCounts {
   );
 }
 
+/* Segment hues come from the @theme tokens — no raw hex here. */
+const COLOR_COMPLETED = 'var(--color-brand-600)';
+const COLOR_IN_PROGRESS = 'var(--color-accent-500)';
+const COLOR_NOT_STARTED = 'var(--color-ink-200)';
+
 export function ProgressOverviewCard({ enrollments }: ProgressOverviewCardProps) {
   const t = useT();
   const counts = bucket(enrollments);
@@ -44,17 +49,17 @@ export function ProgressOverviewCard({ enrollments }: ProgressOverviewCardProps)
         segments={
           total > 0
             ? [
-                { label: t('dashboard.progressOverview.completed'), value: counts.completed, color: '#615FFF' },
-                { label: t('dashboard.progressOverview.inProgress'), value: counts.inProgress, color: '#46ECD5' },
-                { label: t('dashboard.progressOverview.notStarted'), value: counts.notStarted, color: '#E7EBEB' },
+                { label: t('dashboard.progressOverview.completed'), value: counts.completed, color: COLOR_COMPLETED },
+                { label: t('dashboard.progressOverview.inProgress'), value: counts.inProgress, color: COLOR_IN_PROGRESS },
+                { label: t('dashboard.progressOverview.notStarted'), value: counts.notStarted, color: COLOR_NOT_STARTED },
               ]
-            : [{ label: t('dashboard.progressOverview.noData'), value: 1, color: '#E7EBEB' }]
+            : [{ label: t('dashboard.progressOverview.noData'), value: 1, color: COLOR_NOT_STARTED }]
         }
       />
       <ul className="min-w-0 flex-1 space-y-2.5 text-sm">
-        <LegendRow color="#E7EBEB" label={t('dashboard.progressOverview.notStarted')} count={counts.notStarted} />
-        <LegendRow color="#46ECD5" label={t('dashboard.progressOverview.inProgress')} count={counts.inProgress} />
-        <LegendRow color="#615FFF" label={t('dashboard.progressOverview.completed')} count={counts.completed} />
+        <LegendRow color={COLOR_NOT_STARTED} label={t('dashboard.progressOverview.notStarted')} count={counts.notStarted} />
+        <LegendRow color={COLOR_IN_PROGRESS} label={t('dashboard.progressOverview.inProgress')} count={counts.inProgress} />
+        <LegendRow color={COLOR_COMPLETED} label={t('dashboard.progressOverview.completed')} count={counts.completed} />
       </ul>
     </DashboardCard>
   );

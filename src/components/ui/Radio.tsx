@@ -13,7 +13,13 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
   const inputId = id ?? reactId;
 
   return (
-    <label htmlFor={inputId} className={cn('flex cursor-pointer items-center gap-3', className)}>
+    <label
+      htmlFor={inputId}
+      className={cn(
+        'flex cursor-pointer items-center gap-3 has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-60',
+        className,
+      )}
+    >
       <span className="relative grid place-items-center">
         <input
           ref={ref}
@@ -27,7 +33,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(function Radio(
           aria-hidden
           className={cn(
             'grid size-5 place-items-center rounded-full border transition-colors',
-            'peer-focus-visible:ring-2 peer-focus-visible:ring-brand-100',
+            'peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand-500',
             checked
               ? 'border-brand-600'
               : 'border-ink-300',

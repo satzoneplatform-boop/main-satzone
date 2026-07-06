@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/Badge';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { ProgressBar } from '@/components/ui/ProgressBar';
+import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton';
 import { Spinner } from '@/components/ui/Spinner';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import {
@@ -71,8 +72,17 @@ export function CourseLearnPage() {
 
   if (course.isLoading || curriculum.isLoading) {
     return (
-      <div className="grid place-items-center py-24">
-        <Spinner size="lg" />
+      <div className="space-y-6" aria-hidden>
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-44 w-full rounded-2xl" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <Skeleton className="hidden h-64 rounded-2xl lg:block" />
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-56" />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        </div>
       </div>
     );
   }
@@ -192,7 +202,7 @@ function Hero({
 function ModulesNav({ sections }: { sections: SectionRead[] }) {
   const t = useT();
   return (
-    <aside className="rounded-2xl border border-ink-200 bg-white p-3 text-sm shadow-[var(--shadow-card)]">
+    <aside className="hidden h-max rounded-2xl border border-ink-200 bg-white p-3 text-sm shadow-[var(--shadow-card)] lg:sticky lg:top-6 lg:block">
       <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-ink-500">
         {t('learning.courseLearn.course')}
       </p>
@@ -235,7 +245,12 @@ function ModulesContent({
   firstLockedIdx: number;
 }) {
   const t = useT();
-  let runningIdx = 0;
+  // Precompute each section's absolute starting lesson index (lint-safe:
+  // no mutation during render).
+  const sectionStarts = sections.reduce<number[]>((acc, _section, i) => {
+    acc.push(i === 0 ? 0 : acc[i - 1] + sections[i - 1].lessons.length);
+    return acc;
+  }, []);
   return (
     <div className="space-y-6">
       <header className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -259,20 +274,16 @@ function ModulesContent({
         </div>
       </header>
 
-      {sections.map((section) => {
-        const sectionStart = runningIdx;
-        runningIdx += section.lessons.length;
-        return (
-          <ModuleBlock
-            key={section.id}
-            section={section}
-            courseSlug={course.slug}
-            completedIds={completedIds}
-            sectionStartIdx={sectionStart}
-            firstLockedIdx={firstLockedIdx}
-          />
-        );
-      })}
+      {sections.map((section, i) => (
+        <ModuleBlock
+          key={section.id}
+          section={section}
+          courseSlug={course.slug}
+          completedIds={completedIds}
+          sectionStartIdx={sectionStarts[i]}
+          firstLockedIdx={firstLockedIdx}
+        />
+      ))}
     </div>
   );
 }
@@ -314,14 +325,14 @@ function ModuleBlock({
       id={`section-${section.id}`}
       className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]"
     >
-      <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-        <h3 className="text-base font-semibold text-ink-900">
+      <header className="flex items-center justify-between gap-3 border-b border-ink-100 px-4 py-4 sm:px-5">
+        <h3 className="min-w-0 truncate text-base font-semibold text-ink-900">
           {t('learning.courseLearn.module', {
             order: section.order,
             title: section.title,
           })}
         </h3>
-        <span className="text-xs text-ink-500">
+        <span className="shrink-0 text-xs text-ink-500">
           {t('learning.courseLearn.lessons', {
             n: section.lessons.length + (hasQuiz ? 1 : 0),
           })}
@@ -375,6 +386,7 @@ function SectionQuizRow({
   attempts: number;
   maxAttempts: number | null;
 }) {
+  const t = useT();
   const navigate = useNavigate();
   const to = `/courses/${courseSlug}/assessments/${assessmentId}`;
 
@@ -384,10 +396,13 @@ function SectionQuizRow({
   }
 
   const meta = locked
-    ? 'Complete the lessons to unlock'
+    ? t('learning.courseLearn.quizLockedHint')
     : maxAttempts == null
-      ? `${attempts} attempts`
-      : `${attempts}/${maxAttempts} attempts`;
+      ? t('learning.courseLearn.attemptsMeta', { n: attempts })
+      : t('learning.courseLearn.attemptsOfMeta', {
+          used: attempts,
+          max: maxAttempts,
+        });
 
   return (
     <button
@@ -396,7 +411,7 @@ function SectionQuizRow({
       disabled={locked}
       aria-disabled={locked}
       className={[
-        'flex w-full items-center gap-3 px-5 py-3 text-left text-sm',
+        'flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left text-sm sm:px-5',
         locked ? 'cursor-not-allowed bg-ink-50/40' : 'hover:bg-ink-50',
       ].join(' ')}
     >
@@ -426,10 +441,12 @@ function SectionQuizRow({
                 : 'block font-medium text-ink-900'
             }
           >
-            Section quiz
+            {t('learning.courseLearn.sectionQuiz')}
           </span>
-          {passed && <Badge tone="success">Passed</Badge>}
-          {locked && !passed && <Badge tone="neutral">Locked</Badge>}
+          {passed && <Badge tone="success">{t('learning.courseLearn.passedBadge')}</Badge>}
+          {locked && !passed && (
+            <Badge tone="neutral">{t('learning.courseLearn.lockedBadge')}</Badge>
+          )}
         </span>
         <span className="block text-xs text-ink-500">{meta}</span>
       </span>
@@ -495,7 +512,7 @@ function LessonRow({
   if (locked) {
     return (
       <div
-        className="flex cursor-not-allowed items-center gap-3 bg-ink-50/40 px-5 py-3 text-sm"
+        className="flex min-h-11 cursor-not-allowed items-center gap-3 bg-ink-50/40 px-4 py-3 text-sm sm:px-5"
         aria-disabled
         title={t('learning.courseLearn.lockedHint')}
       >
@@ -507,7 +524,7 @@ function LessonRow({
   return (
     <Link
       to={`/courses/${courseSlug}/lessons/${lesson.id}`}
-      className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-ink-50"
+      className="flex min-h-11 items-center gap-3 px-4 py-3 text-sm hover:bg-ink-50 sm:px-5"
     >
       {body}
     </Link>
@@ -583,7 +600,7 @@ function NotesTab({
                 onClick={() => remove.mutate(n.id)}
                 aria-label={t('learning.lesson.deleteNote')}
                 disabled={remove.isPending}
-                className="text-ink-400 hover:text-ink-700 disabled:opacity-50"
+                className="-m-2 grid size-11 shrink-0 place-items-center rounded-full text-ink-400 hover:bg-ink-50 hover:text-ink-700 disabled:opacity-50"
               >
                 <CloseIcon />
               </button>

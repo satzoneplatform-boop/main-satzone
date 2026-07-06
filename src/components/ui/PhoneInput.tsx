@@ -1,5 +1,6 @@
 import { forwardRef, useId, useMemo, useState } from 'react';
 import { ChevronDownIcon } from '@/components/icons';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
 interface Country {
@@ -56,13 +57,14 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
       defaultCountry = 'UZ',
       countries,
       error,
-      placeholder = 'Enter number',
+      placeholder,
       required,
       name,
       disabled,
     },
     ref,
   ) {
+    const t = useT();
     const reactId = useId();
     const inputId = `phone-${reactId}`;
 
@@ -105,19 +107,19 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
         )}
         <div
           className={cn(
-            'flex items-stretch rounded-lg border bg-white shadow-[var(--shadow-input)]',
+            'flex items-stretch rounded-xl border bg-white shadow-[var(--shadow-input)]',
             'focus-within:ring-2 focus-within:ring-brand-100',
             error
               ? 'border-danger-500 focus-within:border-danger-500'
               : 'border-ink-200 focus-within:border-brand-500',
           )}
         >
-          <label className="relative flex items-center gap-1.5 rounded-l-lg bg-ink-50 px-3 text-sm text-ink-700">
+          <label className="relative flex items-center gap-1.5 rounded-l-xl bg-ink-50 px-3 text-sm text-ink-700">
             <span className="text-base leading-none" aria-hidden>{country.flag}</span>
             <span className="font-medium">{country.dial}</span>
             {choices.length > 1 && <ChevronDownIcon className="text-ink-400" />}
             <select
-              aria-label="Country dial code"
+              aria-label={t('ui.countryCode')}
               value={country.code}
               onChange={(e) => {
                 const next = choices.find((c) => c.code === e.target.value);
@@ -151,8 +153,8 @@ export const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
             required={required}
             value={localNumber}
             onChange={(e) => emit(e.target.value)}
-            placeholder={placeholder}
-            className="h-11 w-full bg-transparent px-3 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none"
+            placeholder={placeholder ?? t('ui.phonePlaceholder')}
+            className="h-11 w-full bg-transparent px-3 text-sm text-ink-900 placeholder:text-ink-400 focus:outline-none disabled:cursor-not-allowed disabled:text-ink-400"
           />
         </div>
         {error && <p className="text-xs text-danger-600">{error}</p>}

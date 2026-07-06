@@ -35,7 +35,7 @@ export function QuizzesPage() {
           <Link
             key={c.slug}
             to={`/quizzes/${c.slug}`}
-            className="group relative flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-md"
+            className="group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
           >
             <div
               className={`relative h-32 bg-gradient-to-br ${c.accent}`}

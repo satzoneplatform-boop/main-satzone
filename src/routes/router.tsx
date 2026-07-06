@@ -1,4 +1,3 @@
-import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
@@ -20,8 +19,10 @@ import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { ResetSuccessPage } from '@/pages/auth/ResetSuccessPage';
 import { VerifyPhonePage } from '@/pages/auth/VerifyPhonePage';
 import { AccountPage } from '@/pages/account/AccountPage';
+import { AnalyticsPage } from '@/pages/analytics/AnalyticsPage';
 import { ContactsPage } from '@/pages/contacts/ContactsPage';
 import { AssessmentsAdminPage } from '@/pages/instructor/AssessmentsAdminPage';
+import { PromocodesAdminPage } from '@/pages/admin/PromocodesAdminPage';
 import { QuizzesPage } from '@/pages/quizzes/QuizzesPage';
 import { QuizCoursePage } from '@/pages/quizzes/QuizCoursePage';
 import { QuizSetupPage } from '@/pages/quizzes/QuizSetupPage';
@@ -29,29 +30,9 @@ import { QuizPlayPage } from '@/pages/quizzes/QuizPlayPage';
 import { GoogleCallbackPage } from '@/pages/auth/GoogleCallbackPage';
 import { VerifyEmailPage } from '@/pages/auth/VerifyEmailPage';
 import { LandingPage } from '@/pages/LandingPage';
-import { Spinner } from '@/components/ui/Spinner';
+import { ComingSoon } from '@/pages/ComingSoonPage';
 import { RedirectIfAuthed, RequireAuth } from './guards';
-
-// Lazy-load the lesson player so hls.js is only fetched when a learner opens a video.
-const LessonPlayerPage = lazy(() =>
-  import('@/pages/learning/LessonPlayerPage').then((m) => ({
-    default: m.LessonPlayerPage,
-  })),
-);
-
-function withSuspense(node: React.ReactNode) {
-  return (
-    <Suspense
-      fallback={
-        <div className="grid place-items-center py-24">
-          <Spinner size="lg" />
-        </div>
-      }
-    >
-      {node}
-    </Suspense>
-  );
-}
+import { LazyLessonPlayerPage } from './lazyPages';
 
 export const router = createBrowserRouter([
   // Public auth-flow pages — bounce away if already signed in.
@@ -104,10 +85,12 @@ export const router = createBrowserRouter([
           { path: '/courses/:slug/checkout', element: <CheckoutPage /> },
           { path: '/courses/:slug/checkout/success', element: <CheckoutSuccessPage /> },
           { path: '/courses/:slug/learn', element: <CourseLearnPage /> },
-          { path: '/courses/:slug/lessons/:lessonId', element: withSuspense(<LessonPlayerPage />) },
+          { path: '/courses/:slug/lessons/:lessonId', element: <LazyLessonPlayerPage /> },
           { path: '/courses/:slug/assessments/:assessmentId', element: <AssessmentOverviewPage /> },
           { path: '/instructor/courses/:slug/assessments', element: <AssessmentsAdminPage /> },
+          { path: '/admin/promocodes', element: <PromocodesAdminPage /> },
           { path: '/learning-path', element: <MyLearningsPage /> },
+          { path: '/analytics', element: <AnalyticsPage /> },
           { path: '/account', element: <AccountPage /> },
           { path: '/contacts', element: <ContactsPage /> },
           { path: '/quizzes', element: <QuizzesPage /> },
@@ -126,14 +109,3 @@ export const router = createBrowserRouter([
 
   { path: '*', element: <NotFoundPage /> },
 ]);
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="grid place-items-center py-24 text-center">
-      <div>
-        <h2 className="text-xl font-semibold text-ink-900">{title}</h2>
-        <p className="mt-2 text-sm text-ink-500">This page is coming soon.</p>
-      </div>
-    </div>
-  );
-}

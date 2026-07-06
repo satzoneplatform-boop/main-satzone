@@ -74,7 +74,22 @@ export function VerifyPhonePage() {
           </p>
         </header>
 
-        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+        <ol className="mt-6 space-y-2.5 rounded-xl bg-ink-50 p-4 text-left text-sm text-ink-700">
+          {[
+            t('verifyPhone.stepOpenBot'),
+            t('verifyPhone.stepSharePhone'),
+            t('verifyPhone.stepEnterCode'),
+          ].map((step, i) => (
+            <li key={step} className="flex items-start gap-2.5">
+              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-brand-100 text-[11px] font-semibold text-brand-700">
+                {i + 1}
+              </span>
+              {step}
+            </li>
+          ))}
+        </ol>
+
+        <form className="mt-5 space-y-4" onSubmit={onSubmit}>
           {botUrl ? (
             <a href={botUrl} target="_blank" rel="noreferrer" className="block">
               <Button type="button" fullWidth size="lg">
@@ -82,16 +97,16 @@ export function VerifyPhonePage() {
               </Button>
             </a>
           ) : (
-            <div className="rounded-md border border-danger-500/40 bg-danger-50 px-3 py-2 text-sm text-danger-600">
+            <div
+              role="alert"
+              className="rounded-xl border border-danger-500/40 bg-danger-50 px-3 py-2.5 text-sm text-danger-600"
+            >
               {t('verifyPhone.errorNotConfigured')}
             </div>
           )}
 
-          <div>
-            <label
-              htmlFor="phone-otp"
-              className="block text-sm font-medium text-ink-700"
-            >
+          <div className="flex flex-col gap-1.5 text-left">
+            <label htmlFor="phone-otp" className="text-sm font-medium text-ink-900">
               {t('verifyPhone.codeLabel')}
             </label>
             <input
@@ -106,10 +121,14 @@ export function VerifyPhonePage() {
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
               placeholder="12345678"
-              className="mt-1 block w-full rounded-md border border-ink-200 bg-white px-3 py-2.5 text-center text-2xl font-semibold tracking-[0.4em] text-ink-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
+              aria-invalid={Boolean(error) || undefined}
+              aria-describedby={error ? 'phone-otp-error' : undefined}
+              className="block h-14 w-full rounded-xl border border-ink-200 bg-white px-3 text-center text-2xl font-semibold tracking-[0.4em] text-ink-900 shadow-[var(--shadow-input)] outline-none transition-colors placeholder:text-ink-300 focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
             {error && (
-              <p className="mt-2 text-sm text-danger-600">{error}</p>
+              <p id="phone-otp-error" role="alert" className="text-sm text-danger-600">
+                {error}
+              </p>
             )}
           </div>
 
@@ -130,7 +149,7 @@ export function VerifyPhonePage() {
 
 function TelegramGlyph() {
   return (
-    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-[#26A5E4]/10 text-[#26A5E4]">
+    <span className="mx-auto grid size-12 place-items-center rounded-2xl bg-teal-25 text-accent-500">
       <svg
         viewBox="0 0 24 24"
         width="26"

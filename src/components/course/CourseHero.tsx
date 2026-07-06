@@ -1,5 +1,6 @@
 import { BookmarkIcon } from '@/components/icons';
 import { Avatar } from '@/components/ui/Avatar';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 import type { CourseDetail } from '@/types/api';
 
@@ -16,13 +17,14 @@ interface CourseHeroProps {
  * to the navy gradient + grid pattern.
  */
 export function CourseHero({ course, saved = false, onToggleSave }: CourseHeroProps) {
+  const t = useT();
   const inst = course.instructor;
   const hasImage = Boolean(course.thumbnail_url);
 
   return (
     <section
       className={cn(
-        'relative overflow-hidden rounded-2xl px-8 py-10 text-white',
+        'relative overflow-hidden rounded-2xl px-5 py-8 text-white sm:px-8 sm:py-10',
         !hasImage && 'bg-gradient-to-br from-ink-900 via-ink-900 to-brand-900',
       )}
     >
@@ -44,12 +46,12 @@ export function CourseHero({ course, saved = false, onToggleSave }: CourseHeroPr
         <BackdropPattern />
       )}
 
-      <div className="relative flex items-start justify-between gap-6">
-        <div className="max-w-2xl">
+      <div className="relative flex items-start justify-between gap-4 sm:gap-6">
+        <div className="min-w-0 max-w-2xl">
           {inst && (
-            <span className="inline-flex items-center gap-2 rounded-md bg-white/10 px-2 py-1 text-xs font-medium backdrop-blur">
+            <span className="inline-flex max-w-full items-center gap-2 rounded-md bg-white/10 px-2 py-1 text-xs font-medium backdrop-blur">
               <Avatar src={inst.avatar_url} name={inst.full_name} size={20} />
-              {inst.full_name}
+              <span className="truncate">{inst.full_name}</span>
             </span>
           )}
           {course.tags?.[0] && (
@@ -57,7 +59,7 @@ export function CourseHero({ course, saved = false, onToggleSave }: CourseHeroPr
               {course.tags[0]}
             </span>
           )}
-          <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight">
+          <h1 className="mt-4 break-words text-2xl font-semibold leading-tight tracking-tight sm:text-3xl">
             {course.title}
           </h1>
           {course.subtitle && (
@@ -70,7 +72,7 @@ export function CourseHero({ course, saved = false, onToggleSave }: CourseHeroPr
             type="button"
             onClick={onToggleSave}
             aria-pressed={saved}
-            aria-label={saved ? 'Remove from saved' : 'Save course'}
+            aria-label={saved ? t('course.hero.unsave') : t('course.hero.save')}
             className="grid size-10 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20"
           >
             <BookmarkIcon className={saved ? 'fill-white' : ''} />

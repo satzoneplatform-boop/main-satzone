@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
-import { Spinner } from '@/components/ui/Spinner';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { meApi, type NotificationPreferences } from '@/api/me';
 import { BellIcon, BookIcon, CheckIcon, FlagIcon } from '@/components/icons';
 import { useT } from '@/i18n/I18nProvider';
@@ -59,9 +59,13 @@ export function NotificationTab() {
     [t],
   );
 
-  useEffect(() => {
+  // Sync the draft when the server preferences land / change — done during
+  // render (adjust-state pattern) instead of via a setState-in-effect.
+  const [prevData, setPrevData] = useState<typeof prefs.data>(undefined);
+  if (prefs.data !== prevData) {
+    setPrevData(prefs.data);
     if (prefs.data) setDraft({ ...DEFAULT, ...prefs.data });
-  }, [prefs.data]);
+  }
 
   const save = useMutation({
     mutationFn: (payload: NotificationPreferences) =>
@@ -75,8 +79,10 @@ export function NotificationTab() {
 
   if (prefs.isLoading) {
     return (
-      <div className="grid place-items-center py-12">
-        <Spinner />
+      <div className="space-y-2 py-2">
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+        ))}
       </div>
     );
   }
@@ -91,7 +97,7 @@ export function NotificationTab() {
       </header>
 
       {info && (
-        <div className="rounded-md border border-brand-100 bg-brand-25 px-3 py-2 text-sm text-brand-700">
+        <div role="status" className="rounded-md border border-brand-100 bg-brand-25 px-3 py-2 text-sm text-brand-700">
           {info}
         </div>
       )}

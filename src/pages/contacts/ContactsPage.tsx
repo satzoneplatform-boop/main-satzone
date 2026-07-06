@@ -1,5 +1,6 @@
 import type { ReactElement, SVGProps } from 'react';
 import { MailIcon, PhoneIcon, ArrowRightIcon } from '@/components/icons';
+import { Stagger, StaggerItem } from '@/components/motion/Stagger';
 import { useT } from '@/i18n/I18nProvider';
 
 const TELEGRAM_HANDLE = 'satzone';
@@ -45,11 +46,13 @@ export function ContactsPage() {
         <p className="max-w-xl text-sm text-ink-500">{t('contacts.subtitle')}</p>
       </header>
 
-      <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <Stagger as="section" onView={false} className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {channels.map((c) => (
-          <ChannelCard key={c.label} {...c} />
+          <StaggerItem key={c.label} className="h-full">
+            <ChannelCard {...c} />
+          </StaggerItem>
         ))}
-      </section>
+      </Stagger>
     </div>
   );
 }
@@ -67,7 +70,7 @@ interface ChannelCardProps {
 const TONE_STYLES: Record<ChannelCardProps['tone'], { badge: string; cta: string }> = {
   brand: { badge: 'bg-brand-50 text-brand-600', cta: 'text-brand-600 hover:text-brand-700' },
   teal: { badge: 'bg-teal-25 text-teal-700', cta: 'text-teal-700 hover:text-teal-500' },
-  sky: { badge: 'bg-[#E6F4FF] text-[#0284C7]', cta: 'text-[#0284C7] hover:text-[#0369A1]' },
+  sky: { badge: 'bg-teal-25 text-accent-600', cta: 'text-teal-700 hover:text-accent-600' },
 };
 
 function ChannelCard({ tone, Icon, label, value, href, cta, external }: ChannelCardProps) {
@@ -76,7 +79,7 @@ function ChannelCard({ tone, Icon, label, value, href, cta, external }: ChannelC
     <a
       href={href}
       {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-      className="group flex flex-col gap-4 rounded-2xl border border-ink-200 bg-white p-6 shadow-card transition-colors hover:border-ink-300"
+      className="group flex h-full flex-col gap-4 rounded-2xl border border-ink-200 bg-white p-6 shadow-[var(--shadow-card)] transition-colors hover:border-brand-200"
     >
       <span className={`grid size-11 place-items-center rounded-xl ${tones.badge}`}>
         <Icon width={22} height={22} />

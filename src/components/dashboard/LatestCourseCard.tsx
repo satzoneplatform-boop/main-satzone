@@ -78,8 +78,10 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
-        'rounded-full px-3 py-1 font-medium transition-colors',
+        'min-h-9 rounded-full px-3 font-medium transition-colors',
+        'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500',
         active
           ? 'bg-white text-ink-900 shadow-[var(--shadow-input)]'
           : 'text-ink-500 hover:text-ink-700',
@@ -102,8 +104,8 @@ function ActiveState({ enrollment }: { enrollment: EnrollmentRead }) {
     : `/courses/${course.slug}/learn`;
   return (
     <>
-      <div className="flex flex-col">
-        <h3 className="text-xl font-semibold text-ink-900">{course.title}</h3>
+      <div className="flex min-w-0 flex-col">
+        <h3 className="text-xl font-semibold text-ink-900 line-clamp-2">{course.title}</h3>
         <p className="mt-1 text-sm text-ink-500 line-clamp-2">
           {course.subtitle ?? t('dashboard.latestCourse.defaultSubtitle')}
         </p>
@@ -111,7 +113,7 @@ function ActiveState({ enrollment }: { enrollment: EnrollmentRead }) {
         <div className="mt-4">
           <div className="flex items-center justify-between text-xs text-ink-500">
             <span>{t('dashboard.latestCourse.progress')}</span>
-            <span className="font-medium text-ink-900">
+            <span className="font-medium tabular-nums text-ink-900">
               {Math.round(enrollment.progress_percent)}%
             </span>
           </div>
@@ -142,8 +144,8 @@ function BookmarkState({ item }: { item: WishlistItemRead }) {
   const course = item.course;
   return (
     <>
-      <div className="flex flex-col">
-        <h3 className="text-xl font-semibold text-ink-900">{course.title}</h3>
+      <div className="flex min-w-0 flex-col">
+        <h3 className="text-xl font-semibold text-ink-900 line-clamp-2">{course.title}</h3>
         <p className="mt-1 text-sm text-ink-500 line-clamp-2">
           {course.subtitle ?? t('dashboard.latestCourse.defaultSubtitle')}
         </p>

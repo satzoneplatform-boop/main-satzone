@@ -1,8 +1,11 @@
 import { NavLink } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { Logo, LogoMark } from '@/components/brand/Logo';
 import {
   BookIcon,
+  ChartIcon,
   FlagIcon,
+  GiftIcon,
   GridIcon,
   HomeIcon,
   PanelLeftIcon,
@@ -10,6 +13,7 @@ import {
 } from '@/components/icons';
 import { cn } from '@/lib/cn';
 import { useHomeFeed } from '@/features/home/hooks';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { useT } from '@/i18n/I18nProvider';
 
 interface SidebarProps {
@@ -33,6 +37,7 @@ interface NavItemConfig {
  */
 export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
   const home = useHomeFeed();
+  const { user } = useAuth();
   const t = useT();
 
   // Show 4 most recent in-progress courses (FRONTEND.md §4.4 — `continue_learning`).
@@ -40,10 +45,16 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
 
   const main: NavItemConfig[] = [
     { to: '/dashboard', label: t('nav.dashboard'), icon: HomeIcon },
-    { to: '/explore', label: t('nav.explore'), icon: GridIcon, badge: 2 },
+    { to: '/explore', label: t('nav.explore'), icon: GridIcon },
     { to: '/learning-path', label: t('nav.myLearnings'), icon: BookIcon },
     { to: '/quizzes', label: t('nav.quizzes'), icon: FlagIcon },
+    { to: '/analytics', label: t('nav.analytics'), icon: ChartIcon },
   ];
+
+  const adminItems: NavItemConfig[] =
+    user?.role === 'admin'
+      ? [{ to: '/admin/promocodes', label: t('nav.promocodes'), icon: GiftIcon }]
+      : [];
 
   return (
     <aside
@@ -60,15 +71,16 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
         )}
       >
         {collapsed ? (
-          <LogoMark size={26} />
+          <LogoMark size={26} variant="white" />
         ) : (
-          <Logo withWordmark size={26} className="[&>span]:text-white" />
+          <Logo withWordmark size={26} variant="white" />
         )}
         <button
           type="button"
           onClick={onToggleCollapsed}
-          className="grid size-8 place-items-center rounded-md text-ink-500 hover:bg-ink-800 hover:text-white"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          className="grid size-8 place-items-center rounded-md text-ink-500 transition-colors duration-150 hover:bg-ink-800 hover:text-white"
+          aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+          title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
           aria-expanded={!collapsed}
         >
           <PanelLeftIcon />
@@ -81,6 +93,14 @@ export function Sidebar({ collapsed, onToggleCollapsed }: SidebarProps) {
             <NavRow key={item.to} item={item} collapsed={collapsed} />
           ))}
         </NavGroup>
+
+        {adminItems.length > 0 && (
+          <NavGroup title={t('nav.admin')} collapsed={collapsed}>
+            {adminItems.map((item) => (
+              <NavRow key={item.to} item={item} collapsed={collapsed} />
+            ))}
+          </NavGroup>
+        )}
 
         {recent.length > 0 && !collapsed && (
           <NavGroup title={t('nav.latestLearnings')} collapsed={collapsed}>
@@ -130,6 +150,7 @@ function NavGroup({
 }
 
 function NavRow({ item, collapsed }: { item: NavItemConfig; collapsed: boolean }) {
+  const reduce = useReducedMotion();
   return (
     <NavLink
       to={item.to}
@@ -137,21 +158,46 @@ function NavRow({ item, collapsed }: { item: NavItemConfig; collapsed: boolean }
       title={collapsed ? item.label : undefined}
       className={({ isActive }) =>
         cn(
-          'flex h-10 items-center rounded-lg text-sm font-medium transition-colors',
+          'relative flex h-10 items-center rounded-lg text-sm font-medium transition-colors duration-150',
           collapsed ? 'justify-center px-0' : 'gap-3 px-3',
-          isActive
-            ? 'bg-brand-600 text-white shadow-[0_1px_0_0_rgba(2,6,24,0.3)]'
-            : 'text-ink-400 hover:bg-ink-800 hover:text-white',
+          isActive ? 'text-white' : 'text-ink-400 hover:bg-ink-800 hover:text-white',
         )
       }
     >
-      <item.icon />
-      {!collapsed && <span className="truncate">{item.label}</span>}
-      {!collapsed && item.badge ? (
-        <span className="ml-auto grid size-5 place-items-center rounded-full bg-white text-[10px] font-semibold text-ink-900">
-          {item.badge}
-        </span>
-      ) : null}
+      {({ isActive }) => (
+        <>
+          {isActive && (
+            <motion.span
+              layoutId="sidebar-active"
+              transition={
+                reduce
+                  ? { duration: 0 }
+                  : { type: 'spring', stiffness: 400, damping: 32 }
+              }
+              className="absolute inset-0 -z-0 rounded-lg bg-brand-600"
+            >
+              {/* Small accent indicator hugging the pill's leading edge. */}
+              {!collapsed && (
+                <span className="absolute left-0 top-1/2 h-4 w-1 -translate-y-1/2 rounded-r-full bg-accent-400" />
+              )}
+            </motion.span>
+          )}
+          <span
+            className={cn(
+              'relative z-10 flex min-w-0 items-center',
+              collapsed ? 'justify-center' : 'w-full gap-3',
+            )}
+          >
+            <item.icon />
+            {!collapsed && <span className="truncate">{item.label}</span>}
+            {!collapsed && item.badge ? (
+              <span className="ml-auto grid size-5 place-items-center rounded-full bg-white text-[10px] font-semibold text-ink-900">
+                {item.badge}
+              </span>
+            ) : null}
+          </span>
+        </>
+      )}
     </NavLink>
   );
 }
@@ -162,14 +208,23 @@ function RecentBadge({ progress }: { progress: number }) {
   const c = 2 * Math.PI * r;
   const filled = c * (Math.min(100, Math.max(0, progress)) / 100);
   return (
-    <svg width={18} height={18} viewBox="0 0 18 18" aria-hidden>
-      <circle cx="9" cy="9" r={r} fill="none" stroke="#314158" strokeWidth="2" />
+    <svg width={18} height={18} viewBox="0 0 18 18" aria-hidden className="shrink-0">
       <circle
         cx="9"
         cy="9"
         r={r}
         fill="none"
-        stroke="#46ECD5"
+        stroke="currentColor"
+        strokeWidth="2"
+        className="text-ink-700"
+      />
+      <circle
+        cx="9"
+        cy="9"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        className="text-brand-400"
         strokeWidth="2"
         strokeDasharray={`${filled} ${c - filled}`}
         strokeLinecap="round"

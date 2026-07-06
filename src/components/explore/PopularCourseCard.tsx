@@ -1,51 +1,127 @@
 import { Link } from 'react-router-dom';
+import { motion, useReducedMotion } from 'motion/react';
 import { Avatar } from '@/components/ui/Avatar';
+import { StarIcon } from '@/components/icons';
 import type { CourseSummary } from '@/types/api';
-import { formatDuration } from '@/lib/format';
+import type { TranslationKey } from '@/i18n/en';
+import { formatDuration, formatPrice } from '@/lib/format';
+import { useT } from '@/i18n/I18nProvider';
+import { cn } from '@/lib/cn';
 
 interface PopularCourseCardProps {
   course: CourseSummary;
 }
 
-export function PopularCourseCard({ course }: PopularCourseCardProps) {
-  return (
-    <Link
-      to={`/courses/${course.slug}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:shadow-md"
-    >
-      <div className="relative aspect-[16/10] overflow-hidden bg-ink-100">
-        {course.thumbnail_url && (
-          <img
-            src={course.thumbnail_url}
-            alt={course.title}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-          />
-        )}
-        {course.category && (
-          <span className="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-medium text-ink-700 backdrop-blur">
-            {course.category.name}
-          </span>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-3 p-4">
-        <h3 className="line-clamp-2 text-sm font-semibold text-ink-900">{course.title}</h3>
+const LEVEL_KEY: Record<string, TranslationKey> = {
+  beginner: 'explore.level.beginner',
+  intermediate: 'explore.level.intermediate',
+  advanced: 'explore.level.advanced',
+  all_levels: 'explore.level.allLevels',
+};
 
-        <div className="mt-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar
-              src={course.instructor?.avatar_url}
-              name={course.instructor?.full_name}
-              size={24}
+export function PopularCourseCard({ course }: PopularCourseCardProps) {
+  const t = useT();
+  const reduce = useReducedMotion();
+  const hasDiscount =
+    course.discount_price_cents != null &&
+    course.discount_price_cents < course.price_cents &&
+    !course.is_free;
+  const price = formatPrice(
+    hasDiscount ? course.discount_price_cents! : course.price_cents,
+    course.currency,
+    course.is_free,
+  );
+
+  return (
+    <motion.div
+      whileHover={reduce ? undefined : { y: -6 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+      className="h-full"
+    >
+      <Link
+        to={`/courses/${course.slug}`}
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
+      >
+        <div className="relative aspect-[16/10] overflow-hidden bg-ink-100">
+          {course.thumbnail_url && (
+            <img
+              src={course.thumbnail_url}
+              alt={course.title}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-            <span className="truncate text-xs text-ink-600">
-              {course.instructor?.full_name ?? 'SATZone instructor'}
-            </span>
+          )}
+          <div className="absolute left-3 top-3 flex items-center gap-2">
+            {course.category && (
+              <span className="rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-navy-900 backdrop-blur">
+                {course.category.name}
+              </span>
+            )}
+            {course.is_featured && (
+              <span className="rounded-md bg-brand-600 px-2 py-0.5 text-[11px] font-semibold text-white">
+                {t('explore.card.featured')}
+              </span>
+            )}
           </div>
-          <span className="text-xs text-ink-500">
-            {formatDuration(course.duration_minutes)} · {course.lessons_count} lessons
-          </span>
         </div>
-      </div>
-    </Link>
+
+        <div className="flex flex-1 flex-col gap-3 p-4">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-ink-500">
+            <span className="rounded bg-ink-100 px-1.5 py-0.5 text-ink-700">
+              {LEVEL_KEY[course.level] ? t(LEVEL_KEY[course.level]) : course.level}
+            </span>
+            {course.rating > 0 && (
+              <span className="inline-flex items-center gap-0.5 text-warn-500">
+                <StarIcon className="size-3.5" />
+                <span className="font-semibold text-navy-900">
+                  {course.rating.toFixed(1)}
+                </span>
+                <span className="text-ink-400">({course.reviews_count})</span>
+              </span>
+            )}
+          </div>
+
+          <h3 className="line-clamp-2 text-sm font-semibold text-navy-900">
+            {course.title}
+          </h3>
+
+          <div className="mt-auto flex items-center justify-between border-t border-ink-100 pt-3">
+            <div className="flex min-w-0 items-center gap-2">
+              <Avatar
+                src={course.instructor?.avatar_url}
+                name={course.instructor?.full_name}
+                size={24}
+              />
+              <span className="truncate text-xs text-ink-600">
+                {course.instructor?.full_name ?? t('learning.myLearnings.defaultInstructor')}
+              </span>
+            </div>
+            <div className="shrink-0 text-right">
+              <p
+                className={cn(
+                  'text-sm font-bold',
+                  course.is_free ? 'text-success-600' : 'text-brand-600',
+                )}
+              >
+                {price}
+              </p>
+              {hasDiscount && (
+                <p className="text-[11px] text-ink-400 line-through">
+                  {formatPrice(course.price_cents, course.currency, false)}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-ink-400">
+            {formatDuration(course.duration_minutes)} ·{' '}
+            {t('explore.card.lessons', { count: course.lessons_count })}
+            {course.students_count > 0 &&
+              ` · ${t('explore.card.students', {
+                count: course.students_count.toLocaleString(),
+              })}`}
+          </p>
+        </div>
+      </Link>
+    </motion.div>
   );
 }

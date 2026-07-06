@@ -33,7 +33,17 @@ export function DonutChart({
   const circumference = 2 * Math.PI * radius;
   const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
 
-  let offset = 0;
+  // Precompute each segment's arc length + start offset (lint-safe: no
+  // mutation during render).
+  const arcs = segments.reduce<Array<{ length: number; start: number }>>(
+    (acc, s, i) => {
+      const length = (s.value / total) * circumference;
+      const start = i === 0 ? 0 : acc[i - 1].start + acc[i - 1].length;
+      acc.push({ length, start });
+      return acc;
+    },
+    [],
+  );
 
   return (
     <div className={cn('relative inline-block', className)} style={{ width: size, height: size }}>
@@ -46,11 +56,10 @@ export function DonutChart({
           stroke="var(--color-progress-bg)"
           strokeWidth={strokeWidth}
         />
-        {segments.map((s) => {
-          const length = (s.value / total) * circumference;
+        {segments.map((s, i) => {
+          const { length, start } = arcs[i];
           const dasharray = `${length} ${circumference - length}`;
-          const dashoffset = -offset;
-          offset += length;
+          const dashoffset = -start;
           return (
             <circle
               key={`${reactId}-${s.label}`}

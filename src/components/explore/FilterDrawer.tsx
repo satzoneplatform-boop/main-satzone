@@ -1,25 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Modal } from '@/components/ui/Modal';
 import { Radio, RadioGroup } from '@/components/ui/Radio';
 import { ChevronDownIcon } from '@/components/icons';
-import type { Category, CourseLevel } from '@/types/api';
+import type { Category } from '@/types/api';
+import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
-
-export interface FilterValue {
-  level: CourseLevel | 'any';
-  topicIds: string[];
-  durationBucket: 'any' | 'lt2h' | '2_6h' | 'gt6h';
-  isFree: 'any' | 'free' | 'paid';
-}
-
-export const DEFAULT_FILTERS: FilterValue = {
-  level: 'any',
-  topicIds: [],
-  durationBucket: 'any',
-  isFree: 'any',
-};
+import { DEFAULT_FILTERS, type FilterValue } from './filters';
 
 interface FilterDrawerProps {
   open: boolean;
@@ -29,6 +17,10 @@ interface FilterDrawerProps {
   onApply: (value: FilterValue) => void;
 }
 
+/**
+ * Filter panel: bottom sheet below `sm`, right-hand drawer on larger
+ * screens. Draft state is applied only on "Apply filters".
+ */
 export function FilterDrawer({
   open,
   onClose,
@@ -36,11 +28,20 @@ export function FilterDrawer({
   initial,
   onApply,
 }: FilterDrawerProps) {
+  const t = useT();
   const [value, setValue] = useState<FilterValue>(initial ?? DEFAULT_FILTERS);
 
-  useEffect(() => {
+  // Re-seed the draft whenever the drawer opens (or the applied filters
+  // change while it is open) — adjust-state-during-render, so the reset
+  // lands in the same render pass instead of a post-commit effect.
+  const [prev, setPrev] = useState<{ open: boolean; initial?: FilterValue }>({
+    open,
+    initial,
+  });
+  if (prev.open !== open || prev.initial !== initial) {
+    setPrev({ open, initial });
     if (open) setValue(initial ?? DEFAULT_FILTERS);
-  }, [open, initial]);
+  }
 
   function clear() {
     setValue(DEFAULT_FILTERS);
@@ -55,28 +56,36 @@ export function FilterDrawer({
     <Modal
       open={open}
       onClose={onClose}
-      className="absolute right-4 top-4 bottom-4 m-0 max-h-none w-[360px] overflow-y-auto rounded-2xl p-6"
+      className={cn(
+        // Mobile: bottom sheet pinned to the viewport edge.
+        'absolute inset-x-0 bottom-0 top-auto m-0 flex max-h-[85dvh] w-full max-w-none flex-col overflow-hidden rounded-2xl rounded-b-none p-0',
+        // ≥sm: right-hand filter drawer.
+        'sm:inset-x-auto sm:right-4 sm:top-4 sm:bottom-4 sm:max-h-none sm:w-[360px] sm:rounded-2xl sm:p-0',
+      )}
     >
-      <div className="space-y-5 pb-20">
-        <div>
-          <h2 className="text-lg font-semibold text-ink-900">Filter your result</h2>
-        </div>
+      {/* Grab handle (mobile sheet affordance only). */}
+      <div aria-hidden className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-ink-200 sm:hidden" />
 
-        <Section title="Skill you’re building">
+      <header className="shrink-0 border-b border-ink-100 px-5 py-4 pr-14">
+        <h2 className="text-lg font-semibold text-ink-900">{t('explore.filter.title')}</h2>
+      </header>
+
+      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+        <Section title={t('explore.filter.skill')}>
           <RadioGroup
             name="level"
             value={value.level}
             onChange={(v) => setValue((s) => ({ ...s, level: v }))}
             options={[
-              { value: 'any', label: 'Any level' },
-              { value: 'beginner', label: 'Beginner' },
-              { value: 'intermediate', label: 'Intermediate' },
-              { value: 'advanced', label: 'Advanced' },
+              { value: 'any', label: t('explore.filter.level.any') },
+              { value: 'beginner', label: t('explore.filter.level.beginner') },
+              { value: 'intermediate', label: t('explore.filter.level.intermediate') },
+              { value: 'advanced', label: t('explore.filter.level.advanced') },
             ]}
           />
         </Section>
 
-        <Section title="Topic">
+        <Section title={t('explore.filter.topic')}>
           <ul className="space-y-2.5">
             {categories.slice(0, 6).map((c) => (
               <li key={c.id}>
@@ -97,56 +106,52 @@ export function FilterDrawer({
           </ul>
         </Section>
 
-        <Section title="Duration">
+        <Section title={t('explore.filter.duration')}>
           <RadioGroup
             name="duration"
             value={value.durationBucket}
             onChange={(v) => setValue((s) => ({ ...s, durationBucket: v }))}
             options={[
-              { value: 'any', label: 'Any duration' },
-              { value: 'lt2h', label: 'Less than 2 hours' },
-              { value: '2_6h', label: '2 – 6 hours' },
-              { value: 'gt6h', label: 'More than 6 hours' },
+              { value: 'any', label: t('explore.filter.duration.any') },
+              { value: 'lt2h', label: t('explore.filter.duration.lt2h') },
+              { value: '2_6h', label: t('explore.filter.duration.2to6h') },
+              { value: 'gt6h', label: t('explore.filter.duration.gt6h') },
             ]}
           />
         </Section>
 
-        <Section title="Price">
-          <div className="flex items-center gap-3">
+        <Section title={t('explore.filter.price')} last>
+          <div className="flex items-center gap-4">
             <Radio
               name="price"
               checked={value.isFree === 'any'}
               onChange={() => setValue((s) => ({ ...s, isFree: 'any' }))}
-              label="Any"
+              label={t('explore.filter.price.any')}
             />
             <Radio
               name="price"
               checked={value.isFree === 'free'}
               onChange={() => setValue((s) => ({ ...s, isFree: 'free' }))}
-              label="Free"
+              label={t('explore.filter.price.free')}
             />
             <Radio
               name="price"
               checked={value.isFree === 'paid'}
               onChange={() => setValue((s) => ({ ...s, isFree: 'paid' }))}
-              label="Paid"
+              label={t('explore.filter.price.paid')}
             />
           </div>
         </Section>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 border-t border-ink-100 bg-white px-6 py-3">
-        <button
-          type="button"
-          onClick={clear}
-          className="text-sm font-medium text-ink-600 hover:text-ink-900"
-        >
-          Clear all
-        </button>
-        <Button onClick={apply} className="ml-auto">
-          Apply filter
+      <footer className="flex shrink-0 items-center gap-3 border-t border-ink-100 bg-white px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <Button variant="ghost" onClick={clear}>
+          {t('explore.filter.clearAll')}
         </Button>
-      </div>
+        <Button onClick={apply} className="ml-auto">
+          {t('explore.filter.apply')}
+        </Button>
+      </footer>
     </Modal>
   );
 }
@@ -154,44 +159,27 @@ export function FilterDrawer({
 function Section({
   title,
   children,
+  last = false,
 }: {
   title: string;
   children: React.ReactNode;
+  last?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   return (
-    <section className="border-b border-ink-100 pb-4">
+    <section className={cn(!last && 'border-b border-ink-100 pb-4')}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between text-sm font-semibold text-ink-900"
+        aria-expanded={open}
+        className="flex min-h-11 w-full items-center justify-between rounded-lg text-sm font-semibold text-ink-900"
       >
         {title}
-        <ChevronDownIcon className={cn('text-ink-400 transition-transform', !open && '-rotate-90')} />
+        <ChevronDownIcon
+          className={cn('text-ink-400 transition-transform duration-200', !open && '-rotate-90')}
+        />
       </button>
-      {open && <div className="mt-3">{children}</div>}
+      {open && <div className="mt-2">{children}</div>}
     </section>
   );
-}
-
-/** Convert UI filter state into the backend `CourseFilters` shape. */
-export function toCourseFilters(value: FilterValue): {
-  level?: CourseLevel;
-  is_free?: boolean;
-  min_duration_minutes?: number;
-  max_duration_minutes?: number;
-  category_id?: string;
-} {
-  const out: ReturnType<typeof toCourseFilters> = {};
-  if (value.level !== 'any') out.level = value.level;
-  if (value.isFree === 'free') out.is_free = true;
-  if (value.isFree === 'paid') out.is_free = false;
-  if (value.durationBucket === 'lt2h') out.max_duration_minutes = 120;
-  if (value.durationBucket === '2_6h') {
-    out.min_duration_minutes = 120;
-    out.max_duration_minutes = 360;
-  }
-  if (value.durationBucket === 'gt6h') out.min_duration_minutes = 360;
-  if (value.topicIds.length > 0) out.category_id = value.topicIds[0]; // backend filters single
-  return out;
 }

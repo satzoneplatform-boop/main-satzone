@@ -1,69 +1,100 @@
 @import 'tailwindcss';
 
-@import '@fontsource/geist/400.css';
-@import '@fontsource/geist/500.css';
-@import '@fontsource/geist/600.css';
-@import '@fontsource/geist/700.css';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
 
 @theme {
-  --font-sans: 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* SATZONE brand typography — Poppins with sensible system fallbacks. */
+  --font-sans: 'Poppins', 'Inter', 'Helvetica Neue', Arial, system-ui, sans-serif;
 
-  /* Brand — Figma "Primary" */
+  /* ------------------------------------------------------------------ */
+  /* Brand — SATZONE "Primary Blue" #2563EB anchored at 600.            */
+  /* Token names are preserved from the previous theme so every page    */
+  /* rebrands automatically; only the values change (purple → blue).    */
+  /* ------------------------------------------------------------------ */
   --color-brand-25: #f5f8ff;
-  --color-brand-50: #eef0ff;
-  --color-brand-100: #e0e1ff;
-  --color-brand-200: #c5c5ff;
-  --color-brand-300: #a3b3ff;
-  --color-brand-400: #7c86ff;
-  --color-brand-500: #615fff;
-  --color-brand-600: #4f39f6;
-  --color-brand-700: #3f2bd9;
-  --color-brand-800: #3422af;
-  --color-brand-900: #261a7f;
+  --color-brand-50: #eff5ff;
+  --color-brand-100: #dbe8fe;
+  --color-brand-200: #bfd6fe;
+  --color-brand-300: #93b8fd;
+  --color-brand-400: #60a5fa; /* Light Blue */
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb; /* Primary Blue */
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e3a8a;
+  --color-brand-900: #172b6b;
 
-  /* Secondary — Figma "Secondary" (teal) */
-  --color-teal-25: #f5fffd;
-  --color-teal-300: #46ecd5;
-  --color-teal-400: #00d5be;
-  --color-teal-500: #00bba7;
-  --color-teal-700: #00786f;
-  --color-teal-950: #022f2e;
+  /* Accent Blue #1FA8F8 — reuses the old "teal" slots so any existing  */
+  /* teal-* usages stay on-brand (bright accent, glows, secondary CTA). */
+  --color-teal-25: #f0f9ff;
+  --color-teal-300: #7cd4fd;
+  --color-teal-400: #1fa8f8; /* Accent Blue */
+  --color-teal-500: #0d92e5;
+  --color-teal-700: #075e93;
+  --color-teal-950: #082f49;
 
-  /* Greyscale — exact values from Figma */
+  /* Accent aliases (clearer names for new code). */
+  --color-accent-400: #38bdf8;
+  --color-accent-500: #1fa8f8;
+  --color-accent-600: #0d92e5;
+
+  /* Deep Blue #0D1B3D — navy surfaces for hero / dashboard chrome. */
+  --color-navy-700: #1b2f5c;
+  --color-navy-800: #132347;
+  --color-navy-900: #0d1b3d; /* Deep Blue */
+  --color-navy-950: #081026;
+
+  /* Greyscale — slate ramp; already matches SATZONE Neutral Gray
+     (#64748B ≈ ink-500) and Light Gray (#F1F5F9 = ink-100). */
   --color-ink-0: #ffffff;
   --color-ink-50: #f8fafc;
   --color-ink-100: #f1f5f9;
-  --color-ink-200: #dde3eb;
-  --color-ink-300: #cad5e2;
-  --color-ink-400: #90a1b9;
-  --color-ink-500: #62748e;
-  --color-ink-600: #45556c;
-  --color-ink-700: #314158;
-  --color-ink-800: #1d293d;
-  --color-ink-900: #0f172b;
-  --color-ink-950: #020618;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b; /* Neutral Gray */
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+  --color-ink-950: #020617;
 
-  /* Status — Figma alert colors */
-  --color-success-50: #ecfdf3;
-  --color-success-500: #22c55e;
-  --color-success-600: #049228;
-  --color-danger-50: #fdf4f3;
-  --color-danger-500: #d54033;
-  --color-danger-600: #c62019;
+  /* Status — Success Green #10B981 per brand guide. */
+  --color-success-50: #ecfdf5;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-danger-50: #fef2f2;
+  --color-danger-300: #fca5a5;
+  --color-danger-500: #ef4444;
+  --color-danger-600: #dc2626;
+  --color-warn-50: #fffbeb;
   --color-warn-500: #f59e0b;
-  --color-progress-bg: #e7ebeb;
+  --color-warn-600: #d97706;
+  --color-warn-700: #b45309;
+  --color-progress-bg: #e5edf7;
 
-  /* Auth illustration backdrop */
-  --color-auth-bg: #6750ff;
+  /* Auth illustration backdrop — align to brand primary. */
+  --color-auth-bg: #2563eb;
 
-  /* Shadow tokens */
-  --shadow-input: 0 1px 1.5px 0 rgb(44 54 53 / 0.04);
-  --shadow-card: 0 1px 2px 0 rgb(15 23 43 / 0.04), 0 1px 3px 0 rgb(15 23 43 / 0.05);
-  --shadow-modal: 0 12px 32px -8px rgb(15 23 43 / 0.35), 0 4px 12px -4px rgb(15 23 43 / 0.2);
+  /* Shadow tokens — cooler, blue-tinted for a premium feel. */
+  --shadow-input: 0 1px 1.5px 0 rgb(13 27 61 / 0.05);
+  --shadow-card: 0 1px 2px 0 rgb(13 27 61 / 0.04), 0 1px 3px 0 rgb(13 27 61 / 0.05);
+  --shadow-dropdown: 0 8px 24px -8px rgb(13 27 61 / 0.18), 0 2px 6px -2px rgb(13 27 61 / 0.08);
+  --shadow-card-hover: 0 12px 28px -12px rgb(37 99 235 / 0.28), 0 4px 10px -4px rgb(13 27 61 / 0.12);
+  --shadow-modal: 0 12px 32px -8px rgb(13 27 61 / 0.35), 0 4px 12px -4px rgb(13 27 61 / 0.2);
+  --shadow-glow: 0 0 0 1px rgb(37 99 235 / 0.15), 0 8px 30px -6px rgb(37 99 235 / 0.35);
 
-  /* Player chrome animations */
+  /* Motion — shared easing + durations for the premium feel. */
+  --ease-brand: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-emphasis: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Legacy player chrome animations (kept — referenced by video player). */
   --animate-fade-in: fade-in 200ms ease-out both;
   --animate-scale-in: scale-in 150ms ease-out both;
+  --animate-shimmer: shimmer 1.4s linear infinite;
+  --animate-float-slow: float-slow 9s var(--ease-brand) infinite;
 
   @keyframes fade-in {
     from { opacity: 0; }
@@ -72,6 +103,14 @@
   @keyframes scale-in {
     from { opacity: 0; transform: scale(0.95); }
     to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to   { background-position: 200% 0; }
+  }
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-10px); }
   }
 }
 
@@ -85,7 +124,63 @@
     @apply bg-ink-50 text-ink-900 font-sans;
   }
 
+  ::selection {
+    background-color: var(--color-brand-100);
+    color: var(--color-ink-900);
+  }
+
   *:focus-visible {
     @apply outline-2 outline-offset-2 outline-brand-500;
+  }
+
+  /* Respect reduced-motion everywhere — the single most important
+     accessibility guardrail for a motion-heavy redesign. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Subtle SATZONE shield/acorn brand pattern for navy hero backdrops.
+     Encoded acorn-in-shield glyph tiled at low opacity. */
+  .bg-brand-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='84' viewBox='0 0 72 84'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1.4'%3E%3Cpath d='M36 10l18 6v16c0 12-8 20-18 24-10-4-18-12-18-24V16z'/%3E%3Cpath d='M36 26c4 0 7 3 7 7 0 5-3 9-7 11-4-2-7-6-7-11 0-4 3-7 7-7z'/%3E%3Cpath d='M36 22v4'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 72px 84px;
+  }
+
+  /* Shimmer surface used by skeleton loaders. */
+  .skeleton-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--color-ink-100) 25%,
+      var(--color-ink-200) 37%,
+      var(--color-ink-100) 63%
+    );
+    background-size: 200% 100%;
+    animation: var(--animate-shimmer);
+  }
+
+  /* Static tint fallback — no shimmer for users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-shimmer {
+      animation: none;
+      background: var(--color-ink-100);
+    }
+  }
+
+  /* Radial brand glow — used sparingly behind hero focal points. */
+  .brand-glow {
+    background: radial-gradient(
+      60% 60% at 50% 40%,
+      rgb(37 99 235 / 0.28) 0%,
+      rgb(37 99 235 / 0) 70%
+    );
   }
 }

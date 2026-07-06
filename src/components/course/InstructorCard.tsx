@@ -26,7 +26,7 @@ export function InstructorCard({ instructor }: InstructorCardProps) {
           )}
           <div className="mt-2 flex items-center gap-4 text-xs text-ink-600">
             <span className="flex items-center gap-1">
-              <StarIcon className="size-3.5 text-amber-400" />
+              <StarIcon className="size-3.5 text-warn-500" />
               {t('course.instructor.rating', { rating: instructor.rating.toFixed(1) })}
             </span>
             <span>{t('course.instructor.students', { count: instructor.students_count.toLocaleString() })}</span>

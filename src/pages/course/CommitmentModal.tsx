@@ -36,7 +36,11 @@ export function CommitmentModal({ open, onClose, onStart }: CommitmentModalProps
 
   function toggle(i: number) {
     const next = new Set(checked);
-    next.has(i) ? next.delete(i) : next.add(i);
+    if (next.has(i)) {
+      next.delete(i);
+    } else {
+      next.add(i);
+    }
     setChecked(next);
   }
 
