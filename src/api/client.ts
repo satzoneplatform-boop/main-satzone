@@ -40,6 +40,11 @@ let refreshPromise: Promise<boolean> | null = null;
 function buildUrl(path: string, params?: RequestOptions['params']): string {
   const base = path.startsWith('http') ? path : `${env.apiBaseUrl}${path}`;
   if (!params) return base;
+  // When the base is absolute (e.g. VITE_API_BASE_URL=https://api.satzone.org/api/v1)
+  // we must return the full URL — returning only pathname+search would strip the
+  // API host and send the request to the frontend's own origin. When the base is
+  // relative (e.g. "/api/v1", proxied by the Vite dev server) we keep it relative.
+  const isAbsolute = /^https?:\/\//i.test(base);
   const url = new URL(base, window.location.origin);
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null) continue;
@@ -49,7 +54,7 @@ function buildUrl(path: string, params?: RequestOptions['params']): string {
       url.searchParams.append(key, String(value));
     }
   }
-  return url.pathname + url.search;
+  return isAbsolute ? url.toString() : url.pathname + url.search;
 }
 
 async function parseError(res: Response): Promise<ApiError> {
