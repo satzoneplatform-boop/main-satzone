@@ -79,8 +79,8 @@ function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
   const t = useT();
   const c = enrollment.course;
   const completed = Boolean(enrollment.completed_at);
-  const next = enrollment.last_lesson_id
-    ? `/courses/${c.slug}/lessons/${enrollment.last_lesson_id}`
+  const next = enrollment.last_lesson
+    ? `/courses/${c.slug}/lessons/${enrollment.last_lesson.id}`
     : `/courses/${c.slug}/learn`;
 
   return (

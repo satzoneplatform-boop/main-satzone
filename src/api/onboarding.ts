@@ -5,9 +5,9 @@ export interface OnboardingProfile {
   headline: string | null;
   bio: string | null;
   skill_level: SkillLevel | null;
-  weekly_goal_minutes: number;
+  weekly_goal_minutes: number | null;
   learning_goal: string | null;
-  locale: string;
+  locale: string | null;
   timezone: string | null;
 }
 

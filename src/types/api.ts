@@ -43,6 +43,8 @@ export interface UserMe {
   onboarding_completed_at: string | null;
   last_login_at: string | null;
   created_at: string;
+  has_password: boolean;
+  has_google: boolean;
 }
 
 export interface Page<T> {
@@ -74,6 +76,7 @@ export interface Category {
   description: string | null;
   icon_url: string | null;
   parent_id: string | null;
+  sort_order: number;
 }
 
 export interface CategoryTreeNode extends Category {
@@ -98,6 +101,7 @@ export interface CourseSummary {
   subtitle: string | null;
   thumbnail_url: string | null;
   level: CourseLevel;
+  language: string;
   duration_minutes: number;
   lessons_count: number;
   rating: number;
@@ -133,15 +137,31 @@ export interface LessonSummary {
   order: number;
 }
 
+/** Compact assessment row embedded in curriculum responses. */
+export interface AssessmentBrief {
+  id: string;
+  section_id: string | null;
+  title: string;
+  description: string | null;
+  pass_percent: number;
+  time_limit_minutes: number | null;
+  max_attempts: number | null;
+  is_section_quiz: boolean;
+  status: AssessmentStatus;
+  questions_count: number;
+}
+
 export interface SectionRead {
   id: string;
   title: string;
   order: number;
   lessons: LessonSummary[];
+  assessments: AssessmentBrief[];
 }
 
 export interface CurriculumRead {
   sections: SectionRead[];
+  course_assessments: AssessmentBrief[];
   total_lessons: number;
   total_duration_seconds: number;
 }
@@ -152,7 +172,8 @@ export interface EnrollmentRead {
   enrolled_at: string;
   completed_at: string | null;
   progress_percent: number;
-  last_lesson_id: string | null;
+  last_accessed_at: string | null;
+  last_lesson: LessonSummary | null;
 }
 
 export interface ProgramSummary {
@@ -161,10 +182,12 @@ export interface ProgramSummary {
   title: string;
   subtitle: string | null;
   thumbnail_url: string | null;
-  courses_count: number;
-  duration_minutes: number;
+  level: CourseLevel;
+  duration_weeks: number;
   price_cents: number;
   currency: string;
+  status: PublishStatus;
+  published_at: string | null;
 }
 
 export interface HomeFeed {
@@ -181,7 +204,7 @@ export interface LessonPlaybackResponse {
   lesson_id: string;
   expires_at: string;
   hls_url: string | null;
-  hls_status: HlsStatus;
+  hls_status: HlsStatus | null;
   // Authoritative duration components — total_segments × segment_seconds is
   // the real total length. <video>.duration only reflects the buffered window
   // for sliding manifests.
@@ -298,7 +321,8 @@ export interface LessonAttachmentRead {
   id: string;
   lesson_id: string;
   title: string;
-  file_key: string | null;
+  /** Resolved, ready-to-use media URL (backend serializes the alias `file_key`). */
+  file_key: string;
   file_size_bytes: number | null;
   mime_type: string | null;
   created_at: string;
@@ -392,6 +416,48 @@ export interface AssessmentUpdatePayload {
   show_correct_answers?: boolean;
   is_section_quiz?: boolean;
   status?: AssessmentStatus;
+}
+
+/** Instructor-facing option (includes the answer key). */
+export interface OptionInstructorRead {
+  id: string;
+  text: string;
+  order: number;
+  image_url: string | null;
+  is_correct: boolean;
+}
+
+/** Instructor-facing question (full authoring view). */
+export interface QuestionInstructorRead {
+  id: string;
+  type: QuestionType;
+  prompt: string;
+  explanation: string | null;
+  points: number;
+  order: number;
+  image_url: string | null;
+  expected_answers: string[] | null;
+  options: OptionInstructorRead[];
+}
+
+/** Full instructor view of an assessment — returned by GET/POST/PATCH
+ *  `/instructor/assessments/...`. Note: no `questions_count` / `created_at`
+ *  (those are on `AssessmentSummary`); instead it carries the full `questions`. */
+export interface AssessmentInstructorRead {
+  id: string;
+  course_id: string;
+  section_id: string | null;
+  title: string;
+  description: string | null;
+  instructions: string | null;
+  time_limit_minutes: number | null;
+  pass_percent: number;
+  max_attempts: number | null;
+  shuffle_questions: boolean;
+  show_correct_answers: boolean;
+  is_section_quiz: boolean;
+  status: AssessmentStatus;
+  questions: QuestionInstructorRead[];
 }
 
 // ===== Practice quizzes (Duolingo-style drills) =====

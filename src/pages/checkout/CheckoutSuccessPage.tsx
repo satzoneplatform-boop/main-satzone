@@ -64,8 +64,8 @@ export function CheckoutSuccessPage() {
   const pending = isPaidFlow && (status === 'pending' || status === 'processing');
   const failed = status === 'cancelled' || status === 'refunded' || status === 'failed';
 
-  const startUrl = freeEnrollment?.last_lesson_id
-    ? `/lessons/${freeEnrollment.last_lesson_id}`
+  const startUrl = freeEnrollment?.last_lesson
+    ? `/lessons/${freeEnrollment.last_lesson.id}`
     : `/courses/${c.slug}`;
 
   const totalLabel =

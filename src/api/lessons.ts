@@ -8,12 +8,11 @@ export interface LessonProgressUpdate {
 }
 
 export interface LessonProgressRead {
-  enrollment_id: string;
+  id: string;
   lesson_id: string;
-  last_position_seconds: number;
-  watched_seconds: number;
-  completed: boolean;
   completed_at: string | null;
+  watched_seconds: number;
+  last_position_seconds: number;
 }
 
 export const lessonsApi = {

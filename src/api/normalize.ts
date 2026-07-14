@@ -25,6 +25,7 @@ import type {
   HomeFeed,
   InstructorRead,
   InstructorSummary,
+  LessonSummary,
   Page,
   ReviewRead,
   WishlistItemRead,
@@ -85,6 +86,7 @@ export function normalizeCourseSummary(raw: unknown): CourseSummary {
     subtitle: (r.subtitle ?? null) as string | null,
     thumbnail_url: (r.thumbnail_url ?? null) as string | null,
     level: (r.level ?? 'all_levels') as CourseSummary['level'],
+    language: String(r.language ?? 'en'),
     duration_minutes: toNumber(r.duration_minutes),
     lessons_count: toNumber(r.lectures_count ?? r.lessons_count),
     rating: toNumber(r.rating_avg ?? r.rating),
@@ -118,6 +120,20 @@ export function normalizeCourseDetail(raw: unknown): CourseDetail {
   };
 }
 
+/** Backend lesson → frontend LessonSummary. */
+export function normalizeLessonSummary(raw: unknown): LessonSummary | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  return {
+    id: String(r.id ?? ''),
+    title: String(r.title ?? ''),
+    type: (r.type ?? 'video') as LessonSummary['type'],
+    duration_seconds: toNumber(r.duration_seconds),
+    is_free_preview: Boolean(r.is_free_preview),
+    order: toNumber(r.order),
+  };
+}
+
 export function normalizeEnrollment(raw: unknown): EnrollmentRead {
   const r = (raw ?? {}) as Record<string, unknown>;
   return {
@@ -126,7 +142,8 @@ export function normalizeEnrollment(raw: unknown): EnrollmentRead {
     enrolled_at: String(r.enrolled_at ?? ''),
     completed_at: (r.completed_at ?? null) as string | null,
     progress_percent: toNumber(r.progress_percent),
-    last_lesson_id: (r.last_lesson_id ?? null) as string | null,
+    last_accessed_at: (r.last_accessed_at ?? null) as string | null,
+    last_lesson: normalizeLessonSummary(r.last_lesson),
   };
 }
 

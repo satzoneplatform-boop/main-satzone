@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { ProgramSummary } from '@/types/api';
-import { formatDuration, formatPrice } from '@/lib/format';
+import { formatPrice } from '@/lib/format';
 
 interface DegreeCardProps {
   program: ProgramSummary;
@@ -24,8 +24,8 @@ export function DegreeCard({ program }: DegreeCardProps) {
             program.title.charAt(0)
           )}
         </div>
-        <span className="rounded-md bg-success-50 px-2 py-0.5 text-[11px] font-semibold text-success-600">
-          {program.courses_count} courses
+        <span className="rounded-md bg-success-50 px-2 py-0.5 text-[11px] font-semibold capitalize text-success-600">
+          {program.level.replace('_', ' ')}
         </span>
       </div>
 
@@ -36,7 +36,7 @@ export function DegreeCard({ program }: DegreeCardProps) {
 
       <div className="mt-auto flex items-center justify-between text-xs">
         <span className="text-ink-500">
-          {formatDuration(program.duration_minutes)}
+          {program.duration_weeks} weeks
         </span>
         <span className="font-semibold text-ink-900">
           {formatPrice(program.price_cents, program.currency)}

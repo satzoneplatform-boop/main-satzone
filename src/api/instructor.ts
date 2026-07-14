@@ -1,5 +1,6 @@
 import { api } from './client';
 import type {
+  AssessmentInstructorRead,
   AssessmentSummary,
   AssessmentUpdatePayload,
   Page,
@@ -13,12 +14,23 @@ export interface InstructorProfileRead {
   title: string | null;
   bio: string | null;
   avatar_url: string | null;
+  expertise: string[] | null;
+  linkedin_url: string | null;
+  twitter_url: string | null;
+  website_url: string | null;
+  courses_count: number;
+  students_count: number;
 }
 
 export interface InstructorProfileUpsertPayload {
   name: string;
   title?: string | null;
   bio?: string | null;
+  expertise?: string[] | null;
+  avatar_url?: string | null;
+  linkedin_url?: string | null;
+  twitter_url?: string | null;
+  website_url?: string | null;
 }
 
 /**
@@ -37,7 +49,7 @@ export const instructorApi = {
   },
 
   updateAssessment(assessmentId: string, payload: AssessmentUpdatePayload) {
-    return api.patch<AssessmentSummary>(
+    return api.patch<AssessmentInstructorRead>(
       `/instructor/assessments/${assessmentId}`,
       { json: payload },
     );

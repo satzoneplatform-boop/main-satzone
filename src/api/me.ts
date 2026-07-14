@@ -16,7 +16,10 @@ import type {
 
 export interface UpdateMePayload {
   full_name?: string;
-  avatar_url?: string;
+}
+
+export interface SetPasswordPayload {
+  new_password: string;
 }
 
 export interface ChangePasswordPayload {
@@ -33,17 +36,18 @@ export interface SessionRead {
 }
 
 /**
- * Notification preference shape — FRONTEND.md §4.2 references the schema as
- * `NotificationPreferenceSchema` but doesn't print the full surface, so this
- * mirrors the toggles shown in the Notifications design (Figma 14137:29319).
- * Backend tolerates partial PATCH per the doc.
+ * Notification preferences — matches backend `NotificationPreferenceSchema`
+ * (app/schemas/user.py). GET returns all four booleans; PATCH accepts any
+ * subset (partial).
  */
 export interface NotificationPreferences {
-  course_updates?: boolean;
-  assignment_deadlines?: boolean;
-  certificates_achievements?: boolean;
-  degree_admission_updates?: boolean;
+  email_marketing: boolean;
+  email_announcements: boolean;
+  email_course_updates: boolean;
+  push_enabled: boolean;
 }
+
+export type NotificationPreferencesUpdate = Partial<NotificationPreferences>;
 
 export interface CreateNotePayload {
   lesson_id: string;
@@ -79,6 +83,10 @@ export const meApi = {
   changePassword(payload: ChangePasswordPayload) {
     return api.put<{ message: string }>('/me/password', { json: payload });
   },
+  /** Set an initial password on a Google-only account (no current password). */
+  setPassword(payload: SetPasswordPayload) {
+    return api.post<{ message: string }>('/me/password/set', { json: payload });
+  },
 
   uploadAvatar(file: File) {
     const fd = new FormData();
@@ -92,7 +100,7 @@ export const meApi = {
   getNotifications() {
     return api.get<NotificationPreferences>('/me/preferences/notifications');
   },
-  updateNotifications(payload: NotificationPreferences) {
+  updateNotifications(payload: NotificationPreferencesUpdate) {
     return api.patch<NotificationPreferences>('/me/preferences/notifications', {
       json: payload,
     });

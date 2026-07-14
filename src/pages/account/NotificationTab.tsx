@@ -8,10 +8,10 @@ import { BellIcon, BookIcon, CheckIcon, FlagIcon } from '@/components/icons';
 import { useT } from '@/i18n/I18nProvider';
 
 const DEFAULT: NotificationPreferences = {
-  course_updates: true,
-  assignment_deadlines: true,
-  certificates_achievements: true,
-  degree_admission_updates: true,
+  email_course_updates: true,
+  email_announcements: true,
+  email_marketing: false,
+  push_enabled: true,
 };
 
 export function NotificationTab() {
@@ -32,27 +32,27 @@ export function NotificationTab() {
   }> = useMemo(
     () => [
       {
-        key: 'course_updates',
+        key: 'email_course_updates',
         title: t('account.notification.courseUpdates.title'),
         description: t('account.notification.courseUpdates.description'),
         icon: BookIcon,
       },
       {
-        key: 'assignment_deadlines',
-        title: t('account.notification.assignments.title'),
-        description: t('account.notification.assignments.description'),
+        key: 'email_announcements',
+        title: t('account.notification.announcements.title'),
+        description: t('account.notification.announcements.description'),
         icon: FlagIcon,
       },
       {
-        key: 'certificates_achievements',
-        title: t('account.notification.certificates.title'),
-        description: t('account.notification.certificates.description'),
+        key: 'email_marketing',
+        title: t('account.notification.marketing.title'),
+        description: t('account.notification.marketing.description'),
         icon: CheckIcon,
       },
       {
-        key: 'degree_admission_updates',
-        title: t('account.notification.degree.title'),
-        description: t('account.notification.degree.description'),
+        key: 'push_enabled',
+        title: t('account.notification.push.title'),
+        description: t('account.notification.push.description'),
         icon: BellIcon,
       },
     ],

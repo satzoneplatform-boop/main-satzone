@@ -49,10 +49,10 @@ export interface SubmissionAnswerWrite {
 
 export interface SubmissionAnswerRead {
   question_id: string;
-  selected_option_ids: string[];
-  text: string | null;
+  is_correct: boolean;
   awarded_points: number;
-  is_correct: boolean | null;
+  /** Opaque snapshot of what the learner submitted (shape depends on question type). */
+  response: Record<string, unknown> | unknown[] | null;
 }
 
 export interface AssessmentSubmissionRead {

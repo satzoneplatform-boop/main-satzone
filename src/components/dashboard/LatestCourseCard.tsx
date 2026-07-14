@@ -99,8 +99,8 @@ function ActiveState({ enrollment }: { enrollment: EnrollmentRead }) {
   // Resume target: the last lesson the user opened in this course. Falls
   // back to the course's learn page when the backend has no last lesson
   // yet (i.e. the user enrolled but never opened a lesson).
-  const resumeTo = enrollment.last_lesson_id
-    ? `/courses/${course.slug}/lessons/${enrollment.last_lesson_id}`
+  const resumeTo = enrollment.last_lesson
+    ? `/courses/${course.slug}/lessons/${enrollment.last_lesson.id}`
     : `/courses/${course.slug}/learn`;
   return (
     <>

@@ -48,8 +48,8 @@ export function DashboardGreeting({
   // Resume target: first in-progress course, else null.
   const resume = enrollments.find((e) => !e.completed_at && e.progress_percent > 0) ?? enrollments[0];
   const resumeTo = resume
-    ? resume.last_lesson_id
-      ? `/courses/${resume.course.slug}/lessons/${resume.last_lesson_id}`
+    ? resume.last_lesson
+      ? `/courses/${resume.course.slug}/lessons/${resume.last_lesson.id}`
       : `/courses/${resume.course.slug}/learn`
     : null;
 

@@ -24,6 +24,39 @@ import { useAuth } from '@/features/auth/AuthProvider';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
+const STUDENT_RESULTS = [
+  {
+    id: 1,
+    photo:
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2.6&w=640&h=640&q=80',
+    before: 1260,
+    after: 1480,
+    gain: 220,
+    weeks: 8,
+    destination: 'New York University',
+  },
+  {
+    id: 2,
+    photo:
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2.4&w=640&h=640&q=80',
+    before: 1180,
+    after: 1450,
+    gain: 270,
+    weeks: 10,
+    destination: 'University of Toronto',
+  },
+  {
+    id: 3,
+    photo:
+      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=facearea&facepad=2.4&w=640&h=640&q=80',
+    before: 1320,
+    after: 1520,
+    gain: 200,
+    weeks: 7,
+    destination: 'Bocconi University',
+  },
+] as const;
+
 /**
  * Public marketing landing page shown at `/`.
  *
@@ -628,7 +661,6 @@ function HowItWorksSection() {
 
 function TestimonialsSection() {
   const t = useT();
-  const quotes = [1, 2, 3] as const;
   return (
     <section id="testimonials" className="bg-ink-50/60 py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
@@ -639,38 +671,70 @@ function TestimonialsSection() {
           <p className="mt-4 text-base text-ink-500">{t('landing.testimonials.subtitle')}</p>
         </Reveal>
         <Stagger className="mt-14 grid gap-5 md:grid-cols-3" stagger={0.1}>
-          {quotes.map((n) => (
-            <StaggerItem key={n}>
-              <figure className="flex h-full flex-col justify-between rounded-2xl border border-ink-200 bg-white p-7 shadow-[var(--shadow-card)]">
-                <div>
-                  <div className="flex gap-0.5 text-warn-500">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <StarIcon key={i} className="size-4" />
-                    ))}
+          {STUDENT_RESULTS.map((result) => (
+            <StaggerItem key={result.id}>
+              <figure className="flex h-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
+                <div className="relative aspect-[4/3] overflow-hidden bg-brand-50">
+                  <img
+                    src={result.photo}
+                    alt={t(`landing.testimonials.q${result.id}.photoAlt` as never)}
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    onError={(event) => {
+                      event.currentTarget.style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute left-4 top-4 rounded-xl bg-white/90 px-3 py-2 shadow-[var(--shadow-dropdown)] backdrop-blur">
+                    <p className="text-[11px] font-semibold uppercase text-ink-500">
+                      {t('landing.testimonials.score')}
+                    </p>
+                    <p className="text-xl font-bold text-navy-900">
+                      {result.after}
+                      <span className="ml-1 text-xs font-semibold text-success-600">
+                        +{result.gain}
+                      </span>
+                    </p>
                   </div>
-                  <blockquote className="mt-4 text-sm leading-relaxed text-ink-700">
-                    “{t(`landing.testimonials.q${n}.body` as never)}”
-                  </blockquote>
                 </div>
-                <figcaption className="mt-6 flex items-center gap-3">
-                  <div className="grid size-10 place-items-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
-                    {t(`landing.testimonials.q${n}.initials` as never)}
+                <div className="flex flex-1 flex-col p-6">
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <ResultStat label={t('landing.testimonials.before')} value={result.before} />
+                    <ResultStat label={t('landing.testimonials.after')} value={result.after} />
+                    <ResultStat
+                      label={t('landing.testimonials.time')}
+                      value={`${result.weeks} ${t('landing.testimonials.weeks')}`}
+                    />
                   </div>
-                  <div>
+                  <blockquote className="mt-5 text-sm leading-relaxed text-ink-700">
+                    “{t(`landing.testimonials.q${result.id}.body` as never)}”
+                  </blockquote>
+                  <figcaption className="mt-auto pt-6">
                     <p className="text-sm font-semibold text-navy-900">
-                      {t(`landing.testimonials.q${n}.author` as never)}
+                      {t(`landing.testimonials.q${result.id}.author` as never)}
                     </p>
-                    <p className="text-xs text-ink-500">
-                      {t(`landing.testimonials.q${n}.role` as never)}
+                    <p className="mt-1 text-xs text-ink-500">
+                      {t(`landing.testimonials.q${result.id}.role` as never)}
                     </p>
-                  </div>
-                </figcaption>
+                    <p className="mt-3 rounded-xl bg-ink-50 px-3 py-2 text-xs font-medium text-ink-600">
+                      {t('landing.testimonials.destination')}: {result.destination}
+                    </p>
+                  </figcaption>
+                </div>
               </figure>
             </StaggerItem>
           ))}
         </Stagger>
       </div>
     </section>
+  );
+}
+
+function ResultStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-xl bg-ink-50 px-2 py-3">
+      <p className="text-[11px] font-semibold uppercase text-ink-500">{label}</p>
+      <p className="mt-1 text-sm font-bold text-navy-900">{value}</p>
+    </div>
   );
 }
 
