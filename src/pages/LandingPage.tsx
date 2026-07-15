@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { motion, useReducedMotion } from 'motion/react';
+import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 import { Logo } from '@/components/brand/Logo';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -10,60 +10,32 @@ import {
   ArrowRightIcon,
   BookIcon,
   CheckIcon,
+  ClockIcon,
   FlagIcon,
   LightbulbIcon,
   PathIcon,
   StarIcon,
+  TrendingUpIcon,
+  UsersIcon,
 } from '@/components/icons';
 import { LanguageDropdown } from '@/components/layout/LanguageDropdown';
 import { CountUp } from '@/components/motion/CountUp';
 import { Reveal } from '@/components/motion/Reveal';
 import { Stagger, StaggerItem } from '@/components/motion/Stagger';
 import { staggerContainer, transitions } from '@/components/motion/variants';
+import { ResultsSection } from '@/components/results/ResultsSection';
+import { instructor } from '@/components/auth/marketing/config';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
-const STUDENT_RESULTS = [
-  {
-    id: 1,
-    photo:
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&facepad=2.6&w=640&h=640&q=80',
-    before: 1260,
-    after: 1480,
-    gain: 220,
-    weeks: 8,
-    destination: 'New York University',
-  },
-  {
-    id: 2,
-    photo:
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2.4&w=640&h=640&q=80',
-    before: 1180,
-    after: 1450,
-    gain: 270,
-    weeks: 10,
-    destination: 'University of Toronto',
-  },
-  {
-    id: 3,
-    photo:
-      'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=facearea&facepad=2.4&w=640&h=640&q=80',
-    before: 1320,
-    after: 1520,
-    gain: 200,
-    weeks: 7,
-    destination: 'Bocconi University',
-  },
-] as const;
-
 /**
  * Public marketing landing page shown at `/`.
  *
- * Rebuilt for the SATZONE brand: deep-navy hero with the shield/acorn brand
- * pattern, an animated SAT score dashboard, count-up proof metrics, and a
- * Learn → Practice → Prepare → Achieve journey. Authed users redirect to
- * the dashboard.
+ * Rebuilt for the SATZONE brand: deep-navy hero with animated gradient mesh,
+ * an animated SAT score dashboard, count-up proof metrics, a Learn → Practice
+ * → Prepare → Achieve journey, instructor spotlight, and live CMS-managed
+ * results. Authed users redirect to the dashboard.
  */
 export function LandingPage() {
   const { user, status } = useAuth();
@@ -83,12 +55,15 @@ export function LandingPage() {
     <div className="flex min-h-screen flex-col bg-white">
       <PublicTopBar />
       <main className="flex-1">
+        {/* Section order keeps color bands continuous: navy hero → light
+            content → one navy band (journey + instructor) → light results. */}
         <HeroSection />
         <MetricsBand />
         <FeaturesSection />
-        <JourneySection />
         <HowItWorksSection />
-        <TestimonialsSection />
+        <JourneySection />
+        <InstructorSection />
+        <ResultsSection />
         <FinalCtaSection />
       </main>
       <PublicFooter />
@@ -135,13 +110,13 @@ function PublicTopBar() {
             scrolled ? 'text-ink-600' : 'text-white/80',
           )}
         >
-          <a href="#features" className="transition-colors hover:opacity-100 hover:text-current">
+          <a href="#features" className="lp-nav-link transition-colors hover:opacity-100 hover:text-current">
             {t('landing.nav.features')}
           </a>
-          <a href="#journey" className="transition-colors hover:text-current">
+          <a href="#journey" className="lp-nav-link transition-colors hover:text-current">
             {t('landing.nav.howItWorks')}
           </a>
-          <a href="#testimonials" className="transition-colors hover:text-current">
+          <a href="#results" className="lp-nav-link transition-colors hover:text-current">
             {t('landing.nav.testimonials')}
           </a>
         </nav>
@@ -175,11 +150,14 @@ function HeroSection() {
   const reduce = useReducedMotion();
 
   return (
-    <section className="relative -mt-16 overflow-hidden bg-navy-900 pt-16 text-white">
-      {/* Brand pattern + glow backdrop */}
-      <div className="pointer-events-none absolute inset-0 bg-brand-pattern opacity-70" />
+    <section className="relative -mt-16 overflow-hidden bg-gradient-to-b from-navy-950 via-navy-900 to-navy-900 pt-16 text-white">
+      {/* Animated mesh gradient + drifting orbs backdrop */}
+      <div className="lp-mesh pointer-events-none absolute inset-0 opacity-90" />
+      <div className="lp-orb lp-orb--a absolute -left-32 top-6 h-80 w-80 bg-brand-500/25" />
+      <div className="lp-orb lp-orb--b absolute -right-24 bottom-0 h-96 w-96 bg-accent-500/20" />
+      <div className="lp-orb lp-orb--c absolute left-1/3 top-1/2 h-72 w-72 bg-brand-400/15" />
       <div className="pointer-events-none absolute -left-32 top-10 h-80 w-80 rounded-full brand-glow blur-2xl" />
-      <div className="pointer-events-none absolute -right-24 bottom-0 h-96 w-96 rounded-full bg-accent-500/10 blur-3xl" />
+      <LandingParticles count={16} />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-white/[0.03]" />
 
       <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-4 py-20 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:py-28">
@@ -199,7 +177,7 @@ function HeroSection() {
             <h1 className="mt-6 text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-6xl">
               {t('landing.hero.titleLine1')}
               <br />
-              <span className="bg-gradient-to-r from-brand-300 via-accent-400 to-brand-400 bg-clip-text text-transparent">
+              <span className="lp-text-flow bg-gradient-to-r from-brand-300 via-accent-300 to-brand-400 bg-clip-text text-transparent [text-shadow:0_0_40px_rgb(31_168_248/0.25)]">
                 {t('landing.hero.titleLine2')}
               </span>
             </h1>
@@ -213,16 +191,20 @@ function HeroSection() {
 
           <HeroItem>
             <div className="mt-9 flex flex-wrap items-center gap-3">
-              <Link to="/sign-up">
-                <Button size="lg" rightIcon={<ArrowRightIcon />}>
-                  {t('landing.hero.ctaPrimary')}
-                </Button>
-              </Link>
+              <span className="lp-breathe inline-block">
+                <Magnetic>
+                  <Link to="/sign-up">
+                    <Button size="lg" className="lp-cta" rightIcon={<ArrowRightIcon />}>
+                      {t('landing.hero.ctaPrimary')}
+                    </Button>
+                  </Link>
+                </Magnetic>
+              </span>
               <a href="#features">
                 <Button
                   size="lg"
                   variant="ghost"
-                  className="border border-white/25 text-white hover:bg-white/10"
+                  className="lp-btn-glass border border-white/25 text-white hover:bg-white/10"
                 >
                   {t('landing.hero.ctaSecondary')}
                 </Button>
@@ -260,7 +242,7 @@ function HeroSection() {
   );
 }
 
-function HeroItem({ children }: { children: React.ReactNode }) {
+function HeroItem({ children }: { children: ReactNode }) {
   const reduce = useReducedMotion();
   return (
     <motion.div
@@ -396,6 +378,68 @@ function TrendSparkline() {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Motion helpers                                                             */
+/* -------------------------------------------------------------------------- */
+
+/** Cursor-magnet wrapper — the child leans toward the pointer, springs back. */
+function Magnetic({ children, strength = 0.25 }: { children: ReactNode; strength?: number }) {
+  const reduce = useReducedMotion();
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 240, damping: 18 });
+  const sy = useSpring(y, { stiffness: 240, damping: 18 });
+
+  if (reduce) return <>{children}</>;
+
+  return (
+    <motion.div
+      style={{ x: sx, y: sy }}
+      onMouseMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        x.set((e.clientX - (r.left + r.width / 2)) * strength);
+        y.set((e.clientY - (r.top + r.height / 2)) * strength);
+      }}
+      onMouseLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
+      className="inline-block"
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/** Slowly rising glow specks over dark surfaces. Deterministic per index. */
+function LandingParticles({ count = 12 }: { count?: number }) {
+  const reduce = useReducedMotion();
+  if (reduce) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {Array.from({ length: count }).map((_, i) => {
+        const left = ((i * 61) % 97) + 1.5;
+        const size = 2 + ((i * 7) % 4);
+        const duration = 9 + ((i * 13) % 9);
+        const delay = -((i * 17) % 12);
+        return (
+          <span
+            key={i}
+            className="lp-particle"
+            style={{
+              left: `${left}%`,
+              width: size,
+              height: size,
+              animationDuration: `${duration}s`,
+              animationDelay: `${delay}s`,
+            }}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Metrics band                                                               */
 /* -------------------------------------------------------------------------- */
 
@@ -415,7 +459,7 @@ function MetricsBand() {
       >
         {metrics.map((m) => (
           <StaggerItem key={m.label} className="text-center sm:text-left">
-            <p className="text-3xl font-bold tracking-tight text-navy-900 sm:text-4xl">
+            <p className="bg-gradient-to-br from-navy-900 via-brand-700 to-brand-500 bg-clip-text text-3xl font-bold tracking-tight text-transparent sm:text-4xl">
               <CountUp
                 to={m.to}
                 prefix={m.prefix ?? ''}
@@ -445,7 +489,7 @@ function FeaturesSection() {
   ] as const;
 
   return (
-    <section id="features" className="bg-ink-50/60 py-24">
+    <section id="features" className="bg-gradient-to-b from-white via-ink-50 to-white py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-600">
@@ -463,9 +507,9 @@ function FeaturesSection() {
               <motion.article
                 whileHover={{ y: -6 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                className="group h-full rounded-2xl border border-ink-200 bg-white p-6 shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
+                className="lp-card group h-full rounded-2xl border border-ink-200 bg-white p-6 shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
               >
-                <div className="grid size-12 place-items-center rounded-xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
+                <div className="lp-icon grid size-12 place-items-center rounded-xl bg-brand-50 text-brand-600 transition-colors group-hover:bg-brand-600 group-hover:text-white">
                   {f.icon}
                 </div>
                 <h3 className="mt-5 text-lg font-semibold text-navy-900">
@@ -497,8 +541,11 @@ function JourneySection() {
   ] as const;
 
   return (
-    <section id="journey" className="relative overflow-hidden bg-navy-900 py-24 text-white">
-      <div className="pointer-events-none absolute inset-0 bg-brand-pattern opacity-50" />
+    // Top half of the navy band — flows seamlessly into InstructorSection.
+    <section id="journey" className="relative overflow-hidden bg-gradient-to-b from-navy-900 to-navy-950 py-24 text-white">
+      <div className="lp-mesh pointer-events-none absolute inset-0 opacity-70" />
+      <div className="lp-orb lp-orb--a absolute -left-20 top-16 h-72 w-72 bg-brand-500/20" />
+      <div className="lp-orb lp-orb--c absolute -right-16 bottom-10 h-80 w-80 bg-accent-500/15" />
       <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal className="mx-auto max-w-2xl text-center">
           <p className="text-sm font-semibold uppercase tracking-wider text-brand-300">
@@ -516,11 +563,11 @@ function JourneySection() {
         <Stagger className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4" stagger={0.12}>
           {stages.map((s, i) => (
             <StaggerItem key={s.key}>
-              <div className="relative h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur">
+              <div className="lp-card group relative h-full rounded-2xl border border-white/10 bg-white/[0.04] p-6 backdrop-blur hover:-translate-y-1.5 hover:border-white/20 hover:bg-white/[0.07]">
                 <span className="text-xs font-bold text-white/30">
                   0{i + 1}
                 </span>
-                <div className="mt-2 grid size-12 place-items-center rounded-xl bg-brand-500/15 text-brand-300">
+                <div className="lp-icon mt-2 grid size-12 place-items-center rounded-xl bg-brand-500/15 text-brand-300 group-hover:bg-brand-500/25 group-hover:text-brand-200">
                   {s.icon}
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">
@@ -636,8 +683,8 @@ function HowItWorksSection() {
         <Stagger as="ol" className="mt-14 grid gap-6 md:grid-cols-3" stagger={0.1}>
           {steps.map((n) => (
             <StaggerItem as="li" key={n}>
-              <div className="relative h-full rounded-2xl border border-ink-200 bg-white p-7 shadow-[var(--shadow-card)]">
-                <span className="grid size-11 place-items-center rounded-xl bg-brand-600 text-base font-bold text-white shadow-[0_6px_16px_-4px_rgb(37_99_235/0.5)]">
+              <div className="lp-card group relative h-full rounded-2xl border border-ink-200 bg-white p-7 shadow-[var(--shadow-card)] hover:-translate-y-1.5 hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]">
+                <span className="lp-icon grid size-11 place-items-center rounded-xl bg-brand-600 text-base font-bold text-white shadow-[0_6px_16px_-4px_rgb(37_99_235/0.5)]">
                   {n}
                 </span>
                 <h3 className="mt-5 text-lg font-semibold text-navy-900">
@@ -656,85 +703,132 @@ function HowItWorksSection() {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Testimonials                                                                */
+/* Meet your instructor                                                        */
 /* -------------------------------------------------------------------------- */
 
-function TestimonialsSection() {
+/**
+ * Instructor spotlight — the "learn from someone who's been there" section.
+ * Photo path/initials come from the shared instructor config (same source as
+ * the auth marketing panel) so swapping the photo updates both places.
+ */
+function InstructorSection() {
   const t = useT();
+  const [photoFailed, setPhotoFailed] = useState(false);
+  const showPhoto = Boolean(instructor.photoUrl) && !photoFailed;
+
+  const chips = [
+    t('landing.instructor.chip1'),
+    t('landing.instructor.chip2'),
+    t('landing.instructor.chip3'),
+  ];
+
+  const stats = [
+    { to: 2, suffix: '+', icon: <ClockIcon className="size-6" />, label: t('landing.instructor.stat.years') },
+    { to: 500, suffix: '+', icon: <UsersIcon className="size-6" />, label: t('landing.instructor.stat.students') },
+    { to: 44, suffix: '+', icon: <BookIcon className="size-6" />, label: t('landing.instructor.stat.mocks') },
+    { to: 1480, icon: <TrendingUpIcon className="size-6" />, label: t('landing.instructor.stat.avgScore') },
+  ];
+
   return (
-    <section id="testimonials" className="bg-ink-50/60 py-24">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-navy-900 sm:text-4xl">
-            {t('landing.testimonials.title')}
-          </h2>
-          <p className="mt-4 text-base text-ink-500">{t('landing.testimonials.subtitle')}</p>
-        </Reveal>
-        <Stagger className="mt-14 grid gap-5 md:grid-cols-3" stagger={0.1}>
-          {STUDENT_RESULTS.map((result) => (
-            <StaggerItem key={result.id}>
-              <figure className="flex h-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
-                <div className="relative aspect-[4/3] overflow-hidden bg-brand-50">
+    // Bottom half of the navy band — picks up where JourneySection ends.
+    <section id="instructor" className="relative overflow-hidden bg-gradient-to-b from-navy-950 to-navy-900 py-24 text-white">
+      <div className="lp-mesh pointer-events-none absolute inset-0 opacity-70" />
+      <div className="lp-orb lp-orb--b absolute -left-16 bottom-10 h-72 w-72 bg-brand-500/20" />
+      <div className="lp-orb lp-orb--a absolute -right-20 top-16 h-80 w-80 bg-accent-500/15" />
+
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:gap-16">
+          {/* Portrait with floating name card */}
+          <Reveal>
+            <div className="relative mx-auto w-full max-w-md">
+              {/* Offset outline for depth, echoing the brand pattern */}
+              <div
+                className="pointer-events-none absolute -left-4 -top-4 h-40 w-40 rounded-tl-3xl border-l-2 border-t-2 border-brand-400/40"
+                aria-hidden
+              />
+              <div
+                className="pointer-events-none absolute -inset-6 opacity-60 blur-3xl"
+                style={{ background: 'radial-gradient(circle at 30% 30%, rgb(59 130 246 / 0.4), transparent 65%)' }}
+                aria-hidden
+              />
+              <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-white/10 bg-navy-800 shadow-[0_32px_80px_-32px_rgb(37_99_235/0.6)]">
+                {showPhoto ? (
                   <img
-                    src={result.photo}
-                    alt={t(`landing.testimonials.q${result.id}.photoAlt` as never)}
-                    className="h-full w-full object-cover"
+                    src={instructor.photoUrl}
+                    alt={t(instructor.photoAltKey)}
                     loading="lazy"
-                    onError={(event) => {
-                      event.currentTarget.style.display = 'none';
-                    }}
+                    onError={() => setPhotoFailed(true)}
+                    className="h-full w-full object-cover"
                   />
-                  <div className="absolute left-4 top-4 rounded-xl bg-white/90 px-3 py-2 shadow-[var(--shadow-dropdown)] backdrop-blur">
-                    <p className="text-[11px] font-semibold uppercase text-ink-500">
-                      {t('landing.testimonials.score')}
-                    </p>
-                    <p className="text-xl font-bold text-navy-900">
-                      {result.after}
-                      <span className="ml-1 text-xs font-semibold text-success-600">
-                        +{result.gain}
-                      </span>
-                    </p>
+                ) : (
+                  <div
+                    className="grid h-full w-full place-items-center bg-gradient-to-br from-brand-600/40 to-accent-500/25 text-7xl font-bold text-white/90"
+                    role="img"
+                    aria-label={t(instructor.photoAltKey)}
+                  >
+                    {instructor.initials}
                   </div>
+                )}
+              </div>
+              <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/10 bg-navy-900/85 px-5 py-4 backdrop-blur sm:right-auto sm:min-w-[240px]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-300">
+                  {t('landing.instructor.badge')}
+                </p>
+                <p className="mt-1 text-xl font-bold leading-tight">{t('auth.brand.instructor.name')}</p>
+                <p className="mt-0.5 text-sm text-white/60">{t('auth.brand.instructor.role')}</p>
+              </div>
+            </div>
+          </Reveal>
+
+          {/* Story, specialties, stats, CTA */}
+          <Reveal>
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-300">
+              {t('landing.instructor.eyebrow')}
+            </p>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]">
+              {t('landing.instructor.title')}
+            </h2>
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-white/70 sm:text-lg">
+              {t('landing.instructor.bio')}
+            </p>
+
+            <ul className="mt-8 flex flex-wrap gap-3">
+              {chips.map((chip) => (
+                <li
+                  key={chip}
+                  className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-sm font-medium text-white/90"
+                >
+                  <CheckIcon className="size-4 text-accent-400" />
+                  {chip}
+                </li>
+              ))}
+            </ul>
+
+            <hr className="my-9 border-white/10" />
+
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-4">
+              {stats.map((s) => (
+                <div key={s.label}>
+                  <div className="text-brand-300">{s.icon}</div>
+                  <dd className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+                    <CountUp to={s.to} suffix={s.suffix} />
+                  </dd>
+                  <dt className="mt-1.5 text-sm text-white/60">{s.label}</dt>
                 </div>
-                <div className="flex flex-1 flex-col p-6">
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <ResultStat label={t('landing.testimonials.before')} value={result.before} />
-                    <ResultStat label={t('landing.testimonials.after')} value={result.after} />
-                    <ResultStat
-                      label={t('landing.testimonials.time')}
-                      value={`${result.weeks} ${t('landing.testimonials.weeks')}`}
-                    />
-                  </div>
-                  <blockquote className="mt-5 text-sm leading-relaxed text-ink-700">
-                    “{t(`landing.testimonials.q${result.id}.body` as never)}”
-                  </blockquote>
-                  <figcaption className="mt-auto pt-6">
-                    <p className="text-sm font-semibold text-navy-900">
-                      {t(`landing.testimonials.q${result.id}.author` as never)}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-500">
-                      {t(`landing.testimonials.q${result.id}.role` as never)}
-                    </p>
-                    <p className="mt-3 rounded-xl bg-ink-50 px-3 py-2 text-xs font-medium text-ink-600">
-                      {t('landing.testimonials.destination')}: {result.destination}
-                    </p>
-                  </figcaption>
-                </div>
-              </figure>
-            </StaggerItem>
-          ))}
-        </Stagger>
+              ))}
+            </dl>
+
+            <div className="mt-10">
+              <Link to="/sign-up">
+                <Button size="lg" className="lp-cta" rightIcon={<ArrowRightIcon />}>
+                  {t('landing.instructor.cta')}
+                </Button>
+              </Link>
+            </div>
+          </Reveal>
+        </div>
       </div>
     </section>
-  );
-}
-
-function ResultStat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-xl bg-ink-50 px-2 py-3">
-      <p className="text-[11px] font-semibold uppercase text-ink-500">{label}</p>
-      <p className="mt-1 text-sm font-bold text-navy-900">{value}</p>
-    </div>
   );
 }
 
@@ -747,11 +841,14 @@ function FinalCtaSection() {
   return (
     <section className="px-4 py-24 sm:px-6">
       <Reveal className="mx-auto max-w-5xl">
-        <div className="relative overflow-hidden rounded-[2rem] bg-navy-900 px-6 py-16 text-center text-white sm:px-12">
-          <div className="pointer-events-none absolute inset-0 bg-brand-pattern opacity-60" />
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-navy-900 via-navy-900 to-navy-950 px-6 py-16 text-center text-white sm:px-12">
+          <div className="lp-mesh pointer-events-none absolute inset-0 opacity-80" />
+          <div className="lp-orb lp-orb--a absolute -left-10 top-0 h-64 w-64 bg-brand-500/25" />
+          <div className="lp-orb lp-orb--b absolute -right-10 bottom-0 h-72 w-72 bg-accent-500/20" />
           <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full brand-glow blur-2xl" />
+          <LandingParticles count={10} />
           <div className="relative">
-            <Logo size={52} variant="white" className="mx-auto" />
+            <Logo size={52} variant="white" className="lp-float-sm mx-auto" />
             <h2 className="mx-auto mt-6 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
               {t('landing.cta.title')}
             </h2>
@@ -759,16 +856,20 @@ function FinalCtaSection() {
               {t('landing.cta.subtitle')}
             </p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <Link to="/sign-up">
-                <Button size="lg" rightIcon={<ArrowRightIcon />}>
-                  {t('landing.cta.button')}
-                </Button>
-              </Link>
+              <span className="lp-breathe inline-block">
+                <Magnetic>
+                  <Link to="/sign-up">
+                    <Button size="lg" className="lp-cta" rightIcon={<ArrowRightIcon />}>
+                      {t('landing.cta.button')}
+                    </Button>
+                  </Link>
+                </Magnetic>
+              </span>
               <Link to="/sign-in">
                 <Button
                   size="lg"
                   variant="ghost"
-                  className="border border-white/25 text-white hover:bg-white/10"
+                  className="lp-btn-glass border border-white/25 text-white hover:bg-white/10"
                 >
                   {t('landing.nav.signIn')}
                 </Button>
@@ -795,16 +896,16 @@ function PublicFooter() {
           <p className="mt-4 text-sm text-ink-500">{t('landing.footer.tagline')}</p>
         </div>
         <nav className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-ink-500">
-          <a href="#features" className="hover:text-navy-900">
+          <a href="#features" className="lp-nav-link hover:text-navy-900">
             {t('landing.nav.features')}
           </a>
-          <a href="#journey" className="hover:text-navy-900">
+          <a href="#journey" className="lp-nav-link hover:text-navy-900">
             {t('landing.nav.howItWorks')}
           </a>
-          <a href="#testimonials" className="hover:text-navy-900">
+          <a href="#results" className="lp-nav-link hover:text-navy-900">
             {t('landing.nav.testimonials')}
           </a>
-          <Link to="/contacts" className="hover:text-navy-900">
+          <Link to="/contacts" className="lp-nav-link hover:text-navy-900">
             {t('landing.footer.contacts')}
           </Link>
         </nav>

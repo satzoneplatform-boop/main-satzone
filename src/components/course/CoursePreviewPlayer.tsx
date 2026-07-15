@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { coursesApi } from '@/api/courses';
 import { ApiError } from '@/api/errors';
+import { rewriteHlsUrl } from '@/lib/hls';
 import { Spinner } from '@/components/ui/Spinner';
 
 interface CoursePreviewPlayerProps {
@@ -38,7 +39,11 @@ export function CoursePreviewPlayer({
   const mint = useMutation({
     mutationFn: () => coursesApi.previewPlayback(slug),
     onSuccess: (res) => {
-      setStreamUrl(res.stream_url);
+      // Re-host the signed URL onto the API origin the app actually uses.
+      // The backend builds stream_url from its own API_BASE_URL, which may
+      // differ from the public origin (or default to localhost) — without
+      // this the <video src> would point at the wrong host in production.
+      setStreamUrl(rewriteHlsUrl(res.stream_url));
       setStage('playing');
     },
   });

@@ -421,6 +421,16 @@ export function TrendingUpIcon(props: IconProps) {
   );
 }
 
+export function UsersIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>
+      <circle cx="7.5" cy="6.5" r="2.75" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M2.5 16.5v-.75a4 4 0 0 1 4-4h2a4 4 0 0 1 4 4v.75" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M13.25 4a2.75 2.75 0 0 1 0 5.1M14.75 12a4 4 0 0 1 2.75 3.8v.7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function TargetIcon(props: IconProps) {
   return (
     <svg viewBox="0 0 20 20" width={20} height={20} fill="none" aria-hidden {...props}>

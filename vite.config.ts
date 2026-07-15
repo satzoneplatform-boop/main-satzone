@@ -11,6 +11,9 @@ import path from 'node:path';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const apiTarget = env.VITE_API_TARGET || '';
+  // Local Results-CMS server (server/index.js). The SPA calls `/cms/api/*`;
+  // in dev those requests are proxied here so the CMS works alongside Vite.
+  const cmsTarget = env.VITE_CMS_TARGET || `http://localhost:${env.CMS_PORT || '8787'}`;
 
   return {
     plugins: [react(), tailwindcss()],
@@ -21,24 +24,30 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: 5173,
-      proxy: apiTarget
-        ? {
-            '/api': {
-              target: apiTarget,
-              changeOrigin: true,
-              // Forward client IP via X-Forwarded-For — the backend's HLS
-              // playback tokens are IP-bound (FRONTEND.md §5.1).
-              xfwd: true,
-              secure: true,
-            },
-            '/media': {
-              target: apiTarget,
-              changeOrigin: true,
-              xfwd: true,
-              secure: true,
-            },
-          }
-        : undefined,
+      proxy: {
+        '/cms': {
+          target: cmsTarget,
+          changeOrigin: true,
+        },
+        ...(apiTarget
+          ? {
+              '/api': {
+                target: apiTarget,
+                changeOrigin: true,
+                // Forward client IP via X-Forwarded-For — the backend's HLS
+                // playback tokens are IP-bound (FRONTEND.md §5.1).
+                xfwd: true,
+                secure: true,
+              },
+              '/media': {
+                target: apiTarget,
+                changeOrigin: true,
+                xfwd: true,
+                secure: true,
+              },
+            }
+          : {}),
+      },
     },
   };
 });

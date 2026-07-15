@@ -118,6 +118,7 @@
   html {
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -155,6 +156,15 @@
     background-size: 72px 84px;
   }
 
+  /* Hide the scrollbar on horizontal strips that scroll by swipe/drag. */
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Shimmer surface used by skeleton loaders. */
   .skeleton-shimmer {
     background: linear-gradient(
@@ -182,5 +192,319 @@
       rgb(37 99 235 / 0.28) 0%,
       rgb(37 99 235 / 0) 70%
     );
+  }
+}
+
+/* ========================================================================== */
+/* Landing-page premium visual layer.                                         */
+/*                                                                            */
+/* Everything here is namespaced `lp-*` and used ONLY by the marketing        */
+/* landing page — no other route references these classes, so the rest of     */
+/* the app is untouched. All motion is GPU-friendly (transform / opacity /    */
+/* background-position / box-shadow) and inherits the global                  */
+/* prefers-reduced-motion guard above, which freezes every animation.         */
+/* ========================================================================== */
+
+@property --lp-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes lp-drift-a {
+  0%,
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(6%, 8%, 0) scale(1.08); }
+  66%  { transform: translate3d(-5%, 4%, 0) scale(0.96); }
+}
+@keyframes lp-drift-b {
+  0%,
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+  50%  { transform: translate3d(-8%, -6%, 0) scale(1.12); }
+}
+@keyframes lp-drift-c {
+  0%,
+  100% { transform: translate3d(0, 0, 0) scale(1.05); }
+  40%  { transform: translate3d(7%, -5%, 0) scale(0.95); }
+  75%  { transform: translate3d(-4%, 6%, 0) scale(1.1); }
+}
+
+/* Slow mesh-gradient pan for navy section backdrops. */
+@keyframes lp-mesh-pan {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%; }
+  50%  { background-position: 40% 30%, 60% 40%, 40% 70%; }
+  100% { background-position: 0% 0%, 100% 0%, 50% 100%; }
+}
+
+/* Infinite flowing gradient for primary CTAs. */
+@keyframes lp-aurora {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Glass shine sweep across a surface. */
+@keyframes lp-shine {
+  0%   { transform: translateX(-160%) skewX(-18deg); }
+  60%,
+  100% { transform: translateX(260%) skewX(-18deg); }
+}
+
+/* Breathing outer glow (box-shadow only → no layout / transform conflict). */
+@keyframes lp-glow {
+  0%,
+  100% { box-shadow: 0 8px 22px -6px rgb(37 99 235 / 0.45), 0 0 0 0 rgb(31 168 248 / 0); }
+  50%  { box-shadow: 0 12px 30px -6px rgb(37 99 235 / 0.6), 0 0 22px 2px rgb(31 168 248 / 0.35); }
+}
+
+/* Soft breathing scale (1–2%) for CTA wrappers / focal cards. */
+@keyframes lp-breathe {
+  0%,
+  100% { transform: scale(1); }
+  50%  { transform: scale(1.02); }
+}
+
+/* Gentle idle float. */
+@keyframes lp-float {
+  0%,
+  100% { transform: translateY(0); }
+  50%  { transform: translateY(-12px); }
+}
+@keyframes lp-float-sm {
+  0%,
+  100% { transform: translateY(0); }
+  50%  { transform: translateY(-6px); }
+}
+
+/* Animated gradient-text shimmer. */
+@keyframes lp-text-flow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Floating particles rising and fading. */
+@keyframes lp-rise {
+  0%   { transform: translateY(0) scale(1); opacity: 0; }
+  10%  { opacity: 0.7; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateY(-160px) scale(0.4); opacity: 0; }
+}
+
+/* Rotating conic border light for premium cards. */
+@keyframes lp-border-spin {
+  to { --lp-angle: 360deg; }
+}
+
+@layer utilities {
+  /* ---- Animated blurred gradient orbs -------------------------------- */
+  .lp-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(56px);
+    will-change: transform;
+    pointer-events: none;
+  }
+  .lp-orb--a { animation: lp-drift-a 22s var(--ease-brand) infinite; }
+  .lp-orb--b { animation: lp-drift-b 28s var(--ease-brand) infinite; }
+  .lp-orb--c { animation: lp-drift-c 25s var(--ease-brand) infinite; }
+
+  /* ---- Moving gradient mesh (navy backdrops) ------------------------- */
+  .lp-mesh {
+    background-image:
+      radial-gradient(38% 44% at 20% 22%, rgb(37 99 235 / 0.28) 0%, transparent 70%),
+      radial-gradient(34% 40% at 82% 18%, rgb(31 168 248 / 0.22) 0%, transparent 72%),
+      radial-gradient(48% 52% at 50% 100%, rgb(56 189 248 / 0.16) 0%, transparent 70%);
+    background-size: 180% 180%, 170% 170%, 200% 200%;
+    animation: lp-mesh-pan 26s ease-in-out infinite;
+    will-change: background-position;
+  }
+
+  /* ---- Floating particles -------------------------------------------- */
+  .lp-particle {
+    position: absolute;
+    bottom: -8px;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.6);
+    box-shadow: 0 0 8px 1px rgb(31 168 248 / 0.6);
+    animation: lp-rise linear infinite;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+
+  /* ---- Idle float helpers -------------------------------------------- */
+  .lp-float    { animation: lp-float 7s var(--ease-brand) infinite; will-change: transform; }
+  .lp-float-sm { animation: lp-float-sm 5s var(--ease-brand) infinite; will-change: transform; }
+  .lp-breathe  { animation: lp-breathe 4.5s ease-in-out infinite; will-change: transform; }
+
+  /* ---- Animated gradient text ---------------------------------------- */
+  .lp-text-flow {
+    background-size: 200% auto;
+    animation: lp-text-flow 6s linear infinite;
+  }
+
+  /* ---- Primary CTA: aurora gradient + shine + breathing glow --------- */
+  .lp-cta {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    background-image: linear-gradient(
+      110deg,
+      var(--color-brand-700) 0%,
+      var(--color-brand-600) 25%,
+      var(--color-accent-500) 50%,
+      var(--color-brand-500) 75%,
+      var(--color-brand-700) 100%
+    );
+    background-size: 220% 100%;
+    background-color: var(--color-brand-600);
+    animation: lp-aurora 7s ease infinite, lp-glow 3.4s ease-in-out infinite;
+  }
+  .lp-cta::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 45%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgb(255 255 255 / 0.35) 50%,
+      transparent 100%
+    );
+    transform: translateX(-160%) skewX(-18deg);
+    animation: lp-shine 5s ease-in-out infinite;
+    animation-delay: 1.2s;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .lp-cta:hover {
+    animation-duration: 3.5s, 2.4s;
+  }
+
+  /* ---- Glass / outline button: hover glow + border transition -------- */
+  .lp-btn-glass {
+    position: relative;
+    overflow: hidden;
+    transition:
+      border-color 0.4s var(--ease-brand),
+      box-shadow 0.4s var(--ease-brand),
+      background-color 0.3s var(--ease-brand);
+  }
+  .lp-btn-glass:hover {
+    border-color: rgb(255 255 255 / 0.55) !important;
+    box-shadow: 0 0 22px -4px rgb(31 168 248 / 0.5);
+  }
+  .lp-btn-glass::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 40%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.25), transparent);
+    transform: translateX(-160%) skewX(-18deg);
+    transition: transform 0.7s var(--ease-brand);
+    pointer-events: none;
+  }
+  .lp-btn-glass:hover::after {
+    transform: translateX(260%) skewX(-18deg);
+  }
+
+  /* ---- Premium card: soft depth + animated gradient border on hover -- */
+  .lp-card {
+    position: relative;
+    transition:
+      transform 0.45s var(--ease-brand),
+      box-shadow 0.45s var(--ease-brand),
+      border-color 0.45s var(--ease-brand);
+  }
+  .lp-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--lp-angle),
+      transparent 0deg,
+      var(--color-brand-400) 90deg,
+      var(--color-accent-500) 160deg,
+      transparent 260deg,
+      transparent 360deg
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.45s var(--ease-brand);
+    pointer-events: none;
+  }
+  .lp-card:hover::before {
+    opacity: 1;
+    animation: lp-border-spin 4s linear infinite;
+  }
+
+  /* ---- Icon micro-interactions inside cards -------------------------- */
+  .lp-icon {
+    transition:
+      transform 0.4s var(--ease-brand),
+      box-shadow 0.4s var(--ease-brand),
+      background-color 0.3s var(--ease-brand),
+      color 0.3s var(--ease-brand);
+  }
+  .group:hover .lp-icon {
+    transform: translateY(-2px) rotate(-6deg) scale(1.08);
+    box-shadow: 0 10px 22px -8px rgb(37 99 235 / 0.55);
+  }
+
+  /* ---- Animated nav underline ---------------------------------------- */
+  .lp-nav-link {
+    position: relative;
+  }
+  .lp-nav-link::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -4px;
+    height: 2px;
+    width: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--color-brand-400), var(--color-accent-500));
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.35s var(--ease-brand);
+  }
+  .lp-nav-link:hover::after {
+    transform: scaleX(1);
+  }
+}
+
+/* ========================================================================== */
+/* Auth marketing panel — animated backdrop layer.                            */
+/*                                                                            */
+/* Used only by <AnimatedBackdrop> on the Sign Up / Sign In split screen.     */
+/* Reuses the lp-* orbs/particles above and adds a seamless vertical drift    */
+/* for the tiled shield pattern. Transform/opacity only → GPU friendly, and   */
+/* frozen by the global prefers-reduced-motion guard.                         */
+/* ========================================================================== */
+
+/* Seamless because -252px is an exact multiple of the 84px pattern tile. */
+@keyframes auth-pattern-drift {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, -252px, 0); }
+}
+
+@layer utilities {
+  /* Tall (200%) tiled-pattern layer that drifts slowly upward. Sits inside a
+     separate parallax wrapper so the JS cursor transform never conflicts. */
+  .auth-pattern-drift {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 200%;
+    animation: auth-pattern-drift 120s linear infinite;
+    will-change: transform;
   }
 }

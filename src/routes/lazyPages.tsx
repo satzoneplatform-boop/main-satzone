@@ -21,3 +21,25 @@ export function LazyLessonPlayerPage() {
     </Suspense>
   );
 }
+
+// Lazy-load the private Results CMS admin panel so its bundle never ships to
+// public visitors — only fetched when someone actually opens /admin/results.
+const ResultsAdminPage = lazy(() =>
+  import('@/pages/admin/ResultsAdminPage').then((m) => ({
+    default: m.ResultsAdminPage,
+  })),
+);
+
+export function LazyResultsAdminPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="grid min-h-screen place-items-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <ResultsAdminPage />
+    </Suspense>
+  );
+}

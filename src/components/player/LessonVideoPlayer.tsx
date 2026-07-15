@@ -96,6 +96,11 @@ export function LessonVideoPlayer({
         Number.isFinite(videoEl.duration) ? videoEl.duration : 0,
       );
     const onTime = () => {
+      // While the user is actively scrubbing, the pointer drives the
+      // displayed position (seekTo updates it optimistically). Ignoring the
+      // element's lagging currentTime here keeps the bar glued to the
+      // pointer instead of snapping back to the pre-seek position.
+      if (scrubbingRef.current) return;
       setCurrentTime(videoEl.currentTime);
       lastTimeRef.current = videoEl.currentTime;
     };
@@ -197,7 +202,12 @@ export function LessonVideoPlayer({
     const el = videoElRef.current;
     if (!el || !Number.isFinite(t)) return;
     const max = Number.isFinite(el.duration) ? el.duration : t;
-    el.currentTime = Math.max(0, Math.min(max, t));
+    const clamped = Math.max(0, Math.min(max, t));
+    el.currentTime = clamped;
+    // Reflect the new position immediately so clicks/drags seek accurately
+    // and the bar stays synced even before the element emits `timeupdate`
+    // (an HLS seek into an unbuffered region can delay that event).
+    setCurrentTime(clamped);
   }
 
   // Pointer-based scrubbing on the progress track. We avoid a native
@@ -278,6 +288,23 @@ export function LessonVideoPlayer({
   // for sliding HLS manifests).
   const duration =
     durationProp != null && durationProp > 0 ? durationProp : videoDuration;
+
+  // Reaching the end fires `ended` but NOT `pause`, so without this the UI
+  // stays stuck "playing": the Play button keeps showing Pause and the
+  // resume overlay never returns. Reset to the initial (paused) state and
+  // pin the clock to the full duration so the timer stops there and the
+  // progress bar sits at exactly 100%. Depends on `duration` so the pin
+  // uses the authoritative total once it's known.
+  useEffect(() => {
+    if (!videoEl) return;
+    const onEnded = () => {
+      setIsPlaying(false);
+      if (duration > 0) setCurrentTime(duration);
+    };
+    videoEl.addEventListener('ended', onEnded);
+    return () => videoEl.removeEventListener('ended', onEnded);
+  }, [videoEl, duration]);
+
   const progressPct =
     duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   const showChrome = !overlay && !hidden;

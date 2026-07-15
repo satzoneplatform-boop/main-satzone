@@ -23,6 +23,9 @@ export function formatDuration(minutes: number): string {
 /**
  * Format `price_cents` with the given ISO 4217 code.
  * Returns "Free" when `is_free` is true.
+ *
+ * UZS is rendered as a plain grouped amount with a trailing "sum"
+ * (e.g. "100 sum") rather than the default ISO presentation ("UZS 100").
  */
 export function formatPrice(
   priceCents: number,
@@ -30,13 +33,17 @@ export function formatPrice(
   isFree = false,
 ): string {
   if (isFree || priceCents === 0) return 'Free';
+  const amount = priceCents / 100;
+  if (currency.toUpperCase() === 'UZS') {
+    return `${new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(amount)} sum`;
+  }
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency,
       maximumFractionDigits: 0,
-    }).format(priceCents / 100);
+    }).format(amount);
   } catch {
-    return `$${(priceCents / 100).toFixed(0)}`;
+    return `$${amount.toFixed(0)}`;
   }
 }

@@ -145,12 +145,69 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       hls.loadSource(playSrc);
       hls.attachMedia(video);
 
+      // Lifecycle logging — makes a "200s but frozen" stall diagnosable:
+      // if MANIFEST_PARSED fires but FRAG_BUFFERED never does, the media
+      // pipeline (decrypt/transmux) is the culprit, not the network.
+      hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
+        console.info('[lesson-player] manifest parsed — levels:', data.levels?.length);
+      });
+      let buffered = 0;
+      hls.on(Hls.Events.FRAG_BUFFERED, () => {
+        buffered += 1;
+        if (buffered === 1) console.info('[lesson-player] first fragment buffered — media pipeline OK');
+      });
+
       // Bounded to 4 fatals per src — covers transient network drops,
       // playback_ip_mismatch (network swap), playback_token_expired
       // (TTL crossed). After 4 we surface a permanent error rather than
       // loop the re-mint forever.
       hls.on(Hls.Events.ERROR, (_, data) => {
-        if (!data.fatal) return;
+        // Log EVERY error (fatal + non-fatal). hls.js reports many stall
+        // conditions as non-fatal, so a silent freeze leaves no other trace.
+        console.warn('[lesson-player] hls error', {
+          type: data.type,
+          details: data.details,
+          fatal: data.fatal,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          httpCode: (data as any).response?.code,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const httpCode = (data as any).response?.code as number | undefined;
+
+        // Rate limited (429). The streaming endpoints share the API's
+        // default per-IP limit, and a single HLS play issues many requests
+        // (manifest reloads + every segment + the AES key). Re-minting here
+        // would re-fetch everything and multiply the load into a storm, so
+        // instead back off and resume the SAME session — the token is still
+        // valid. Not counted toward the fatal cap.
+        if (httpCode === 429) {
+          window.setTimeout(() => {
+            try {
+              hls.startLoad();
+            } catch {
+              /* player may be torn down — ignore */
+            }
+          }, 5000);
+          return;
+        }
+
+        if (!data.fatal) {
+          // Non-fatal buffer stall: nudge the playhead so a transient gap
+          // doesn't leave the video frozen with no visible error.
+          if (
+            data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR &&
+            video &&
+            !video.paused
+          ) {
+            try {
+              video.currentTime += 0.1;
+            } catch {
+              /* currentTime may be unseekable at the window edge — ignore */
+            }
+          }
+          return;
+        }
         fatalCountRef.current += 1;
         if (fatalCountRef.current > 4) {
           setError('Playback failed. Please refresh the page.');

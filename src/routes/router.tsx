@@ -32,7 +32,7 @@ import { VerifyEmailPage } from '@/pages/auth/VerifyEmailPage';
 import { LandingPage } from '@/pages/LandingPage';
 import { ComingSoon } from '@/pages/ComingSoonPage';
 import { RedirectIfAuthed, RequireAuth } from './guards';
-import { LazyLessonPlayerPage } from './lazyPages';
+import { LazyLessonPlayerPage, LazyResultsAdminPage } from './lazyPages';
 
 export const router = createBrowserRouter([
   // Public auth-flow pages — bounce away if already signed in.
@@ -50,6 +50,11 @@ export const router = createBrowserRouter([
   // authed, the page surfaces a "Go to dashboard" CTA but doesn't auto-
   // redirect (so authed users can still share / browse the public site).
   { path: '/', element: <LandingPage /> },
+
+  // Private Results CMS admin panel. Intentionally top-level (outside the app
+  // auth guards and dashboard shell) and never linked from navigation — it has
+  // its own shared-password gate. Reachable only by typing the URL directly.
+  { path: '/admin/results', element: <LazyResultsAdminPage /> },
 
   // Always-public pages.
   { path: '/sign-up/check-email', element: <CheckEmailPage /> },

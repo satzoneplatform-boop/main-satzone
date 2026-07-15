@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "server": "node --env-file=.env server/index.js",
+    "start": "NODE_ENV=production node --env-file=.env server/index.js"
   },
   "dependencies": {
     "@fontsource/geist": "^5.2.8",
@@ -17,13 +19,16 @@
     "@tanstack/react-query-devtools": "^5.100.9",
     "axios": "^1.16.0",
     "clsx": "^2.1.1",
+    "express": "^5.1.0",
     "hls.js": "^1.6.16",
+    "multer": "^2.0.1",
     "lucide-react": "^1.14.0",
     "motion": "^12.42.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hook-form": "^7.75.0",
     "react-router-dom": "^7.15.0",
+    "sharp": "^0.34.2",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.4.3"
   },
