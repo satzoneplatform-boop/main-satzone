@@ -44,3 +44,6 @@ public/uploads/students/*
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code: personal settings stay local; .claude/skills is shared via git
+.claude/settings.local.json
