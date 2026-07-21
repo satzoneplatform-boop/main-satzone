@@ -1,9 +1,22 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import type { TranslationKey } from '@/i18n/en';
 
 export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
+
+/**
+ * Backend course-level enum → translation key. Render with
+ * `t(COURSE_LEVEL_KEY[level] ?? ...)`; fall back to the raw value only for
+ * unknown enums so new backend levels degrade visibly instead of crashing.
+ */
+export const COURSE_LEVEL_KEY: Record<string, TranslationKey> = {
+  beginner: 'explore.level.beginner',
+  intermediate: 'explore.level.intermediate',
+  advanced: 'explore.level.advanced',
+  all_levels: 'explore.level.allLevels',
+};
 
 /**
  * Convert a backend `duration_minutes` (int) into a short human label.

@@ -114,8 +114,7 @@ export function CheckoutPage() {
       <Breadcrumb
         items={[
           { label: t('course.breadcrumb.explore'), to: '/explore' },
-          { label: t('course.breadcrumb.searchResults'), to: '/explore/search' },
-          { label: t('course.breadcrumb.detail'), to: `/courses/${slug}` },
+          { label: course.data.title, to: `/courses/${slug}` },
           { label: t('course.breadcrumb.payment') },
         ]}
       />

@@ -18,6 +18,15 @@ export function ExplorePage() {
   const featured = allCourses.filter((c) => c.is_featured).slice(0, 4);
   const rest = featured.length > 0 ? allCourses.filter((c) => !c.is_featured) : allCourses;
 
+  // Real per-category course counts from the loaded catalog — the categories
+  // endpoint carries no counts, and a hardcoded 0 reads as an empty platform.
+  const countByCategory = new Map<string, number>();
+  for (const c of allCourses) {
+    if (c.category) {
+      countByCategory.set(c.category.id, (countByCategory.get(c.category.id) ?? 0) + 1);
+    }
+  }
+
   return (
     <div className="space-y-10">
       <Reveal onView={false}>
@@ -38,7 +47,7 @@ export function ExplorePage() {
           >
             {(categories.data ?? []).slice(0, 6).map((c) => (
               <StaggerItem key={c.id} className="h-full [&>*]:h-full">
-                <CategoryCard category={c} />
+                <CategoryCard category={c} count={countByCategory.get(c.id) ?? 0} />
               </StaggerItem>
             ))}
           </Stagger>

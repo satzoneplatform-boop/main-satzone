@@ -7,6 +7,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 import { ArrowRightIcon, BookIcon, BookmarkIcon, SearchIcon } from '@/components/icons';
+import { CourseThumbnail } from '@/components/course/CourseThumbnail';
 import { useMyEnrollments } from '@/features/learning/hooks';
 import { useT } from '@/i18n/I18nProvider';
 import type { EnrollmentRead } from '@/types/api';
@@ -89,13 +90,11 @@ function EnrollmentTile({ enrollment }: { enrollment: EnrollmentRead }) {
       className="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
     >
       <div className="relative aspect-[16/10] overflow-hidden bg-ink-100">
-        {c.thumbnail_url && (
-          <img
-            src={c.thumbnail_url}
-            alt={c.title}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
-          />
-        )}
+        <CourseThumbnail
+          url={c.thumbnail_url}
+          title={c.title}
+          imgClassName="transition-transform group-hover:scale-105"
+        />
         {c.category && (
           <span className="absolute left-3 top-3 rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-medium text-ink-700 backdrop-blur">
             {c.category.name}

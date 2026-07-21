@@ -27,6 +27,7 @@ import {
   useMyEnrollments,
 } from '@/features/learning/hooks';
 import { useCompletedLessons } from '@/features/learning/completionStore';
+import { COURSE_LEVEL_KEY } from '@/lib/format';
 import authIllustration from '@/assets/auth-illustration.png';
 import { useT } from '@/i18n/I18nProvider';
 import type {
@@ -166,7 +167,9 @@ function Hero({
         <div className="px-6 py-8">
           <div className="flex items-center gap-2 text-xs">
             {course.tags?.[0] && <Badge tone="brand">{course.tags[0]}</Badge>}
-            <Badge tone="teal">{course.level}</Badge>
+            <Badge tone="teal">
+              {COURSE_LEVEL_KEY[course.level] ? t(COURSE_LEVEL_KEY[course.level]) : course.level}
+            </Badge>
           </div>
           <h1 className="mt-3 text-2xl font-semibold leading-tight tracking-tight">
             {course.title}

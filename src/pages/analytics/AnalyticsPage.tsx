@@ -130,7 +130,6 @@ export function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
         <Reveal onView={false}>
           <div className="relative h-full overflow-hidden rounded-2xl bg-navy-900 p-6 text-white shadow-[var(--shadow-card)]">
-            <div className="pointer-events-none absolute inset-0 bg-brand-pattern opacity-50" />
             <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-brand-500/25 blur-3xl" />
             <div className="absolute right-4 top-4">
               <SampleChip dark />

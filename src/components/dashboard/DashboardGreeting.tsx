@@ -64,7 +64,6 @@ export function DashboardGreeting({
 
   return (
     <section className="relative overflow-hidden rounded-2xl bg-navy-900 text-white shadow-[var(--shadow-card)]">
-      <div className="pointer-events-none absolute inset-0 bg-brand-pattern opacity-60" />
       <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-brand-500/20 blur-3xl" />
 
       <motion.div

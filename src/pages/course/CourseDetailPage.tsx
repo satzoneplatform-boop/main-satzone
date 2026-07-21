@@ -114,8 +114,7 @@ export function CourseDetailPage() {
         <Breadcrumb
           items={[
             { label: t('course.breadcrumb.explore'), to: '/explore' },
-            { label: t('course.breadcrumb.searchResults'), to: '/explore/search' },
-            { label: t('course.breadcrumb.detail') },
+            { label: c.title },
           ]}
         />
         {(user?.role === 'instructor' || user?.role === 'admin') && (

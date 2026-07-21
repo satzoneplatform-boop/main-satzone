@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { CalendarIcon, CheckIcon } from '@/components/icons';
 import { cn } from '@/lib/cn';
+import { formatDuration } from '@/lib/format';
 import type { UserMe } from '@/types/api';
 import { DashboardCard } from './DashboardCard';
 import { useT } from '@/i18n/I18nProvider';
@@ -15,6 +16,8 @@ interface WeeklyActivityCardProps {
   studyDays?: number[];
   /** Total time studied this week in minutes. */
   studiedMinutes?: number;
+  /** Lessons completed this week (summed from daily activity). */
+  lessonsCompleted?: number;
   onSetPlan: () => void;
 }
 
@@ -23,13 +26,12 @@ export function WeeklyActivityCard({
   weeklyGoalMinutes,
   studyDays = [],
   studiedMinutes = 0,
+  lessonsCompleted = 0,
   onSetPlan,
 }: WeeklyActivityCardProps) {
   const t = useT();
   const hasPlan = weeklyGoalMinutes > 0;
   const planDays = Math.max(1, Math.round(weeklyGoalMinutes / 60));
-  const hours = Math.floor(studiedMinutes / 60);
-  const mins = studiedMinutes % 60;
 
   const WEEK_DAYS = useMemo(
     () => [
@@ -125,8 +127,14 @@ export function WeeklyActivityCard({
       </div>
 
       <div className="grid grid-cols-2 gap-3 border-t border-ink-100 pt-4">
-        <Stat label={t('dashboard.weeklyActivity.hoursStudied')} value={`${hours}`} unit={t('dashboard.weeklyActivity.unit.hrs')} />
-        <Stat label={t('dashboard.weeklyActivity.activeTime')} value={`${mins}`} unit={t('dashboard.weeklyActivity.unit.min')} />
+        <Stat
+          label={t('dashboard.weeklyActivity.timeStudied')}
+          value={studiedMinutes > 0 ? formatDuration(studiedMinutes) : '0m'}
+        />
+        <Stat
+          label={t('dashboard.weeklyActivity.lessonsCompleted')}
+          value={String(lessonsCompleted)}
+        />
       </div>
 
       <button
@@ -141,14 +149,11 @@ export function WeeklyActivityCard({
   );
 }
 
-function Stat({ label, value, unit }: { label: string; value: string; unit: string }) {
+function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-ink-500">{label}</p>
-      <p className="mt-1">
-        <span className="text-2xl font-semibold text-ink-900">{value}</span>
-        <span className="ml-1 text-sm font-medium text-ink-500">{unit}</span>
-      </p>
+      <p className="mt-1 text-2xl font-semibold text-ink-900">{value}</p>
     </div>
   );
 }

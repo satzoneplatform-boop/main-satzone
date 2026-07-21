@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Spinner } from '@/components/ui/Spinner';
 import { PlayIcon, ArrowRightIcon } from '@/components/icons';
+import { CourseThumbnail } from '@/components/course/CourseThumbnail';
 import { meApi } from '@/api/me';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
@@ -175,13 +176,7 @@ function BookmarkState({ item }: { item: WishlistItemRead }) {
 function CourseThumb({ course }: { course: CourseSummary }) {
   return (
     <div className="hidden h-[180px] overflow-hidden rounded-xl bg-ink-100 lg:block">
-      {course.thumbnail_url && (
-        <img
-          src={course.thumbnail_url}
-          alt={course.title}
-          className="h-full w-full object-cover"
-        />
-      )}
+      <CourseThumbnail url={course.thumbnail_url} title={course.title} markSize={48} />
     </div>
   );
 }

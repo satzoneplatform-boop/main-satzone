@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/Button';
 import { CheckIcon } from '@/components/icons';
 import { CoursePreviewPlayer } from './CoursePreviewPlayer';
+import { CourseThumbnail } from './CourseThumbnail';
 import type { CourseDetail } from '@/types/api';
 import { formatPrice } from '@/lib/format';
 import { useT } from '@/i18n/I18nProvider';
@@ -61,14 +62,8 @@ export function PricingCard({
             poster={course.thumbnail_url}
             title={course.title}
           />
-        ) : course.thumbnail_url ? (
-          <img
-            src={course.thumbnail_url}
-            alt={course.title}
-            className="h-full w-full object-cover"
-          />
         ) : (
-          <div className="grid h-full place-items-center text-4xl">📘</div>
+          <CourseThumbnail url={course.thumbnail_url} title={course.title} markSize={48} />
         )}
       </div>
 

@@ -6,6 +6,7 @@ import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { CommitmentModal } from '@/pages/course/CommitmentModal';
+import { CourseThumbnail } from '@/components/course/CourseThumbnail';
 import { ordersApi } from '@/api/orders';
 import { useCourseDetail } from '@/features/course/hooks';
 import { formatPrice } from '@/lib/format';
@@ -147,9 +148,7 @@ export function CheckoutSuccessPage() {
               <div className="space-y-4 border-t border-ink-100 px-6 py-5">
                 <div className="flex gap-3 rounded-xl border border-ink-200 bg-white p-3">
                   <div className="size-14 shrink-0 overflow-hidden rounded-lg bg-ink-100">
-                    {c.thumbnail_url && (
-                      <img src={c.thumbnail_url} alt={c.title} className="h-full w-full object-cover" />
-                    )}
+                    <CourseThumbnail url={c.thumbnail_url} title={c.title} markSize={24} />
                   </div>
                   <div className="min-w-0">
                     {c.instructor && (

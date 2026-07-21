@@ -102,6 +102,11 @@ function PathLane({
   const ordered = [...quizzes].sort((a, b) => a.order - b.order);
   return (
     <ol className="relative mx-auto flex max-w-md flex-col py-4">
+      {/* Trail spine behind the nodes — ties the zigzag into one path. */}
+      <div
+        className="absolute inset-y-8 left-1/2 -translate-x-1/2 border-l-2 border-dashed border-ink-200"
+        aria-hidden
+      />
       {ordered.map((q, i) => {
         const offset = i % 4;
         const align =
@@ -116,7 +121,7 @@ function PathLane({
         const locked = i > 0 && !prev?.progress.completed;
         const completed = q.progress.completed;
         return (
-          <li key={q.id} className={cn('flex', align)}>
+          <li key={q.id} className={cn('relative z-10 flex', align)}>
             <PathNode
               slug={slug}
               quiz={q}
@@ -174,22 +179,25 @@ function PathNode({
           <FlagIcon className="size-9 text-white" />
         )}
       </span>
-      <span
-        className={cn(
-          'max-w-[14rem] text-center text-sm font-semibold',
-          locked ? 'text-ink-400' : 'text-ink-900',
-        )}
-      >
-        {quiz.title}
-      </span>
-      <span className="text-xs text-ink-500">
-        {t('quizzes.items', { n: quiz.item_count })}
-      </span>
-      {completed && quiz.progress.best_score_percent > 0 && (
-        <span className="text-[11px] font-semibold text-success-600">
-          {t('quizzes.best', { pct: quiz.progress.best_score_percent })}
+      {/* White backdrop keeps center-lane labels readable over the spine. */}
+      <span className="flex flex-col items-center gap-0.5 rounded-lg bg-white/95 px-2 py-0.5">
+        <span
+          className={cn(
+            'max-w-[14rem] text-center text-sm font-semibold',
+            locked ? 'text-ink-400' : 'text-ink-900',
+          )}
+        >
+          {quiz.title}
         </span>
-      )}
+        <span className="text-xs text-ink-500">
+          {t('quizzes.items', { n: quiz.item_count })}
+        </span>
+        {completed && quiz.progress.best_score_percent > 0 && (
+          <span className="text-[11px] font-semibold text-success-600">
+            {t('quizzes.best', { pct: quiz.progress.best_score_percent })}
+          </span>
+        )}
+      </span>
     </div>
   );
 

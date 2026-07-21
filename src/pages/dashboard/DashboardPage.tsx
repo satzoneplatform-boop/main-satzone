@@ -56,6 +56,10 @@ export function DashboardPage() {
     .filter((d) => d.minutes_learned > 0)
     .map((d) => weekdayIndex(d.activity_date));
   const studiedMinutes = activity.data?.minutes_learned_total ?? 0;
+  const lessonsCompleted = (activity.data?.days ?? []).reduce(
+    (sum, d) => sum + d.lessons_completed,
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -91,6 +95,7 @@ export function DashboardPage() {
             weeklyGoalMinutes={weeklyGoalMinutes}
             studyDays={studyDays}
             studiedMinutes={studiedMinutes}
+            lessonsCompleted={lessonsCompleted}
             onSetPlan={() => setGoalOpen(true)}
           />
         </StaggerItem>

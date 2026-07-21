@@ -2,6 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
 import { CheckIcon, LockIcon } from '@/components/icons';
+import { CourseThumbnail } from '@/components/course/CourseThumbnail';
 import { formatPrice } from '@/lib/format';
 import type { CourseDetail } from '@/types/api';
 import type { PromocodePreview } from '@/api/promocodes';
@@ -60,13 +61,7 @@ export function CheckoutSummary({
         <div className="p-5">
           <div className="flex gap-3">
             <div className="size-16 shrink-0 overflow-hidden rounded-lg bg-ink-100">
-              {course.thumbnail_url && (
-                <img
-                  src={course.thumbnail_url}
-                  alt={course.title}
-                  className="h-full w-full object-cover"
-                />
-              )}
+              <CourseThumbnail url={course.thumbnail_url} title={course.title} markSize={26} />
             </div>
             <div className="min-w-0">
               <p className="line-clamp-2 text-sm font-semibold text-navy-900">

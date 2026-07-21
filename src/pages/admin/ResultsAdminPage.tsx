@@ -89,7 +89,6 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <div className="grid min-h-screen place-items-center bg-navy-900 px-4">
-      <div className="pointer-events-none fixed inset-0 bg-brand-pattern opacity-20" />
       <form
         onSubmit={onSubmit}
         className="relative w-full max-w-sm rounded-3xl border border-white/10 bg-white p-8 shadow-[0_30px_80px_-20px_rgb(0_0_0/0.6)]"

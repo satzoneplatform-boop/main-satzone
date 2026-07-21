@@ -1,23 +1,16 @@
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { Avatar } from '@/components/ui/Avatar';
+import { CourseThumbnail } from '@/components/course/CourseThumbnail';
 import { StarIcon } from '@/components/icons';
 import type { CourseSummary } from '@/types/api';
-import type { TranslationKey } from '@/i18n/en';
-import { formatDuration, formatPrice } from '@/lib/format';
+import { COURSE_LEVEL_KEY, formatDuration, formatPrice } from '@/lib/format';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
 interface PopularCourseCardProps {
   course: CourseSummary;
 }
-
-const LEVEL_KEY: Record<string, TranslationKey> = {
-  beginner: 'explore.level.beginner',
-  intermediate: 'explore.level.intermediate',
-  advanced: 'explore.level.advanced',
-  all_levels: 'explore.level.allLevels',
-};
 
 export function PopularCourseCard({ course }: PopularCourseCardProps) {
   const t = useT();
@@ -43,13 +36,11 @@ export function PopularCourseCard({ course }: PopularCourseCardProps) {
         className="group flex h-full flex-col overflow-hidden rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)] transition-shadow hover:border-brand-200 hover:shadow-[var(--shadow-card-hover)]"
       >
         <div className="relative aspect-[16/10] overflow-hidden bg-ink-100">
-          {course.thumbnail_url && (
-            <img
-              src={course.thumbnail_url}
-              alt={course.title}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-          )}
+          <CourseThumbnail
+            url={course.thumbnail_url}
+            title={course.title}
+            imgClassName="transition-transform duration-500 group-hover:scale-105"
+          />
           <div className="absolute left-3 top-3 flex items-center gap-2">
             {course.category && (
               <span className="rounded-md bg-white/90 px-2 py-0.5 text-[11px] font-semibold text-navy-900 backdrop-blur">
@@ -67,7 +58,7 @@ export function PopularCourseCard({ course }: PopularCourseCardProps) {
         <div className="flex flex-1 flex-col gap-3 p-4">
           <div className="flex items-center gap-2 text-[11px] font-medium text-ink-500">
             <span className="rounded bg-ink-100 px-1.5 py-0.5 text-ink-700">
-              {LEVEL_KEY[course.level] ? t(LEVEL_KEY[course.level]) : course.level}
+              {COURSE_LEVEL_KEY[course.level] ? t(COURSE_LEVEL_KEY[course.level]) : course.level}
             </span>
             {course.rating > 0 && (
               <span className="inline-flex items-center gap-0.5 text-warn-500">

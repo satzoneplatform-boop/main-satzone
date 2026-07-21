@@ -46,7 +46,6 @@ export function ExploreSearchHero() {
 
   return (
     <section className="relative isolate overflow-hidden rounded-3xl bg-navy-900 px-6 py-16 text-center text-white">
-      <div className="pointer-events-none absolute inset-0 bg-brand-pattern opacity-60" />
       <div className="pointer-events-none absolute -left-16 top-8 h-56 w-56 rounded-full brand-glow blur-2xl" />
       <div className="pointer-events-none absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-accent-500/10 blur-3xl" />
 

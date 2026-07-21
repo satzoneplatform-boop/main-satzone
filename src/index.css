@@ -149,13 +149,6 @@
 }
 
 @layer utilities {
-  /* Subtle SATZONE shield/acorn brand pattern for navy hero backdrops.
-     Encoded acorn-in-shield glyph tiled at low opacity. */
-  .bg-brand-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='84' viewBox='0 0 72 84'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1.4'%3E%3Cpath d='M36 10l18 6v16c0 12-8 20-18 24-10-4-18-12-18-24V16z'/%3E%3Cpath d='M36 26c4 0 7 3 7 7 0 5-3 9-7 11-4-2-7-6-7-11 0-4 3-7 7-7z'/%3E%3Cpath d='M36 22v4'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 72px 84px;
-  }
-
   /* Hide the scrollbar on horizontal strips that scroll by swipe/drag. */
   .scrollbar-none {
     scrollbar-width: none;
@@ -205,12 +198,6 @@
 /* prefers-reduced-motion guard above, which freezes every animation.         */
 /* ========================================================================== */
 
-@property --lp-angle {
-  syntax: '<angle>';
-  inherits: false;
-  initial-value: 0deg;
-}
-
 @keyframes lp-drift-a {
   0%,
   100% { transform: translate3d(0, 0, 0) scale(1); }
@@ -236,50 +223,11 @@
   100% { background-position: 0% 0%, 100% 0%, 50% 100%; }
 }
 
-/* Infinite flowing gradient for primary CTAs. */
-@keyframes lp-aurora {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* Glass shine sweep across a surface. */
-@keyframes lp-shine {
-  0%   { transform: translateX(-160%) skewX(-18deg); }
-  60%,
-  100% { transform: translateX(260%) skewX(-18deg); }
-}
-
-/* Breathing outer glow (box-shadow only → no layout / transform conflict). */
-@keyframes lp-glow {
-  0%,
-  100% { box-shadow: 0 8px 22px -6px rgb(37 99 235 / 0.45), 0 0 0 0 rgb(31 168 248 / 0); }
-  50%  { box-shadow: 0 12px 30px -6px rgb(37 99 235 / 0.6), 0 0 22px 2px rgb(31 168 248 / 0.35); }
-}
-
 /* Soft breathing scale (1–2%) for CTA wrappers / focal cards. */
 @keyframes lp-breathe {
   0%,
   100% { transform: scale(1); }
   50%  { transform: scale(1.02); }
-}
-
-/* Gentle idle float. */
-@keyframes lp-float {
-  0%,
-  100% { transform: translateY(0); }
-  50%  { transform: translateY(-12px); }
-}
-@keyframes lp-float-sm {
-  0%,
-  100% { transform: translateY(0); }
-  50%  { transform: translateY(-6px); }
-}
-
-/* Animated gradient-text shimmer. */
-@keyframes lp-text-flow {
-  0%   { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
 }
 
 /* Floating particles rising and fading. */
@@ -290,9 +238,10 @@
   100% { transform: translateY(-160px) scale(0.4); opacity: 0; }
 }
 
-/* Rotating conic border light for premium cards. */
-@keyframes lp-border-spin {
-  to { --lp-angle: 360deg; }
+/* Infinite marquee track (track holds two copies → -50% loops seamlessly). */
+@keyframes lp-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
 
 @layer utilities {
@@ -331,55 +280,30 @@
     pointer-events: none;
   }
 
-  /* ---- Idle float helpers -------------------------------------------- */
-  .lp-float    { animation: lp-float 7s var(--ease-brand) infinite; will-change: transform; }
-  .lp-float-sm { animation: lp-float-sm 5s var(--ease-brand) infinite; will-change: transform; }
+  /* ---- Idle breathing (auth backdrop) --------------------------------- */
   .lp-breathe  { animation: lp-breathe 4.5s ease-in-out infinite; will-change: transform; }
 
-  /* ---- Animated gradient text ---------------------------------------- */
-  .lp-text-flow {
-    background-size: 200% auto;
-    animation: lp-text-flow 6s linear infinite;
-  }
-
-  /* ---- Primary CTA: aurora gradient + shine + breathing glow --------- */
+  /* ---- Primary CTA: brand gradient that shifts toward accent on hover -- */
   .lp-cta {
-    position: relative;
-    overflow: hidden;
-    isolation: isolate;
     background-image: linear-gradient(
       110deg,
       var(--color-brand-700) 0%,
-      var(--color-brand-600) 25%,
-      var(--color-accent-500) 50%,
-      var(--color-brand-500) 75%,
-      var(--color-brand-700) 100%
+      var(--color-brand-600) 45%,
+      var(--color-accent-500) 100%
     );
-    background-size: 220% 100%;
+    background-size: 160% 100%;
+    background-position: 0% 50%;
     background-color: var(--color-brand-600);
-    animation: lp-aurora 7s ease infinite, lp-glow 3.4s ease-in-out infinite;
-  }
-  .lp-cta::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 45%;
-    background: linear-gradient(
-      100deg,
-      transparent 0%,
-      rgb(255 255 255 / 0.35) 50%,
-      transparent 100%
-    );
-    transform: translateX(-160%) skewX(-18deg);
-    animation: lp-shine 5s ease-in-out infinite;
-    animation-delay: 1.2s;
-    pointer-events: none;
-    z-index: 0;
+    box-shadow: 0 8px 22px -6px rgb(37 99 235 / 0.45);
+    transition:
+      background-position 0.5s var(--ease-brand),
+      box-shadow 0.5s var(--ease-brand);
   }
   .lp-cta:hover {
-    animation-duration: 3.5s, 2.4s;
+    background-position: 100% 50%;
+    box-shadow:
+      0 12px 30px -6px rgb(37 99 235 / 0.6),
+      0 0 22px 2px rgb(31 168 248 / 0.35);
   }
 
   /* ---- Glass / outline button: hover glow + border transition -------- */
@@ -411,40 +335,13 @@
     transform: translateX(260%) skewX(-18deg);
   }
 
-  /* ---- Premium card: soft depth + animated gradient border on hover -- */
+  /* ---- Premium card: soft lift + border/shadow transition ------------- */
   .lp-card {
     position: relative;
     transition:
       transform 0.45s var(--ease-brand),
       box-shadow 0.45s var(--ease-brand),
       border-color 0.45s var(--ease-brand);
-  }
-  .lp-card::before {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    border-radius: inherit;
-    padding: 1px;
-    background: conic-gradient(
-      from var(--lp-angle),
-      transparent 0deg,
-      var(--color-brand-400) 90deg,
-      var(--color-accent-500) 160deg,
-      transparent 260deg,
-      transparent 360deg
-    );
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    opacity: 0;
-    transition: opacity 0.45s var(--ease-brand);
-    pointer-events: none;
-  }
-  .lp-card:hover::before {
-    opacity: 1;
-    animation: lp-border-spin 4s linear infinite;
   }
 
   /* ---- Icon micro-interactions inside cards -------------------------- */
@@ -456,8 +353,27 @@
       color 0.3s var(--ease-brand);
   }
   .group:hover .lp-icon {
-    transform: translateY(-2px) rotate(-6deg) scale(1.08);
+    transform: translateY(-2px) scale(1.04);
     box-shadow: 0 10px 22px -8px rgb(37 99 235 / 0.55);
+  }
+
+  /* ---- Growth-tree glow (journey signature) ---------------------------- */
+  /* Non-scaling 3px strokes read faint on navy; a soft cyan halo gives the
+     drawing presence without thickening the linework. */
+  .lp-tree-glow {
+    filter: drop-shadow(0 0 6px rgb(56 189 248 / 0.45))
+      drop-shadow(0 0 20px rgb(37 99 235 / 0.3));
+  }
+
+  /* ---- Infinite marquee strip ----------------------------------------- */
+  .lp-marquee {
+    display: flex;
+    width: max-content;
+    animation: lp-marquee 36s linear infinite;
+    will-change: transform;
+  }
+  .lp-marquee:hover {
+    animation-play-state: paused;
   }
 
   /* ---- Animated nav underline ---------------------------------------- */
@@ -486,25 +402,5 @@
 /* Auth marketing panel — animated backdrop layer.                            */
 /*                                                                            */
 /* Used only by <AnimatedBackdrop> on the Sign Up / Sign In split screen.     */
-/* Reuses the lp-* orbs/particles above and adds a seamless vertical drift    */
-/* for the tiled shield pattern. Transform/opacity only → GPU friendly, and   */
-/* frozen by the global prefers-reduced-motion guard.                         */
+/* Reuses the lp-* orbs/particles above.                                      */
 /* ========================================================================== */
-
-/* Seamless because -252px is an exact multiple of the 84px pattern tile. */
-@keyframes auth-pattern-drift {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(0, -252px, 0); }
-}
-
-@layer utilities {
-  /* Tall (200%) tiled-pattern layer that drifts slowly upward. Sits inside a
-     separate parallax wrapper so the JS cursor transform never conflicts. */
-  .auth-pattern-drift {
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 200%;
-    animation: auth-pattern-drift 120s linear infinite;
-    will-change: transform;
-  }
-}
