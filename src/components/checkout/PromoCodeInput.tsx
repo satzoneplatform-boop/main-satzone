@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
 import { CheckIcon, CloseIcon, GiftIcon } from '@/components/icons';
@@ -45,10 +46,20 @@ export function PromoCodeInput({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function apply(e?: FormEvent) {
-    e?.preventDefault();
-    const normalized = code.trim().toUpperCase();
-    if (!normalized) return;
+  // Codes the user saved to their profile wallet that apply to this course —
+  // offered as one-tap chips below the manual input. A failed fetch (or an
+  // empty wallet) simply renders no chips.
+  const saved = useQuery({
+    queryKey: ['me', 'promocodes', { course: courseId }],
+    queryFn: () => promocodesApi.listSavedForCourse(courseId),
+    staleTime: 60_000,
+  });
+  const savedUsable = (saved.data ?? []).filter(
+    (s) => s.is_valid && s.final_amount_cents !== null,
+  );
+
+  async function applyCode(normalized: string) {
+    if (!normalized || loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -67,6 +78,11 @@ export function PromoCodeInput({
     } finally {
       setLoading(false);
     }
+  }
+
+  function apply(e?: FormEvent) {
+    e?.preventDefault();
+    void applyCode(code.trim().toUpperCase());
   }
 
   const discountLabel = applied
@@ -169,6 +185,32 @@ export function PromoCodeInput({
                 </motion.p>
               )}
             </AnimatePresence>
+            {savedUsable.length > 0 && (
+              <div className="mt-3">
+                <p className="text-xs font-medium text-ink-500">
+                  {t('checkout.promo.savedCodes')}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {savedUsable.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={loading}
+                      onClick={() => void applyCode(s.code)}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 transition-colors hover:border-brand-400 hover:bg-brand-100 disabled:opacity-50"
+                    >
+                      <span className="font-mono font-semibold">{s.code}</span>
+                      <span>
+                        −
+                        {s.discount_kind === 'percent'
+                          ? `${s.discount_value}%`
+                          : formatPrice(s.discount_cents ?? 0, s.currency, false)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.form>
         )}
       </AnimatePresence>

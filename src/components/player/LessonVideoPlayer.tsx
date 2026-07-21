@@ -320,7 +320,13 @@ export function LessonVideoPlayer({
       )}
       onPointerMove={bumpActivity}
       onPointerDown={bumpActivity}
-      onPointerLeave={() => isPlaying && setLastMove(0)}
+      // Mouse only: touch pointers "leave" at the end of every tap, which
+      // would yank the controls away (pointer-events-none) between the tap
+      // that reveals them and the tap on a control — making the pause
+      // button un-hittable on mobile.
+      onPointerLeave={(e) => {
+        if (e.pointerType === 'mouse' && isPlaying) setLastMove(0);
+      }}
       onKeyDown={handleKeyDown}
       onContextMenu={(e) => e.preventDefault()}
       tabIndex={0}
@@ -382,9 +388,15 @@ export function LessonVideoPlayer({
             'transition-all duration-300 ease-out',
             'bg-gradient-to-t from-black/80 via-black/40 to-transparent',
             'px-4 sm:px-5 pt-14 pb-3',
+            // The gradient apron must never intercept taps: on a phone-width
+            // player it covers nearly the bottom half of the video and would
+            // swallow play/pause taps (and the lower half of the center play
+            // button). pointer-events inherits, so the seek track and the
+            // controls row explicitly re-enable it while shown.
+            'pointer-events-none',
             showControls
               ? 'opacity-100 translate-y-0'
-              : 'opacity-0 translate-y-2 pointer-events-none',
+              : 'opacity-0 translate-y-2',
           )}
           onClick={(e) => e.stopPropagation()}
         >
@@ -402,6 +414,7 @@ export function LessonVideoPlayer({
             onPointerCancel={onScrubEnd}
             className={cn(
               'relative h-3 mb-2 flex items-center group/seek touch-none',
+              showControls && 'pointer-events-auto',
               duration > 0 ? 'cursor-pointer' : 'cursor-default',
             )}
           >
@@ -425,7 +438,12 @@ export function LessonVideoPlayer({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3 text-white">
+          <div
+            className={cn(
+              'flex items-center gap-2 sm:gap-3 text-white',
+              showControls && 'pointer-events-auto',
+            )}
+          >
             <button
               type="button"
               onClick={togglePlay}

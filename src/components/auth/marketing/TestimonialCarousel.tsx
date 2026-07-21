@@ -10,25 +10,30 @@ interface TestimonialCarouselProps {
 }
 
 /**
- * Auto-rotating review carousel. Cross-fades + slides between quotes and pauses
- * on hover, focus-within, when the tab is hidden, and when scrolled off-screen.
- * Supports swipe and arrow-key navigation, with clickable dot indicators.
+ * Auto-rotating review carousel. Advances every `interval` and on click/tap
+ * anywhere on the card (no visible controls) — each advance restarts the
+ * timer. The next quote slides in from the right while the old one slides out
+ * left, so slides visibly replace each other. Pauses only when the tab is
+ * hidden or the card is scrolled off-screen.
  *
- * Fixed height + line-clamp keep the card from reflowing between quotes. Under
- * reduced motion it shows the first slide statically and only the dots navigate.
+ * Fixed height + line-clamp keep the card from reflowing between quotes.
+ * Swipe and arrow keys navigate both ways; Enter/Space advance. Under reduced
+ * motion auto-advance stops and manual navigation swaps without animation.
  */
-export function TestimonialCarousel({ interval = 6000 }: TestimonialCarouselProps) {
+export function TestimonialCarousel({ interval = 2000 }: TestimonialCarouselProps) {
   const t = useT();
   const reduce = useReducedMotion();
   const count = testimonials.length;
 
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [inView, setInView] = useState(true);
   const [tabVisible, setTabVisible] = useState(true);
 
   const figureRef = useRef<HTMLElement>(null);
   const touchStartX = useRef<number | null>(null);
+  // A handled swipe still ends in a click on the same element — eat that click
+  // so one gesture doesn't advance twice.
+  const suppressClick = useRef(false);
 
   const go = useCallback(
     (next: number) => setIndex((next + count) % count),
@@ -54,18 +59,28 @@ export function TestimonialCarousel({ interval = 6000 }: TestimonialCarouselProp
     return () => io.disconnect();
   }, []);
 
-  // Auto-advance, unless blocked. Functional update keeps `index` out of deps.
+  // Auto-advance, unless blocked. `index` in the deps restarts the timer on
+  // every change, so a manual advance always gets a full interval before the
+  // next automatic one.
   useEffect(() => {
-    if (reduce || paused || !inView || !tabVisible || count <= 1) return;
+    if (reduce || !inView || !tabVisible || count <= 1) return;
     const id = window.setInterval(
       () => setIndex((i) => (i + 1) % count),
       interval,
     );
     return () => window.clearInterval(id);
-  }, [reduce, paused, inView, tabVisible, count, interval]);
+  }, [reduce, inView, tabVisible, count, interval, index]);
+
+  const onClick = () => {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      return;
+    }
+    go(index + 1);
+  };
 
   const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowRight') {
+    if (e.key === 'ArrowRight' || e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       go(index + 1);
     } else if (e.key === 'ArrowLeft') {
@@ -80,16 +95,13 @@ export function TestimonialCarousel({ interval = 6000 }: TestimonialCarouselProp
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 40) {
+      suppressClick.current = true;
+      go(index + (dx < 0 ? 1 : -1));
+    }
     touchStartX.current = null;
   };
 
-  // focus-within → pause (blur only when focus truly leaves the figure).
-  const onBlurCapture = (e: React.FocusEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPaused(false);
-  };
-
-  // Reduced motion disables only auto-advance; manual nav still moves `index`.
   const current = testimonials[index];
 
   return (
@@ -99,24 +111,24 @@ export function TestimonialCarousel({ interval = 6000 }: TestimonialCarouselProp
       aria-roledescription="carousel"
       aria-label={t('landing.testimonials.title')}
       tabIndex={0}
+      onClick={onClick}
       onKeyDown={onKeyDown}
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={onBlurCapture}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
-      className="relative rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
+      className="relative cursor-pointer select-none rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60"
     >
       {/* Fixed-height stage so quotes of different lengths never reflow. Sized
-          tight to the content (stars + 2-line quote + caption) — no dead gap. */}
-      <div className="relative h-[104px]">
-        <AnimatePresence mode="wait">
+          tight to the content (stars + 2-line quote + caption) — no dead gap.
+          overflow-hidden clips the outgoing/incoming slides mid-push. */}
+      <div className="relative h-[104px] overflow-hidden">
+        {/* No `mode` on purpose: enter and exit run together, so the incoming
+            slide pushes the outgoing one out instead of waiting for it. */}
+        <AnimatePresence initial={false}>
           <motion.div
             key={current.id}
-            initial={reduce ? false : { opacity: 0, x: 8 }}
+            initial={reduce ? false : { opacity: 0, x: 48 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={reduce ? undefined : { opacity: 0, x: -8 }}
+            exit={reduce ? undefined : { opacity: 0, x: -48 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 flex flex-col"
           >
@@ -157,27 +169,6 @@ export function TestimonialCarousel({ interval = 6000 }: TestimonialCarouselProp
             </figcaption>
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      {/* Dot indicators — bottom-right, clickable, real buttons. */}
-      <div className="mt-1 flex justify-end gap-1.5">
-        {testimonials.map((tItem, i) => {
-          const active = i === index;
-          return (
-            <button
-              key={tItem.id}
-              type="button"
-              onClick={() => go(i)}
-              aria-label={`${i + 1} / ${count}`}
-              aria-current={active}
-              className="h-1.5 rounded-full transition-all"
-              style={{
-                width: active ? 18 : 6,
-                backgroundColor: active ? '#3B82F6' : 'rgb(255 255 255 / 0.25)',
-              }}
-            />
-          );
-        })}
       </div>
     </figure>
   );
