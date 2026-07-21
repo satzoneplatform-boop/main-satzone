@@ -4,6 +4,7 @@ import { BottomNav } from './BottomNav';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { PageTransition } from '@/components/motion/PageTransition';
+import { PasswordSetupPrompt } from '@/components/auth/PasswordSetupPrompt';
 import { SignOutModal } from '@/pages/dashboard/SignOutModal';
 import { useT } from '@/i18n/I18nProvider';
 import type { TranslationKey } from '@/i18n/en';
@@ -56,6 +57,7 @@ export function DashboardShell() {
       </div>
       <BottomNav />
       <SignOutModal open={signOutOpen} onClose={() => setSignOutOpen(false)} />
+      <PasswordSetupPrompt />
     </div>
   );
 }

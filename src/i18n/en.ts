@@ -89,6 +89,14 @@ export const en = {
   'account.security.changePassword.submit': 'Update password',
   'account.security.changePassword.invalid': 'New password must contain an uppercase letter, a number and 8+ characters.',
   'account.security.changePassword.failed': 'Could not change password.',
+  'account.security.password.setDescription':
+    'You signed in with Google. Set a password to also sign in with your email.',
+  'account.security.password.setCta': 'Set password',
+  'account.security.setPassword.title': 'Set a password',
+  'account.security.setPassword.subtitle':
+    'Add a password so you can sign in with your email as well as Google.',
+  'account.security.setPassword.submit': 'Set password',
+  'account.security.setPassword.failed': 'Could not set password.',
 
   // Account → Notification tab
   'account.notification.title': 'Notification',
@@ -249,6 +257,11 @@ export const en = {
   'auth.googleCallback.profileError':
     'Sign-in succeeded but we couldn’t load your profile. Please try again.',
   'auth.googleCallback.backToSignIn': 'Back to sign in',
+  'auth.passwordPrompt.title': 'Add a password to your account',
+  'auth.passwordPrompt.body':
+    'You signed in with Google. Set up a password in your profile to also be able to sign in with your email and password.',
+  'auth.passwordPrompt.cta': 'Set up password',
+  'auth.passwordPrompt.later': 'Maybe later',
 
   // Dashboard
   'dashboard.errorLoading': 'We couldn’t load your dashboard. Please refresh to try again.',

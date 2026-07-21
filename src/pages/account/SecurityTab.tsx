@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -7,6 +8,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ApiError } from '@/api/errors';
 import { meApi, type SessionRead } from '@/api/me';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { authErrorMessage } from '@/features/auth/hooks';
 import { evaluatePassword } from '@/lib/password';
 import { useT } from '@/i18n/I18nProvider';
@@ -15,11 +17,27 @@ import type { TranslationKey } from '@/i18n/en';
 export function SecurityTab() {
   const t = useT();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const sessions = useQuery({
     queryKey: ['me', 'sessions'],
     queryFn: () => meApi.listSessions(),
   });
   const [pwOpen, setPwOpen] = useState(false);
+
+  // Google-only accounts get "set a password" (no current-password field);
+  // everyone else gets the regular change flow.
+  const hasPassword = user?.has_password ?? true;
+
+  // ?setpw=1 (from the post-sign-in prompt) auto-opens the set form once;
+  // the param is stripped so back/refresh doesn't re-open it.
+  const [params, setParams] = useSearchParams();
+  useEffect(() => {
+    if (params.get('setpw') !== '1') return;
+    if (user && !user.has_password) setPwOpen(true);
+    const next = new URLSearchParams(params);
+    next.delete('setpw');
+    setParams(next, { replace: true });
+  }, [params, user, setParams]);
 
   const revokeOne = useMutation({
     mutationFn: (id: string) => meApi.revokeSession(id),
@@ -39,8 +57,16 @@ export function SecurityTab() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <SecurityCard
           title={t('account.security.password.title')}
-          description={t('account.security.password.description')}
-          ctaLabel={t('account.security.password.cta')}
+          description={
+            hasPassword
+              ? t('account.security.password.description')
+              : t('account.security.password.setDescription')
+          }
+          ctaLabel={
+            hasPassword
+              ? t('account.security.password.cta')
+              : t('account.security.password.setCta')
+          }
           onClick={() => setPwOpen(true)}
         />
         <SecurityCard
@@ -124,7 +150,11 @@ export function SecurityTab() {
         )}
       </section>
 
-      <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />
+      {hasPassword ? (
+        <ChangePasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />
+      ) : (
+        <SetPasswordModal open={pwOpen} onClose={() => setPwOpen(false)} />
+      )}
     </div>
   );
 }
@@ -341,6 +371,94 @@ function ChangePasswordModal({
           disabled={!current || !passwordValid}
         >
           {t('account.security.changePassword.submit')}
+        </Button>
+      </form>
+    </Modal>
+  );
+}
+
+/**
+ * First-password form for Google-only accounts — POST /me/password/set takes
+ * no current password. On success the auth user is refreshed so has_password
+ * flips everywhere (card switches to "change", the sign-in prompt stops).
+ */
+function SetPasswordModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  const t = useT();
+  const { refresh } = useAuth();
+  const [next, setNext] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const set = useMutation({
+    mutationFn: () => meApi.setPassword({ new_password: next }),
+    onSuccess: async () => {
+      setNext('');
+      setError(null);
+      onClose();
+      await refresh();
+    },
+    onError: (err) => {
+      setError(
+        err instanceof ApiError
+          ? authErrorMessage(err)
+          : t('account.security.setPassword.failed'),
+      );
+    },
+  });
+
+  const checks = evaluatePassword(next);
+  const passwordValid = checks.uppercase && checks.number && checks.length;
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (!passwordValid) {
+      setError(t('account.security.changePassword.invalid'));
+      return;
+    }
+    set.mutate();
+  }
+
+  return (
+    <Modal open={open} onClose={onClose}>
+      <form onSubmit={onSubmit} className="space-y-5">
+        <div>
+          <h2 className="text-xl font-semibold text-ink-900">
+            {t('account.security.setPassword.title')}
+          </h2>
+          <p className="mt-1 text-sm text-ink-500">
+            {t('account.security.setPassword.subtitle')}
+          </p>
+        </div>
+
+        {error && (
+          <div role="alert" className="rounded-md border border-danger-500/30 bg-danger-50 px-3 py-2 text-sm text-danger-600">
+            {error}
+          </div>
+        )}
+
+        <PasswordInput
+          label={t('account.security.changePassword.new')}
+          required
+          autoComplete="new-password"
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          hint={t('account.security.changePassword.hint')}
+        />
+
+        <Button
+          type="submit"
+          fullWidth
+          size="lg"
+          loading={set.isPending}
+          disabled={!passwordValid}
+        >
+          {t('account.security.setPassword.submit')}
         </Button>
       </form>
     </Modal>

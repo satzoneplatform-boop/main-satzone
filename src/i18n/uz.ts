@@ -91,6 +91,14 @@ export const uz: Partial<Record<TranslationKey, string>> = {
   'account.security.changePassword.submit': 'Parolni yangilash',
   'account.security.changePassword.invalid': 'Yangi parolda bosh harf, raqam va kamida 8 ta belgi boʻlishi kerak.',
   'account.security.changePassword.failed': 'Parolni oʻzgartirib boʻlmadi.',
+  'account.security.password.setDescription':
+    'Siz Google orqali kirdingiz. Email orqali ham kirish uchun parol oʻrnating.',
+  'account.security.password.setCta': 'Parol oʻrnatish',
+  'account.security.setPassword.title': 'Parol oʻrnatish',
+  'account.security.setPassword.subtitle':
+    'Google bilan birga email orqali ham kirish uchun parol qoʻshing.',
+  'account.security.setPassword.submit': 'Parol oʻrnatish',
+  'account.security.setPassword.failed': 'Parolni oʻrnatib boʻlmadi.',
 
   // Account → Notification tab
   'account.notification.title': 'Bildirishnomalar',
@@ -251,6 +259,11 @@ export const uz: Partial<Record<TranslationKey, string>> = {
   'auth.googleCallback.profileError':
     'Kirish muvaffaqiyatli, lekin profilingizni yuklab boʻlmadi. Qayta urinib koʻring.',
   'auth.googleCallback.backToSignIn': 'Kirishga qaytish',
+  'auth.passwordPrompt.title': 'Hisobingizga parol qoʻshing',
+  'auth.passwordPrompt.body':
+    'Siz Google orqali kirdingiz. Email va parol bilan ham kira olish uchun profilingizda parol oʻrnating.',
+  'auth.passwordPrompt.cta': 'Parol oʻrnatish',
+  'auth.passwordPrompt.later': 'Keyinroq',
 
   // Dashboard
   'dashboard.errorLoading': 'Boshqaruv panelini yuklashda xatolik. Sahifani yangilab koʻring.',

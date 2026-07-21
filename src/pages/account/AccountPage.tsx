@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AccountHero } from '@/components/account/AccountHero';
 import { ProfileSidebar } from '@/components/account/ProfileSidebar';
@@ -19,11 +20,23 @@ import { SecurityTab } from './SecurityTab';
 
 type Tab = 'personal' | 'notification' | 'preferences' | 'promocodes' | 'security' | 'language';
 
+const TAB_VALUES: Tab[] = ['personal', 'notification', 'preferences', 'promocodes', 'security', 'language'];
+
 export function AccountPage() {
   const { user } = useAuth();
   const t = useT();
   const [tab, setTab] = useState<Tab>('personal');
   const [signOutOpen, setSignOutOpen] = useState(false);
+
+  // Deep-link support (/account?tab=security) — also reacts to in-place
+  // search changes, e.g. the set-password prompt firing while already here.
+  const [params] = useSearchParams();
+  const requestedTab = params.get('tab');
+  useEffect(() => {
+    if (requestedTab && TAB_VALUES.includes(requestedTab as Tab)) {
+      setTab(requestedTab as Tab);
+    }
+  }, [requestedTab]);
 
   const tabs: TabItem<Tab>[] = [
     { value: 'personal', label: t('account.tabs.personal') },

@@ -91,6 +91,14 @@ export const ru: Partial<Record<TranslationKey, string>> = {
   'account.security.changePassword.submit': 'Обновить пароль',
   'account.security.changePassword.invalid': 'Новый пароль должен содержать заглавную букву, цифру и быть не короче 8 символов.',
   'account.security.changePassword.failed': 'Не удалось изменить пароль.',
+  'account.security.password.setDescription':
+    'Вы вошли через Google. Установите пароль, чтобы входить также по электронной почте.',
+  'account.security.password.setCta': 'Установить пароль',
+  'account.security.setPassword.title': 'Установка пароля',
+  'account.security.setPassword.subtitle':
+    'Добавьте пароль, чтобы входить не только через Google, но и по электронной почте.',
+  'account.security.setPassword.submit': 'Установить пароль',
+  'account.security.setPassword.failed': 'Не удалось установить пароль.',
 
   // Account → Notification tab
   'account.notification.title': 'Уведомления',
@@ -251,6 +259,11 @@ export const ru: Partial<Record<TranslationKey, string>> = {
   'auth.googleCallback.profileError':
     'Вход выполнен, но не удалось загрузить профиль. Попробуйте ещё раз.',
   'auth.googleCallback.backToSignIn': 'Назад ко входу',
+  'auth.passwordPrompt.title': 'Добавьте пароль к аккаунту',
+  'auth.passwordPrompt.body':
+    'Вы вошли через Google. Установите пароль в профиле, чтобы также входить по электронной почте и паролю.',
+  'auth.passwordPrompt.cta': 'Установить пароль',
+  'auth.passwordPrompt.later': 'Позже',
 
   // Dashboard
   'dashboard.errorLoading': 'Не удалось загрузить панель. Пожалуйста, обновите страницу.',
