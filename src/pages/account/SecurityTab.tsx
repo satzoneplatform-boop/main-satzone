@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -17,7 +17,8 @@ import type { TranslationKey } from '@/i18n/en';
 export function SecurityTab() {
   const t = useT();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const sessions = useQuery({
     queryKey: ['me', 'sessions'],
     queryFn: () => meApi.listSessions(),
@@ -43,9 +44,16 @@ export function SecurityTab() {
     mutationFn: (id: string) => meApi.revokeSession(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me', 'sessions'] }),
   });
+  // "Sign out everywhere" revokes every refresh token — including this
+  // device's. Access JWTs are stateless and outlive revocation by up to
+  // 15 minutes, so we must end the local session ourselves instead of
+  // letting the app silently die at the next token refresh.
   const revokeAll = useMutation({
     mutationFn: () => meApi.revokeAllSessions(),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['me', 'sessions'] }),
+    onSuccess: async () => {
+      await logout();
+      navigate('/sign-in', { replace: true });
+    },
   });
 
   return (
@@ -79,16 +87,19 @@ export function SecurityTab() {
       </div>
 
       <section className="rounded-2xl border border-ink-200 bg-white shadow-[var(--shadow-card)]">
-        <header className="flex flex-wrap items-center justify-between gap-2 border-b border-ink-100 px-5 py-4">
-          <h3 className="text-base font-semibold text-ink-900">{t('account.security.activeSessions')}</h3>
-          <button
-            type="button"
-            onClick={() => revokeAll.mutate()}
-            disabled={revokeAll.isPending || (sessions.data?.length ?? 0) <= 1}
-            className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-danger-600 hover:underline disabled:cursor-not-allowed disabled:text-ink-400"
-          >
-            {revokeAll.isPending ? t('account.security.signingOut') : t('account.security.signOutAll')}
-          </button>
+        <header className="border-b border-ink-100 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-base font-semibold text-ink-900">{t('account.security.activeSessions')}</h3>
+            <button
+              type="button"
+              onClick={() => revokeAll.mutate()}
+              disabled={revokeAll.isPending || sessions.isLoading}
+              className="inline-flex min-h-11 items-center rounded-lg px-2 text-sm font-medium text-danger-600 hover:underline disabled:cursor-not-allowed disabled:text-ink-400"
+            >
+              {revokeAll.isPending ? t('account.security.signingOut') : t('account.security.signOutAll')}
+            </button>
+          </div>
+          <p className="mt-1 max-w-prose text-xs text-ink-500">{t('account.security.sessionsHint')}</p>
         </header>
 
         {sessions.isLoading ? (
@@ -130,7 +141,7 @@ export function SecurityTab() {
                   <tr className="border-b border-ink-100">
                     <th className="px-5 py-3 text-left font-medium">{t('account.security.col.device')}</th>
                     <th className="px-5 py-3 text-left font-medium">{t('account.security.col.location')}</th>
-                    <th className="px-5 py-3 text-left font-medium">{t('account.security.col.status')}</th>
+                    <th className="px-5 py-3 text-left font-medium">{t('account.security.col.lastActive')}</th>
                     <th className="px-5 py-3" />
                   </tr>
                 </thead>
