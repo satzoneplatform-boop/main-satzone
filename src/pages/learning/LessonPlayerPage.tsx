@@ -19,6 +19,7 @@ import { VideoPlayer } from '@/components/player/VideoPlayer';
 import { playbackErrorLabel } from '@/components/player/playbackError';
 import { CurriculumNav, CurriculumSheet } from '@/components/learning/CurriculumNav';
 import { CompletionCelebration } from '@/components/learning/CompletionCelebration';
+import { CourseCompletionLetter } from '@/components/learning/CourseCompletionLetter';
 import { ApiError } from '@/api/errors';
 import {
   useCourseCurriculum,
@@ -49,6 +50,7 @@ export function LessonPlayerPage() {
   const { slug, lessonId } = useParams<{ slug: string; lessonId: string }>();
   const t = useT();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const course = useCourseDetail(slug);
   const curriculum = useCourseCurriculum(slug);
   const enrollments = useMyEnrollments({ size: 50 });
@@ -58,6 +60,9 @@ export function LessonPlayerPage() {
   const [curriculumOpen, setCurriculumOpen] = useState(false);
   // Celebration fires once when this lesson first transitions to complete.
   const [celebrate, setCelebrate] = useState(false);
+  // The course-completion letter replaces the lesson celebration when the
+  // finished lesson was the last one in the curriculum.
+  const [courseComplete, setCourseComplete] = useState(false);
   const celebratedRef = useRef(false);
 
   const tabs: TabItem<Tab>[] = [
@@ -88,6 +93,18 @@ export function LessonPlayerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playback.data?.expires_at]);
 
+  // Sequential gate: a lesson is unlocked only if every preceding lesson
+  // (across all sections, in curriculum order) is in the local completion
+  // cache. The first lesson is always unlocked.
+  const completedIds = useCompletedLessons(enrollment?.id);
+  const orderedLessonIds = useMemo(
+    () =>
+      (curriculum.data?.sections ?? []).flatMap((s) =>
+        s.lessons.map((l) => l.id),
+      ),
+    [curriculum.data],
+  );
+
   function onProgress(positionSeconds: number, duration: number) {
     if (!enrollment || !lessonId) return;
     const completed = duration > 0 && positionSeconds >= duration - 1;
@@ -103,25 +120,19 @@ export function LessonPlayerPage() {
     // sequential lock in the curriculum nav updates immediately.
     if (completed) {
       completionStore.markComplete(enrollment.id, lessonId);
-      // Fire the celebration once per lesson view.
+      // Fire the celebration once per lesson view. If this was the last
+      // outstanding lesson of the course, the thank-you letter (with the
+      // full confetti volley) takes the stage instead.
       if (!celebratedRef.current) {
         celebratedRef.current = true;
-        setCelebrate(true);
+        const done = completionStore.get(enrollment.id);
+        const courseDone =
+          orderedLessonIds.length > 0 && orderedLessonIds.every((id) => done.has(id));
+        if (courseDone) setCourseComplete(true);
+        else setCelebrate(true);
       }
     }
   }
-
-  // Sequential gate: a lesson is unlocked only if every preceding lesson
-  // (across all sections, in curriculum order) is in the local completion
-  // cache. The first lesson is always unlocked.
-  const completedIds = useCompletedLessons(enrollment?.id);
-  const orderedLessonIds = useMemo(
-    () =>
-      (curriculum.data?.sections ?? []).flatMap((s) =>
-        s.lessons.map((l) => l.id),
-      ),
-    [curriculum.data],
-  );
   const firstLockedIndex = useMemo(() => {
     for (let i = 0; i < orderedLessonIds.length; i++) {
       if (!completedIds.has(orderedLessonIds[i])) return i;
@@ -291,6 +302,17 @@ export function LessonPlayerPage() {
               }
             : undefined
         }
+      />
+
+      <CourseCompletionLetter
+        open={courseComplete}
+        onClose={() => setCourseComplete(false)}
+        onBackToCourses={() => {
+          setCourseComplete(false);
+          navigate('/learning-path');
+        }}
+        courseTitle={course.data.title}
+        studentName={user?.full_name}
       />
     </div>
   );

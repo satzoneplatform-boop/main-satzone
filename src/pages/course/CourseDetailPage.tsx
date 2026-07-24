@@ -21,6 +21,7 @@ import { useMyEnrollments } from '@/features/learning/hooks';
 import { enrollmentsApi } from '@/api/enrollments';
 import { ApiError } from '@/api/errors';
 import { formatPrice } from '@/lib/format';
+import { launchConfetti } from '@/lib/confetti';
 import { useT } from '@/i18n/I18nProvider';
 import { useAuth } from '@/features/auth/AuthProvider';
 
@@ -57,6 +58,9 @@ export function CourseDetailPage() {
     mutationFn: (courseId: string) => enrollmentsApi.enroll(courseId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['enrollments'] });
+      // The confetti overlay lives outside the React tree, so it plays on
+      // across the navigation to the learn page.
+      launchConfetti();
       navigate(`/courses/${slug}/learn`);
     },
   });

@@ -448,6 +448,30 @@ export const en = {
   'learning.complete.message': 'Great work — that’s one more step toward your target score. Keep the momentum going.',
   'learning.complete.next': 'Next lesson',
   'learning.complete.stay': 'Stay on this lesson',
+
+  // Course completion letter
+  'learning.courseComplete.title': 'Congratulations — you finished the course!',
+  'learning.courseComplete.fallbackName': 'friend',
+  'learning.courseComplete.dear': 'Dear {name},',
+  'learning.courseComplete.body1':
+    'You’ve just completed “{course}” — every lesson, from the first to the last. That kind of persistence is exactly what great results are built on.',
+  'learning.courseComplete.body2':
+    'Thank you for learning with SATZONE. We’re proud of the work you’ve put in, and we wish you the very best of luck in your studies and in life. Keep going — this is only the beginning.',
+  'learning.courseComplete.quote1':
+    'Education is the most powerful weapon which you can use to change the world.',
+  'learning.courseComplete.quote1Author': 'Nelson Mandela, Nobel Peace Prize laureate',
+  'learning.courseComplete.quote2':
+    'The beautiful thing about learning is that no one can take it away from you.',
+  'learning.courseComplete.quote2Author': 'B.B. King, blues legend',
+  'learning.courseComplete.quote3': 'An investment in knowledge pays the best interest.',
+  'learning.courseComplete.quote3Author': 'Benjamin Franklin, statesman and inventor',
+  'learning.courseComplete.quote4':
+    'Success is the sum of small efforts, repeated day in and day out.',
+  'learning.courseComplete.quote4Author': 'Robert Collier, author',
+  'learning.courseComplete.signoff': 'With pride and gratitude,',
+  'learning.courseComplete.team': 'The SATZONE Team',
+  'learning.courseComplete.back': 'Back to my courses',
+  'learning.courseComplete.close': 'Close',
   'learning.lesson.videoFailed': 'Video packaging failed for this lesson — please contact the instructor.',
   'learning.lesson.comingSoon': 'Coming soon — the instructor hasn’t uploaded this video yet.',
   'learning.lesson.transcripts.all': 'All transcript',

@@ -481,6 +481,38 @@ export const ru: Partial<Record<TranslationKey, string>> = {
   'learning.lesson.coursesBreadcrumb': 'Мои курсы',
   'learning.lesson.loadingLesson': 'Загрузка',
   'learning.lesson.lessonLabel': 'Урок',
+
+  // Lesson completion celebration
+  'learning.complete.title': 'Урок пройден!',
+  'learning.complete.message':
+    'Отличная работа — ещё один шаг к вашему целевому баллу. Продолжайте в том же духе.',
+  'learning.complete.next': 'Следующий урок',
+  'learning.complete.stay': 'Остаться на этом уроке',
+
+  // Course completion letter
+  'learning.courseComplete.title': 'Поздравляем — курс завершён!',
+  'learning.courseComplete.fallbackName': 'друг',
+  'learning.courseComplete.dear': 'Здравствуйте, {name}!',
+  'learning.courseComplete.body1':
+    'Вы полностью прошли курс «{course}» — каждый урок, от первого до последнего. Именно из такого упорства складываются высокие результаты.',
+  'learning.courseComplete.body2':
+    'Спасибо, что учитесь вместе с SATZONE. Мы гордимся вашей работой и от всей души желаем удачи в учёбе и в жизни. Продолжайте — это только начало.',
+  'learning.courseComplete.quote1':
+    'Образование — самое мощное оружие, с помощью которого можно изменить мир.',
+  'learning.courseComplete.quote1Author': 'Нельсон Мандела, лауреат Нобелевской премии мира',
+  'learning.courseComplete.quote2':
+    'Прекрасное в учении то, что никто не может отнять его у вас.',
+  'learning.courseComplete.quote2Author': 'Би Би Кинг, легенда блюза',
+  'learning.courseComplete.quote3': 'Инвестиции в знания приносят самые высокие проценты.',
+  'learning.courseComplete.quote3Author': 'Бенджамин Франклин, государственный деятель и изобретатель',
+  'learning.courseComplete.quote4':
+    'Успех — это сумма небольших усилий, повторяемых изо дня в день.',
+  'learning.courseComplete.quote4Author': 'Роберт Кольер, писатель',
+  'learning.courseComplete.signoff': 'С гордостью и благодарностью,',
+  'learning.courseComplete.team': 'Команда SATZONE',
+  'learning.courseComplete.back': 'К моим курсам',
+  'learning.courseComplete.close': 'Закрыть',
+
   'learning.lesson.videoFailed': 'Не удалось обработать видео для этого урока — свяжитесь с преподавателем.',
   'learning.lesson.comingSoon': 'Скоро — преподаватель ещё не загрузил видео.',
   'learning.lesson.transcripts.all': 'Весь транскрипт',

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { motion, useReducedMotion } from 'motion/react';
 import { ApiError } from '@/api/errors';
@@ -14,6 +14,7 @@ import {
 } from '@/features/quizzes/hooks';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
+import { launchConfetti } from '@/lib/confetti';
 import type {
   MCQDataStudent,
   MatchingDataStudent,
@@ -486,6 +487,17 @@ function ResultScreen({
   // Build a quick lookup so per-item review can show the prompt.
   const itemById = new Map(items.map((it) => [it.id, it]));
   const passed = result.score_percent >= 80;
+
+  // Celebrate the score reveal once: full volley for a perfect run, a
+  // modest pop for a pass — misses stay quiet so the confetti keeps
+  // meaning something.
+  const celebratedRef = useRef(false);
+  useEffect(() => {
+    if (celebratedRef.current) return;
+    celebratedRef.current = true;
+    if (result.score_percent === 100) launchConfetti();
+    else if (result.score_percent >= 80) launchConfetti(0.45);
+  }, [result.score_percent]);
 
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-4 py-10">

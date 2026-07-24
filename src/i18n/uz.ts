@@ -481,6 +481,38 @@ export const uz: Partial<Record<TranslationKey, string>> = {
   'learning.lesson.coursesBreadcrumb': 'Mening kurslarim',
   'learning.lesson.loadingLesson': 'Yuklanmoqda',
   'learning.lesson.lessonLabel': 'Dars',
+
+  // Lesson completion celebration
+  'learning.complete.title': 'Dars yakunlandi!',
+  'learning.complete.message':
+    'Ajoyib ish — maqsad balingizga yana bir qadam yaqinlashdingiz. Shu ruhda davom eting.',
+  'learning.complete.next': 'Keyingi dars',
+  'learning.complete.stay': 'Shu darsda qolish',
+
+  // Course completion letter
+  'learning.courseComplete.title': 'Tabriklaymiz — kurs yakunlandi!',
+  'learning.courseComplete.fallbackName': 'doʻstim',
+  'learning.courseComplete.dear': 'Hurmatli {name},',
+  'learning.courseComplete.body1':
+    'Siz “{course}” kursini toʻliq tamomladingiz — birinchi darsdan oxirgisigacha. Aynan shunday matonat yuqori natijalar poydevoridir.',
+  'learning.courseComplete.body2':
+    'SATZONE bilan oʻqiganingiz uchun rahmat. Mehnatingiz bilan faxrlanamiz va oʻqishingizda hamda hayotingizda omad tilaymiz. Davom eting — bu hali boshlanishi.',
+  'learning.courseComplete.quote1':
+    'Taʼlim — dunyoni oʻzgartirish uchun ishlatish mumkin boʻlgan eng kuchli quroldir.',
+  'learning.courseComplete.quote1Author': 'Nelson Mandela, Nobel tinchlik mukofoti sovrindori',
+  'learning.courseComplete.quote2':
+    'Oʻrganishning goʻzalligi shundaki, uni hech kim sizdan tortib ololmaydi.',
+  'learning.courseComplete.quote2Author': 'B.B. King, blyuz afsonasi',
+  'learning.courseComplete.quote3': 'Bilimga qoʻyilgan sarmoya eng yuqori foyda keltiradi.',
+  'learning.courseComplete.quote3Author': 'Benjamin Franklin, davlat arbobi va ixtirochi',
+  'learning.courseComplete.quote4':
+    'Muvaffaqiyat — kun sayin takrorlanadigan kichik saʼy-harakatlar yigʻindisidir.',
+  'learning.courseComplete.quote4Author': 'Robert Collier, yozuvchi',
+  'learning.courseComplete.signoff': 'Faxr va minnatdorlik bilan,',
+  'learning.courseComplete.team': 'SATZONE jamoasi',
+  'learning.courseComplete.back': 'Kurslarimga qaytish',
+  'learning.courseComplete.close': 'Yopish',
+
   'learning.lesson.videoFailed': 'Bu dars uchun video paketlash muvaffaqiyatsiz tugadi — ustoz bilan bogʻlaning.',
   'learning.lesson.comingSoon': 'Tez orada — ustoz hali bu videoni yuklamagan.',
   'learning.lesson.transcripts.all': 'Barcha matn',

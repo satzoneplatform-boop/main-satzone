@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Avatar } from '@/components/ui/Avatar';
@@ -10,6 +10,7 @@ import { CourseThumbnail } from '@/components/course/CourseThumbnail';
 import { ordersApi } from '@/api/orders';
 import { useCourseDetail } from '@/features/course/hooks';
 import { formatPrice } from '@/lib/format';
+import { launchConfetti } from '@/lib/confetti';
 import { useT } from '@/i18n/I18nProvider';
 import type { EnrollmentRead, OrderStatus } from '@/types/api';
 
@@ -41,6 +42,23 @@ export function CheckoutSuccessPage() {
     },
   });
 
+  const order = orderQuery.data;
+  const isPaidFlow = Boolean(orderId);
+  const status: OrderStatus | 'free' = isPaidFlow ? order?.status ?? 'pending' : 'free';
+  const settled = status === 'paid' || status === 'free';
+  const pending = isPaidFlow && (status === 'pending' || status === 'processing');
+  const failed = status === 'cancelled' || status === 'refunded' || status === 'failed';
+
+  // Celebrate once when the enrollment is confirmed and the card is visible.
+  const celebrated = useRef(false);
+  const showSuccess = settled && Boolean(course.data);
+  useEffect(() => {
+    if (showSuccess && !celebrated.current) {
+      celebrated.current = true;
+      launchConfetti();
+    }
+  }, [showSuccess]);
+
   if (course.isLoading) {
     return (
       <div className="grid place-items-center py-24">
@@ -57,13 +75,6 @@ export function CheckoutSuccessPage() {
       </div>
     );
   }
-
-  const order = orderQuery.data;
-  const isPaidFlow = Boolean(orderId);
-  const status: OrderStatus | 'free' = isPaidFlow ? order?.status ?? 'pending' : 'free';
-  const settled = status === 'paid' || status === 'free';
-  const pending = isPaidFlow && (status === 'pending' || status === 'processing');
-  const failed = status === 'cancelled' || status === 'refunded' || status === 'failed';
 
   const startUrl = freeEnrollment?.last_lesson
     ? `/lessons/${freeEnrollment.last_lesson.id}`

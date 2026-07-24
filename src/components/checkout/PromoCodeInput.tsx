@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Button } from '@/components/ui/Button';
@@ -6,6 +6,7 @@ import { CheckIcon, CloseIcon, GiftIcon } from '@/components/icons';
 import { ApiError } from '@/api/errors';
 import { promocodesApi, type PromocodePreview } from '@/api/promocodes';
 import { formatPrice } from '@/lib/format';
+import { launchConfettiAt } from '@/lib/confetti';
 import { useT } from '@/i18n/I18nProvider';
 import { cn } from '@/lib/cn';
 
@@ -45,6 +46,7 @@ export function PromoCodeInput({
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   // Codes the user saved to their profile wallet that apply to this course —
   // offered as one-tap chips below the manual input. A failed fetch (or an
@@ -69,6 +71,13 @@ export function PromoCodeInput({
       });
       onApplied(preview);
       setCode('');
+      // A small pop from the promo section — a saved discount is a minor
+      // win, so it gets the localized burst, not the full-screen volley.
+      const el = sectionRef.current;
+      if (el) {
+        const r = el.getBoundingClientRect();
+        launchConfettiAt(r.left + r.width / 2, r.top + r.height / 2, 0.9);
+      }
     } catch (err) {
       const key =
         err instanceof ApiError && ERROR_KEY[err.code]
@@ -94,7 +103,7 @@ export function PromoCodeInput({
     : '';
 
   return (
-    <section>
+    <section ref={sectionRef}>
       <div className="mb-3 flex items-center gap-2">
         <span className="grid size-7 place-items-center rounded-lg bg-brand-50 text-brand-600">
           <GiftIcon className="size-4" />
