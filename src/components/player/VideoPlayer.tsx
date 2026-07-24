@@ -78,6 +78,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const hlsRef = useRef<Hls | null>(null);
     const lastTickRef = useRef(0);
     const fatalCountRef = useRef(0);
+    // Playback session snapshot carried across player re-attaches. Every
+    // token re-mint changes `src` (fresh `?t=`), which tears hls.js down —
+    // without this a lesson longer than the ~30 min token TTL restarted at
+    // 0:00 paused mid-watch. Handlers may pre-fill it (premature-end
+    // recovery); otherwise the attach effect's cleanup snapshots the
+    // position/playing state as it tears down.
+    const resumeRef = useRef<{ time: number; playing: boolean } | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     // Keep the latest callbacks behind refs so the hls attach effect
@@ -107,6 +114,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
       setError(null);
       const playSrc = rewriteHlsUrl(src);
+      // Consume any session snapshot from the previous attach so the viewer
+      // continues where they were instead of restarting at 0:00.
+      const resume = resumeRef.current;
+      resumeRef.current = null;
 
       // Prefer hls.js whenever it's supported so the rewriting loader
       // intercepts every fetch (manifest, segments, AES key). Native HLS
@@ -118,7 +129,20 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (!Hls.isSupported()) {
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = playSrc;
+          if (resume) {
+            const restore = () => {
+              if (resume.time > 1) video.currentTime = resume.time;
+              if (resume.playing) void video.play().catch(() => {});
+            };
+            video.addEventListener('loadedmetadata', restore, { once: true });
+          }
           return () => {
+            if (!resumeRef.current && video.currentTime > 1) {
+              resumeRef.current = {
+                time: video.currentTime,
+                playing: !video.paused && !video.ended,
+              };
+            }
             video.removeAttribute('src');
             video.load();
           };
@@ -133,6 +157,21 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // the same `?t=` query string.
         autoStartLoad: true,
         capLevelToPlayerSize: true,
+        // Resume a re-attached session at the previous position (-1 = from
+        // the start / live edge default).
+        startPosition: resume && resume.time > 1 ? resume.time : -1,
+        // Long lessons: hls.js keeps EVERYTHING behind the playhead by
+        // default (backBufferLength: Infinity). Over an hour-long video
+        // that exhausts memory on modest devices — the classic
+        // "large videos stop playing" failure. 90 s of back-buffer keeps
+        // rewind snappy while capping memory.
+        backBufferLength: 90,
+        // Big segments on slow links can exceed the 20 s default timeout,
+        // which surfaced as a fatal network error → full re-mint → restart
+        // loop. Give large fragments more headroom and retries instead.
+        fragLoadingTimeOut: 45000,
+        fragLoadingMaxRetry: 6,
+        manifestLoadingMaxRetry: 4,
         // Route manifest, playlists, segments, and the AES-128 key
         // through the same proxy origin as the rest of the API. The
         // backend embeds absolute URLs in the manifest, and the playback
@@ -144,6 +183,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       hlsRef.current = hls;
       hls.loadSource(playSrc);
       hls.attachMedia(video);
+      // Re-attached mid-lesson while playing → keep playing.
+      if (resume?.playing) {
+        hls.once(Hls.Events.MANIFEST_PARSED, () => {
+          void video.play().catch(() => {});
+        });
+      }
 
       // Lifecycle logging — makes a "200s but frozen" stall diagnosable:
       // if MANIFEST_PARSED fires but FRAG_BUFFERED never does, the media
@@ -223,10 +268,43 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       });
 
       return () => {
+        // Snapshot the session before teardown so the next attach (token
+        // re-mint, manifest refresh) picks up exactly where this one was.
+        if (!resumeRef.current && video.currentTime > 1) {
+          resumeRef.current = {
+            time: video.currentTime,
+            playing: !video.paused && !video.ended,
+          };
+        }
         hls.destroy();
         hlsRef.current = null;
       };
     }, [video, src, ready]);
+
+    // A still-packaging (growing) manifest can run out of segments and fire
+    // `ended` long before the real end of the lesson. When the authoritative
+    // total says there is more to come, this is NOT the end: re-mint the
+    // manifest and resume playing from the same spot instead of leaving the
+    // player dead mid-video.
+    useEffect(() => {
+      if (!video) return;
+      const onEnded = () => {
+        const total = duration ?? 0;
+        if (total > 0 && video.currentTime < total - 10) {
+          console.info(
+            '[lesson-player] media ended at',
+            Math.round(video.currentTime),
+            's of',
+            Math.round(total),
+            's — manifest behind the lesson, refreshing to continue',
+          );
+          resumeRef.current = { time: video.currentTime, playing: true };
+          onRequestRefreshRef.current();
+        }
+      };
+      video.addEventListener('ended', onEnded);
+      return () => video.removeEventListener('ended', onEnded);
+    }, [video, duration]);
 
     // Progress reporting — bound directly on the underlying <video>. The
     // backend computes completion from the segment watermark, not from
@@ -247,8 +325,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           onProgressRef.current?.(now, video.duration || 0);
         }
       };
+      // Report the true playhead, not the media duration: on a growing
+      // manifest `ended` fires at the end of the packaged prefix, and
+      // reporting duration-as-position wrongly signalled a full watch.
       const onEnded = () =>
-        onProgressRef.current?.(video.duration || 0, video.duration || 0);
+        onProgressRef.current?.(video.currentTime, video.duration || 0);
       const onVisibility = () => {
         if (document.visibilityState === 'hidden') flush();
       };

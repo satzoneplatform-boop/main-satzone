@@ -105,9 +105,39 @@ export function LessonPlayerPage() {
     [curriculum.data],
   );
 
-  function onProgress(positionSeconds: number, duration: number) {
+  // Authoritative total duration comes only from /playback. For large
+  // uploads the backend packages progressively, so <video>.duration covers
+  // only the packaged prefix — it is NOT the lesson length. Prefer the
+  // exact per-segment durations (non-uniform stream-copy packages); fall
+  // back to the nominal total_segments × segment_seconds product.
+  const segDurations = playback.data?.segment_durations ?? null;
+  const exactDuration = useMemo(
+    () =>
+      segDurations && segDurations.length > 0
+        ? segDurations.reduce((sum, s) => sum + s, 0)
+        : 0,
+    [segDurations],
+  );
+  const segs = playback.data?.total_segments ?? 0;
+  const segSec = playback.data?.segment_seconds ?? 0;
+  const nominalDuration = segs > 0 && segSec > 0 ? segs * segSec : 0;
+  const authoritativeDuration =
+    exactDuration > 0 ? exactDuration : nominalDuration > 0 ? nominalDuration : null;
+
+  function onProgress(positionSeconds: number, mediaDuration: number) {
     if (!enrollment || !lessonId) return;
-    const completed = duration > 0 && positionSeconds >= duration - 1;
+    // Judge completion against the REAL total, never the media element's
+    // duration — with a partially-packaged large video the element reports
+    // the packaged prefix, which used to fire the "lesson complete"
+    // celebration mid-video. With exact segment durations the total is
+    // precise (small tolerance); the nominal product overshoots by up to
+    // one short final segment, so allow segment_seconds + 1s there.
+    const total =
+      authoritativeDuration ??
+      (Number.isFinite(mediaDuration) && mediaDuration > 0 ? mediaDuration : 0);
+    const tolerance =
+      exactDuration > 0 ? 1.5 : authoritativeDuration != null ? segSec + 1 : 1;
+    const completed = total > 0 && positionSeconds >= total - tolerance;
     update.mutate({
       lessonId,
       payload: {
@@ -193,18 +223,9 @@ export function LessonPlayerPage() {
 
   const playbackErrLabel = apiErrLabel ?? noVideoLabel;
 
-  // Authoritative total duration comes only from /playback
-  // (total_segments × segment_seconds). When the backend hasn't supplied
-  // those fields we hand `null` to the player and let it use
-  // <video>.duration directly — that's correct for VOD manifests. We
-  // intentionally do NOT fall back to `lesson.duration_seconds`: that's a
-  // rough hint from the instructor (sometimes a default like "2 min") and
-  // showing it as the player's clock makes the timeline look wrong when
-  // the real video is shorter or longer.
-  const segs = playback.data?.total_segments ?? 0;
-  const segSec = playback.data?.segment_seconds ?? 0;
-  const computedDuration = segs > 0 && segSec > 0 ? segs * segSec : 0;
-  const authoritativeDuration = computedDuration > 0 ? computedDuration : null;
+  // Note: we intentionally do NOT fall back to `lesson.duration_seconds`
+  // for the player clock: that's a rough instructor hint (sometimes a
+  // default like "2 min") and using it makes the timeline look wrong.
 
   return (
     <div className="-mx-4 -mt-6 -mb-24 flex h-[calc(100vh-72px)] min-h-0 flex-col bg-white sm:-mx-6 lg:-mx-8 lg:-mb-6">

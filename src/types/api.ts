@@ -205,12 +205,27 @@ export interface LessonPlaybackResponse {
   expires_at: string;
   hls_url: string | null;
   hls_status: HlsStatus | null;
-  // Authoritative duration components — total_segments × segment_seconds is
-  // the real total length. <video>.duration only reflects the buffered window
-  // for sliding manifests.
+  // Authoritative duration components. <video>.duration only reflects the
+  // buffered window for sliding manifests. Prefer summing
+  // `segment_durations` when present; otherwise total_segments ×
+  // segment_seconds is the nominal total.
   total_segments: number | null;
+  // Nominal per-segment duration — every segment is this long for uniform
+  // (transcode) packages and older lessons.
   segment_seconds: number | null;
+  // Real per-segment durations (seconds), positionally aligned with segment
+  // indices. Populated for lessons packaged with the non-uniform
+  // stream-copy path; null otherwise.
+  segment_durations: number[] | null;
   drm: { provider: string; license_url: string } | null;
+}
+
+/** Public, admin-curated marketing figures shown on the landing page. */
+export interface LandingStatsRead {
+  students_count: number;
+  average_score_gain: number;
+  practice_questions: number;
+  top_student_sat_score: number;
 }
 
 export interface CoursePreviewPlaybackResponse {
